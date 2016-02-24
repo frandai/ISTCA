@@ -1,0 +1,111 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package bean;
+
+import datos.Factura;
+import datos.FacturaEstado;
+import datos.FacturaHistoricoEstado;
+import datos.FacturaHistoricoEstadoPK;
+import datos.Factura_;
+import java.util.Date;
+import java.util.Formatter;
+import javax.ejb.Stateless;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.Root;
+import util.Fecha;
+
+/**
+ *
+ *
+ */
+@Stateless
+public class FacturaFacade extends AbstractFacade<Factura> {
+
+    @PersistenceContext(unitName = "GC_DAIPU")
+    private EntityManager em;
+
+    @Override
+    protected EntityManager getEntityManager() {
+        return em;
+    }
+
+    public FacturaFacade() {
+        super(Factura.class);
+    }
+
+    public String findNextID() {
+        return findNextID(new Date());
+    }
+/**
+ * Devuelte el siguiente ID de factura, dada una fecha.
+ * Las facturas se generan con el ID: "AAAA-MM-XXX", donde:
+ * AAAA - Año de la fecha pasada por parámetro
+ * MM - Mes de la fecha pasada por parámetro
+ * XXX - ID correlativo al número de facturas del año y mes actual
+ * 
+ * @param fechaAnioFac La fecha de la que se quiere generar la factura
+ * @return el ID de la factura a generar
+ */
+    public String findNextID(Date fechaAnioFac) {
+        Date actual = new Date();
+        String amf;
+        if (Fecha.getAnio(actual) > Fecha.getAnio(fechaAnioFac)) {
+            amf = (Fecha.getAnio(fechaAnioFac)) + "-12-%";
+        } else {
+            amf = util.Fecha.getFechaAnioMesFactura(actual) + "%";
+        }
+        String idF;
+        CriteriaBuilder cb = getEntityManager().getCriteriaBuilder();
+        javax.persistence.criteria.CriteriaQuery<Factura> cq = cb.createQuery(Factura.class);
+        Root<Factura> gr = cq.from(Factura.class);
+        cq.select(gr);
+        cq.where(getEntityManager().getCriteriaBuilder().like(gr.get(Factura_.id), amf));
+        cq.orderBy(cb.desc(gr.get(Factura_.id)));
+
+        try {
+            Factura f = (Factura) getEntityManager().createQuery(cq).getResultList().get(0);
+            idF = f.getId();
+        } catch (Exception e) {
+            idF = amf.replace("%", "") + "0000";
+        }
+        int n = Integer.parseInt(idF.split("-")[2]);
+        n++;
+        Formatter fmt = new Formatter();
+        fmt.format("%04d", n);
+        idF = idF.split("-")[0] + "-" + idF.split("-")[1] + "-" + fmt;
+        return idF;
+    }
+
+    /**
+     * Edición de facturas:
+     * 
+     * Si se le pasa el parámetro para modificar el estado de la factura,
+     * guardará el estado anterior de la factura en el histórico de estados de la factura.
+     * 
+     * @param entity Factura a editar
+     * @param actEstado TRUE si se desea actualizar el estado de la factura y guardarlo en el histórico.
+     * @return 
+     */
+    public Factura edit(Factura entity, boolean actEstado) {
+        Factura aux = this.find(entity.getId());
+        if (actEstado) {
+            if (!aux.getUltimoEstado().getEstado().getNombre().equals(entity.getUltimoEstado().getEstado().getNombre())) {
+                FacturaEstado fe = entity.getUltimoEstado().getEstado();
+                entity.getUltimoEstado().setEstado(aux.getUltimoEstado().getEstado());
+                FacturaHistoricoEstado fh = new FacturaHistoricoEstado(new FacturaHistoricoEstadoPK(entity.getId(), new Date()));
+                fh.setEstado(fe);
+                entity.getFacturaHistoricoEstadoList().add(fh);
+            }
+        }
+        return getEntityManager().merge(entity);
+    }
+
+    @Override
+    public Factura edit(Factura entity) {
+        return edit(entity, true);
+    }
+}

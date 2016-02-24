@@ -1,0 +1,104 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package filtros;
+
+import java.io.IOException;
+import java.util.Enumeration;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import vista.SesionActual;
+
+/**
+ *
+ * @author fran
+ */
+public final class FiltroPermisos implements Filter {
+
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+        //Nada
+    }
+
+    /**
+     * Función para Filtrar los Permisos de cada Usuario.
+     * 
+     * Para cada Permiso se asignan las páginas a las que NO debe de acceder.
+     * Explicativo en cada IF de la función.
+     * 
+     * @param req
+     * @param res
+     * @param chain
+     * @throws IOException
+     * @throws ServletException 
+     */
+    @Override
+    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
+        HttpServletRequest request = (HttpServletRequest) req;
+        HttpServletResponse response = (HttpServletResponse) res;
+        boolean incorrecto = false;
+
+        //CONTROL DE PERMISOS EN SESION
+        SesionActual sesion = (SesionActual) request.getSession().getAttribute("sesionActual");
+        if (sesion != null && sesion.isUsuario_Conectado()) {
+            //Se controla si se tiene acceso a la página que se quiere acceder
+            if ((request.getRequestURL().toString().contains("faces/JSF/vista/empresa/lista.xhtml")
+                    || request.getRequestURL().toString().contains("faces/JSF/vista/empresa/empresa.xhtml"))
+                    && !(sesion.tienePermiso(1) || sesion.tienePermiso(2) || sesion.tienePermiso(3) || sesion.tienePermiso(23))) {
+                incorrecto = true;
+            } else if ((request.getRequestURL().toString().contains("faces/JSF/vista/persona/lista.xhtml")
+                    || request.getRequestURL().toString().contains("faces/JSF/vista/persona/persona.xhtml"))
+                    && !(sesion.tienePermiso(4) || sesion.tienePermiso(5) || sesion.tienePermiso(6) || sesion.tienePermiso(24))) {
+                incorrecto = true;
+            } else if ((request.getRequestURL().toString().contains("faces/JSF/vista/accionFormativa/lista.xhtml")
+                    || request.getRequestURL().toString().contains("faces/JSF/vista/accionFormativa/accionFormativa.xhtml"))
+                    && !(sesion.tienePermiso(7) || sesion.tienePermiso(8) || sesion.tienePermiso(9))) {
+                incorrecto = true;
+            } else if ((request.getRequestURL().toString().contains("faces/JSF/vista/grupo/lista.xhtml")
+                    || request.getRequestURL().toString().contains("faces/JSF/vista/grupo/grupo.xhtml"))
+                    && !(sesion.tienePermiso(10) || sesion.tienePermiso(11) || sesion.tienePermiso(12))) {
+                incorrecto = true;
+            } else if ((request.getRequestURL().toString().contains("faces/JSF/vista/matricula/lista.xhtml")
+                    || request.getRequestURL().toString().contains("faces/JSF/vista/matricula/matricula.xhtml"))
+                    && !(sesion.tienePermiso(13) || sesion.tienePermiso(14) || sesion.tienePermiso(15) || sesion.tienePermiso(22))) {
+                incorrecto = true;
+            } else if ((request.getRequestURL().toString().contains("faces/JSF/vista/factura/lista.xhtml"))
+                    && !(sesion.tienePermiso(25))) {
+                incorrecto = true;
+            } else if ((request.getRequestURL().toString().contains("faces/JSF/vista/usuario/lista.xhtml")
+                    || request.getRequestURL().toString().contains("faces/JSF/vista/usuario/usuario.xhtml"))
+                    && !(sesion.tienePermiso(16) || sesion.tienePermiso(17) || sesion.tienePermiso(18))) {
+                incorrecto = true;
+            } else if ((request.getRequestURL().toString().contains("faces/JSF/vista/calendario/calendario.xhtml"))
+                    && !(sesion.tienePermiso(19))) {
+                incorrecto = true;
+            }
+            //Fin de controles
+        } else if (!request.getRequestURL().toString().contains("faces/JSF/vista/login.xhtml")
+                && !request.getRequestURL().toString().contains("faces/JSF/vista/sin_permiso.xhtml")
+                && (request.getRequestURL().toString().contains(".xhtml")
+                || request.getRequestURL().toString().contains("docs/"))) {
+            incorrecto = true;
+        }
+
+        if (incorrecto) {
+            response.sendRedirect(request.getContextPath() + "/faces/JSF/vista/sin_permiso.xhtml");
+        }
+
+        //FIN CONTROL PERMISOS EN SESION
+
+        chain.doFilter(req, res);
+    }
+
+    @Override
+    public void destroy() {
+        //Nada
+    }
+}

@@ -1,0 +1,146 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package datos;
+
+import java.io.Serializable;
+
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+import javax.xml.bind.annotation.XmlRootElement;
+
+/**
+ *
+ *
+ */
+@Entity
+@Table(name = "MATRICULA_FACTURA", schema = "public")
+@XmlRootElement
+@NamedQueries({
+    @NamedQuery(name = "MatriculaFactura.findAll", query = "SELECT m FROM MatriculaFactura m"),
+    @NamedQuery(name = "MatriculaFactura.findByMatricula", query = "SELECT m FROM MatriculaFactura m WHERE m.matriculaFacturaPK.matricula = :matricula"),
+    @NamedQuery(name = "MatriculaFactura.findByFactura", query = "SELECT m FROM MatriculaFactura m WHERE m.matriculaFacturaPK.factura = :factura"),
+    @NamedQuery(name = "MatriculaFactura.findByObservaciones", query = "SELECT m FROM MatriculaFactura m WHERE m.observaciones = :observaciones"),
+    @NamedQuery(name = "MatriculaFactura.findByPrecio", query = "SELECT m FROM MatriculaFactura m WHERE m.precio = :precio")})
+public class MatriculaFactura implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+    @EmbeddedId
+    protected MatriculaFacturaPK matriculaFacturaPK;
+    @Size(max = 2147483647)
+    @Column(length = 2147483647)
+    private String observaciones;
+    @Basic(optional = false)
+    @NotNull
+    @Column(nullable = false)
+    private Double precio;
+    @JoinColumn(name = "MATRICULA", referencedColumnName = "ID", nullable = false, insertable = false, updatable = false)
+    @ManyToOne(optional = false)
+    private Matricula matricula1;
+    @JoinColumn(name = "IVA", referencedColumnName = "ID", nullable = false)
+    @ManyToOne(optional = false)
+    private Iva iva;
+    @JoinColumn(name = "FACTURA", referencedColumnName = "ID", nullable = false, insertable = false, updatable = false)
+    @ManyToOne(optional = false)
+    private Factura factura1;
+
+    public MatriculaFactura() {
+    }
+
+    public MatriculaFactura(MatriculaFacturaPK matriculaFacturaPK) {
+        this.matriculaFacturaPK = matriculaFacturaPK;
+    }
+
+    public MatriculaFactura(MatriculaFacturaPK matriculaFacturaPK, Double precio) {
+        this.matriculaFacturaPK = matriculaFacturaPK;
+        this.precio = precio;
+    }
+
+    public MatriculaFactura(int matricula, String factura) {
+        this.matriculaFacturaPK = new MatriculaFacturaPK(matricula, factura);
+    }
+
+    public MatriculaFacturaPK getMatriculaFacturaPK() {
+        return matriculaFacturaPK;
+    }
+
+    public void setMatriculaFacturaPK(MatriculaFacturaPK matriculaFacturaPK) {
+        this.matriculaFacturaPK = matriculaFacturaPK;
+    }
+
+    public String getObservaciones() {
+        return observaciones;
+    }
+
+    public void setObservaciones(String observaciones) {
+        this.observaciones = observaciones;
+    }
+
+    public Double getPrecio() {
+        return precio;
+    }
+
+    public void setPrecio(Double precio) {
+        this.precio = precio;
+    }
+
+    public Matricula getMatricula1() {
+        return matricula1;
+    }
+
+    public void setMatricula1(Matricula matricula1) {
+        this.matricula1 = matricula1;
+    }
+
+    public Iva getIva() {
+        return iva;
+    }
+
+    public void setIva(Iva iva) {
+        this.iva = iva;
+    }
+
+    public Factura getFactura1() {
+        return factura1;
+    }
+
+    public void setFactura1(Factura factura1) {
+        this.factura1 = factura1;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (matriculaFacturaPK != null ? matriculaFacturaPK.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (!(object instanceof MatriculaFactura)) {
+            return false;
+        }
+        MatriculaFactura other = (MatriculaFactura) object;
+        if ((this.matriculaFacturaPK == null && other.matriculaFacturaPK != null) || (this.matriculaFacturaPK != null && !this.matriculaFacturaPK.equals(other.matriculaFacturaPK))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "datos.MatriculaFactura[ matriculaFacturaPK=" + matriculaFacturaPK + " ]";
+    }
+}

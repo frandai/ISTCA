@@ -1,0 +1,851 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:c="http://java.sun.com/jsp/jstl/core">
+
+    <ui:composition template="/template.xhtml">
+        <ui:define name="title">
+            <h:outputText value="#{matriculaGestion.modoAlta? 'Nueva' : 'Gestión'} matricula"></h:outputText>
+        </ui:define>
+        <ui:define name="body">
+            <style type="text/css">
+                .derecha > div{
+                    margin: 5px;
+                    text-align: right;
+                }
+                .derecha > div input{
+                    margin-left: 10px;
+                }
+            </style>
+            <p:fieldset collapsed="#{matriculaGestion.borrado}" legend="Datos de la Matrícula" styleClass="campoRellena" id="datosMatricula">
+                <div style="float: right; min-width: 440px;" class="derecha">
+                    <div>
+                        <h:outputLabel value="Forma de Pago: " style="width: auto; margin-right: 5px;"/>
+                        <p:selectOneMenu  id="formaPago" value="#{matriculaGestion.matriculaSeleccionada.formaPago}" style="text-align: left;" rendered="#{sesionActual.tienePermiso(13)}">
+                            <p:ajax update="formaPago" process="formaPago"  />
+                            <f:selectItems value="#{matriculaGestion.formaPago}" var="c" itemValue="#{c}" itemLabel="#{c.nombre}" />
+                        </p:selectOneMenu>
+                        <p:outputLabel rendered="#{not sesionActual.tienePermiso(13)}" styleClass="valor" value="#{matriculaGestion.matriculaSeleccionada.formaPago.nombre}"/>
+                        <p:commandButton icon="ui-icon-plus" title="Nueva Forma de Pago" type="button" onclick="dlgNuevaFormaPago.show()" style="top: -7px;left: 6px;" rendered="#{sesionActual.tienePermiso(21)}" />
+                    </div>
+                    <div>
+                        <h:outputLabel value="Pago Posterior: "  style="#{(not sesionActual.tienePermiso(13))?'text-align: right; margin-right: 5px;':'width: auto; margin-right: 310px; text-align: left;'}"/>
+                        <p:selectOneButton id="botPagPost" value="#{matriculaGestion.matriculaSeleccionada.pagoPosterior}" rendered="#{sesionActual.tienePermiso(13)}"
+
+                                           >  
+                            <f:selectItem itemLabel="Tras Bonificar" itemValue="1" />  
+                            <f:selectItem itemLabel="En mes de Bonificación" itemValue="2" />  
+                            <f:selectItem itemLabel="Sin Pago Posterior" itemValue="-1" />  
+                            <p:ajax update="botPagPost" process="@this" /> 
+                        </p:selectOneButton> 
+
+                        <p:outputLabel rendered="#{not sesionActual.tienePermiso(13)}" styleClass="valor" value="#{
+                                                   (matriculaGestion.matriculaSeleccionada.pagoPosterior eq 1)? 'Tras Bonificar' : ((matriculaGestion.matriculaSeleccionada.pagoPosterior eq 2)? 'En mes de Bonificación' : 'Sin Pago Posterior')
+}"/>
+
+                    </div>
+                    <div>
+                        <h:outputLabel value="Precio:"/>
+                        <p:spinner rendered="#{sesionActual.tienePermiso(13)}" readonly="#{not empty matriculaGestion.matriculaSeleccionada.facturaList}" label="Precio" min="0" id="valorPrecio" value="#{matriculaGestion.matriculaSeleccionada.precio}" required="true">
+                            <p:ajax update="valorPrecio" process="@this" />  
+                        </p:spinner>
+                        <p:outputLabel rendered="#{not sesionActual.tienePermiso(13)}" styleClass="valor" value="#{matriculaGestion.matriculaSeleccionada.precio}"/>
+                        €
+                    </div>
+                    <div>
+                        <h:outputLabel value="Importe a bonificar:"/>
+                        <p:commandButton value="Generar" id="btImp" rendered="#{matriculaGestion.matriculaSeleccionada.importeBonificar eq null and sesionActual.tienePermiso(13)}" update=":formulario_principal" process="@this">
+                            <p:ajax update="valorImporte btImp @this" process="valorImporte btImp @this"  />
+                            <f:setPropertyActionListener target="#{matriculaGestion.matriculaSeleccionada.importeBonificar}" value="#{matriculaGestion.matriculaSeleccionada.precio}"/>
+                        </p:commandButton>
+                        <p:spinner rendered="#{matriculaGestion.matriculaSeleccionada.importeBonificar ne null and sesionActual.tienePermiso(13)}" label="Importe a Modificar" min="0" id="valorImporte" value="#{matriculaGestion.matriculaSeleccionada.importeBonificar}" required="false">
+                            <p:ajax update="valorImporte" process="@this" />  
+                        </p:spinner>
+                        <p:outputLabel rendered="#{not sesionActual.tienePermiso(13)}" styleClass="valor" value="#{matriculaGestion.matriculaSeleccionada.importeBonificar eq null?' --- ':matriculaGestion.matriculaSeleccionada.importeBonificar}"/>
+                        €
+                    </div>
+                    <div>
+                        <h:outputLabel value="Fecha de Creación:"></h:outputLabel>
+                        <p:calendar rendered="#{sesionActual.tienePermiso(13)}" lang="es" label="Fecha de Creación" value="#{matriculaGestion.matriculaSeleccionada.fechaCreacion}" required="true" readonly="true" id="fecha1">
+                            <p:ajax event="dateSelect" update="fecha1" process="@this" /> 
+                        </p:calendar>
+                        <p:outputLabel rendered="#{not sesionActual.tienePermiso(13)}" styleClass="valor" value="#{Fecha.getFechaDiaMesAnio(matriculaGestion.matriculaSeleccionada.fechaCreacion)}"/>
+                    </div>
+                    <div>
+                        <h:outputLabel value="Fecha de Firma:"/>
+                        <p:calendar rendered="#{sesionActual.tienePermiso(13)}" lang="es" label="Fecha de Firma" value="#{matriculaGestion.matriculaSeleccionada.fechaFirma}" id="fecha2">
+                            <p:ajax event="dateSelect" update="fecha2" process="@this" /> 
+                        </p:calendar>
+                        <p:outputLabel rendered="#{not sesionActual.tienePermiso(13)}" styleClass="valor" value="#{Fecha.getFechaDiaMesAnio(matriculaGestion.matriculaSeleccionada.fechaFirma)}"/>
+                    </div>
+                    <div>
+                        <h:outputLabel value="Fecha de Entrega:"/>
+                        <p:calendar rendered="#{sesionActual.tienePermiso(13)}" lang="es" label="Fecha de Entrega" value="#{matriculaGestion.matriculaSeleccionada.fechaEntrega}" required="true" id="fecha3">
+                            <p:ajax event="dateSelect" update="fecha3" process="@this" /> 
+                        </p:calendar>
+                        <p:outputLabel rendered="#{not sesionActual.tienePermiso(13)}" styleClass="valor" value="#{Fecha.getFechaDiaMesAnio(matriculaGestion.matriculaSeleccionada.fechaEntrega)}"/>
+                    </div>
+                </div>
+                <div>
+                    <h:outputLabel value="ID:" styleClass="separador"/>
+                    <p:inputText  label="ID" id="valorID" value="#{matriculaGestion.matriculaSeleccionada.id}" readonly="true"/>
+                    <p:outputLabel style="font-weight: bolder; color: red !important; background-color: yellow !important; width: 200px; text-align: center; margin-left: 100px; border: solid 1px red;" value="ATENCIÓN: MATRÍCULA DE BAJA." rendered="#{matriculaGestion.matriculaSeleccionada.baja}"/>
+                </div>
+                <div>
+                    <h:outputLabel style="width:auto;" value="Estructura Comercial"/>
+                    <c:forEach var="com" items="#{matriculaGestion.matriculaSeleccionada.matriculaComercialList}">
+                        <h:outputLabel styleClass="valor" style="width:auto; display: inline-block;" value="&nbsp;-&nbsp;#{com.comercial1.comercialTipo.nombre}: #{com.comercial1.nombre}"/>
+                    </c:forEach>
+                    <p:commandButton rendered="#{sesionActual.tienePermiso(13)}" icon="ui-icon-search" title="Asociar Estructura Comercial" type="button" onclick="dlgEstructuraComercial.show()" styleClass="separador"
+                                     />
+                </div>
+                <div style="height: 50px;">
+                    <h:outputLabel value="Empresa:"/>
+                    <a href="../empresa/empresa.xhtml?empresa=#{matriculaGestion.matriculaSeleccionada.empresaMatriculaCcc.empresaMatricula.empresa.nif}&amp;matricula=#{matriculaGestion.matriculaID}"><h:outputLabel id="valorEmpresa" styleClass="valor" value="#{matriculaGestion.matriculaSeleccionada.empresaMatriculaCcc.empresaMatricula.empresa.razonSocial} (#{matriculaGestion.matriculaSeleccionada.empresaMatriculaCcc.empresaMatricula.empresa.nif}) - #{matriculaGestion.matriculaSeleccionada.empresaMatriculaCcc.empresaMatriculaCccPK.ccc}"/></a>
+                    <p:commandButton icon="ui-icon-search" rendered="#{empty matriculaGestion.matriculaSeleccionada.facturaList and sesionActual.tienePermiso(13)}" title="Asociar Empresa" type="button" onclick="dlgEmpresa.show()" styleClass="separador" />
+                    <p:commandButton icon="ui-icon-search" rendered="#{not empty matriculaGestion.matriculaSeleccionada.facturaList and sesionActual.tienePermiso(13)}" title="Asociar Empresa" type="button" onclick="dlgEmpresaCCC.show()" styleClass="separador" />
+
+                </div>
+                <div style="height: 50px;">
+                    <h:outputLabel value="Alumno:"/>
+                    <a href="../persona/persona.xhtml?persona=#{matriculaGestion.matriculaSeleccionada.alumno.nif}&amp;matricula=#{matriculaGestion.matriculaID}" ><h:outputLabel id="valorAlumno" styleClass="valor" value="#{matriculaGestion.matriculaSeleccionada.alumno.persona.nombre} #{matriculaGestion.matriculaSeleccionada.alumno.persona.apellido1} #{matriculaGestion.matriculaSeleccionada.alumno.persona.apellido2} (#{matriculaGestion.matriculaSeleccionada.alumno.persona.nif})"/></a>
+                    <p:commandButton icon="ui-icon-search" title="Asociar Alumno" type="button" onclick="dlgAlumno.show()" styleClass="separador" rendered="#{sesionActual.tienePermiso(13)}"/>
+                </div>
+                <div style="height: 30px;">
+                    <h:outputLabel value="Grupo:"/>
+                    <a href="../grupo/grupo.xhtml?grupo=#{matriculaGestion.matriculaSeleccionada.grupo.grupoPK.id}&amp;accionformativa=#{matriculaGestion.matriculaSeleccionada.grupo.accionFormativa1.id}&amp;matricula=#{matriculaGestion.matriculaID}" ><h:outputLabel id="valorGrupo" styleClass="valor" value="#{matriculaGestion.matriculaSeleccionada.grupo.nombre}  [F. Inicio: #{Fecha.getFechaDiaMesAnio(matriculaGestion.matriculaSeleccionada.grupo.FInicio)} - F. Fin: #{Fecha.getFechaDiaMesAnio(matriculaGestion.matriculaSeleccionada.grupo.FFin)}]"/></a>
+                    <p:commandButton icon="ui-icon-search" rendered="#{empty matriculaGestion.matriculaSeleccionada.facturaList and sesionActual.tienePermiso(13)}" title="Asociar Grupo" type="button" onclick="dlgGrupo.show();
+                                $('.g2').val('Pendiente de Gestionar');
+                                tablaGrupo.filter();" styleClass="separador" />
+                    <p:commandButton icon="ui-icon-search" rendered="#{not empty matriculaGestion.matriculaSeleccionada.facturaList and sesionActual.tienePermiso(13)}" title="Asociar Grupo" type="button" onclick="if (confirm('Esta matrícula tiene facturas asociadas. Si cambia el Grupo, podrá cambiar el concepto de las facturas. ¿Seguro que desea continuar?')) {
+                                    dlgGrupo.show();
+                                    $('.g2').val('-');
+                                    tablaGrupo.filter();
+                                }" styleClass="separador" />
+                </div>
+                <div><br/>
+                    <h:outputLabel value="Acción Formativa:"/>
+                    <a href="../accionFormativa/accionFormativa.xhtml?accionFormativa=#{matriculaGestion.matriculaSeleccionada.grupo.accionFormativa1.id}&amp;matricula=#{matriculaGestion.matriculaID}" ><h:outputLabel id="valorAF" styleClass="valor" value="#{matriculaGestion.matriculaSeleccionada.grupo.grupoPK.accionFormativa}-#{matriculaGestion.matriculaSeleccionada.grupo.accionFormativa1.nombre} (#{matriculaGestion.matriculaSeleccionada.grupo.accionFormativa1.modalidad.nombre})"/></a>
+                </div>
+                <div>
+                    <h:outputLabel value="Dirección Envío:"/>
+                    <h:outputLabel styleClass="valor" id="texto_direccionEnvio" value="
+                                   #{matriculaGestion.matriculaSeleccionada.direccionEnvio.tipoVia.abreviatura} 
+                                   #{matriculaGestion.matriculaSeleccionada.direccionEnvio.via} #{matriculaGestion.matriculaSeleccionada.direccionEnvio.numero} #{matriculaGestion.matriculaSeleccionada.direccionEnvio.extra}, #{matriculaGestion.matriculaSeleccionada.direccionEnvio.cpLocalidad.cpLocalidadPK.cp} 
+                                   #{matriculaGestion.matriculaSeleccionada.direccionEnvio.cpLocalidad.localidad1.nombre} (#{matriculaGestion.matriculaSeleccionada.direccionEnvio.cpLocalidad.localidad1.provincia.nombre})"/>
+                    <p:commandButton icon="ui-icon-search" rendered="#{sesionActual.tienePermiso(13)}" title="Cambiar Dirección" type="button" onclick="dlgDireccion.show()" styleClass="separador" />
+                    <p:commandButton icon="ui-icon-trash" rendered="#{sesionActual.tienePermiso(13)}" onclick="dlgEliminarDireccion.show();" type="button" styleClass="separador"  /><br/>
+                    <p:commandButton value="Usar Dirección del Alumno" rendered="#{matriculaGestion.matriculaSeleccionada.direccionEnvio ne null and sesionActual.tienePermiso(13)}" actionListener="#{matriculaGestion.usarDirAlum}" disabled="#{matriculaGestion.matriculaSeleccionada.alumno.persona.direccion.via eq null}" update=":formulario_principal :form_direccion"/>
+                    <p:commandButton value="Usar Dirección de la Asesoría" rendered="#{matriculaGestion.matriculaSeleccionada.direccionEnvio ne null and sesionActual.tienePermiso(13)}"
+                                     disabled="#{matriculaGestion.matriculaSeleccionada.direccionAsesoria.via eq null}" actionListener="#{matriculaGestion.usarDirAse}" update=":formulario_principal :form_direccion"/>
+                </div>
+                <p style="text-align: center;"><h:outputLabel class="valor" value="#{matriculaGestion.matriculaSeleccionada.textoCostes}"/></p>
+                <div style="margin: auto; width: 700px;">
+                    <div>
+                        <h:outputLabel value="Observaciones:"/>
+                        <p:editor id="observa_mat" styleClass="noTransp"  disabled="#{not sesionActual.tienePermiso(13)}" style="margin-left: 30px;" width="700" value="#{matriculaGestion.matriculaSeleccionada.observaciones}"/>
+                    </div>
+                </div>
+                <div style="margin: auto; width: 700px;">
+                    <div>
+                        <br/>
+                        <h:outputLabel value="Observaciones de Envío:"/>
+                        <p:inputText id="observa_mat_env" style="margin-left: 30px; width: 700px;" value="#{matriculaGestion.matriculaSeleccionada.observacionesEnivo}" readonly="#{not sesionActual.tienePermiso(13)}"/>
+                    </div>
+                </div>
+
+            </p:fieldset>
+
+            <p:fieldset collapsed="#{matriculaGestion.borrado or matriculaGestion.modoAlta}" legend="Facturas" styleClass="campoRellena" id="facturas">
+                <p:dataTable  filterEvent="change" var="factura" value="#{matriculaGestion.matriculaSeleccionada.facturaList}" style="width: 840px; margin: 10px auto; text-align: center;"
+                              emptyMessage="La matrícula no tiene facturas asociadas"
+                              id="tabla_facturas"
+                              >
+                    <f:facet name="header">  
+                        Facturas
+                        <p:commandButton icon="ui-icon-plus" style="width:16px; height: 16px;"
+                                         rendered="#{sesionActual.tienePermiso(13)}"
+                                         actionListener="#{matriculaGestion.aniadeFactura}"
+                                         update=":formulario_principal:messages :formulario_principal:growl :formulario_principal tabla_facturas :formulario_principal:valorPrecio"
+                                         disabled="#{matriculaGestion.matriculaSeleccionada.importeSinFacturar eq 0 or matriculaGestion.matriculaSeleccionada.grupo.pendienteDeGestionar}"
+                                         onclick="if (!confirm('¿Seguro que desea dar crear la Factura? (Se guardarán los datos de la matrícula actuales)')) {
+                                    return false;
+                                }"
+                                         />
+                        <p:commandButton icon="ui-icon-plus" styleClass="bg-red" style="width:16px; height: 16px; margin-left: 10px;"
+                                         rendered="#{sesionActual.tienePermiso(13)}"
+                                         onclick="dlgImporteAbono.show();"
+                                         disabled="#{matriculaGestion.matriculaSeleccionada.facturaList.size() eq 0 or matriculaGestion.matriculaSeleccionada.existeFacturaAbono}"
+                                         title="Añadir Factura de Abono"
+                                         />
+                        <p:commandButton icon="ui-icon-arrowrefresh-1-s" style="width:16px; height: 16px; margin-left: 10px;"
+                                         rendered="#{sesionActual.tienePermiso(13)}"
+                                         onclick="if (!confirm('¿Seguro que desea ajustar el precio de la Matrícula a la Suma del Importe de las Facturas?')) {
+                                    return;
+                                }"
+                                         disabled="#{matriculaGestion.matriculaSeleccionada.facturaList.size() eq 0}"
+                                         title="Ajustar el precio de la Matrícula a la Suma del Importe de las Facturas"
+                                         ajax="false"
+                                         actionListener="#{matriculaGestion.actualizaPrecioImporteFacturas}"
+                                         />
+                    </f:facet>  
+                    <p:column style="width:20px" headerText="Histórico">  
+                        <p:rowToggler />  
+                    </p:column>  
+                    <p:column headerText="Número">
+                        <h:outputText value="#{factura.id}"/>
+                    </p:column>
+                    <p:column headerText="Fecha">
+                        <h:outputText value="#{factura.fechaString}"></h:outputText>
+                    </p:column>
+                    <p:column headerText="Importe">
+                        <h:outputText value="#{factura.importe}"></h:outputText> €
+                    </p:column>
+                    <p:column headerText="Forma de Pago">
+                        <p:selectOneMenu rendered="#{not (factura.importe le -0.0001) and sesionActual.tienePermiso(13)}" id="formaPagoFactura" value="#{factura.formaPago}" style="text-align: left;">
+                            <f:selectItems value="#{matriculaGestion.formaPago}" var="c" itemValue="#{c}" itemLabel="#{c.nombre}" />
+                        </p:selectOneMenu>
+                        <p:outputLabel value="[ABONO]" rendered="#{(factura.importe le -0.0001)}"/>
+                        <p:outputLabel value="#{factura.formaPago.nombre}" rendered="#{not (factura.importe le -0.0001) and not sesionActual.tienePermiso(13)}"/>
+                    </p:column>
+                    <p:column headerText="Estado">
+                        <p:selectOneMenu rendered="#{not (factura.importe le -0.0001) and sesionActual.tienePermiso(13)}" id="estadoFactura" value="#{factura.ultimoEstado.estado}" style="text-align: left;">
+                            <f:selectItems value="#{matriculaGestion.estadoFactura}" var="c" itemValue="#{c}" itemLabel="#{c.nombre}" />
+                        </p:selectOneMenu>
+                        <p:outputLabel value="[ABONO]" rendered="#{(factura.importe le -0.0001)}"/>
+                        <p:outputLabel value="#{factura.ultimoEstado.estado.nombre}" rendered="#{not (factura.importe le -0.0001) and not sesionActual.tienePermiso(13)}"/>
+                    </p:column>
+                    <p:column style="width:170px;" rendered="#{sesionActual.tienePermiso(13)}"> 
+                        <p:commandButton icon="ui-icon-alert" title="Añadir evento de 'Pago Aplazado' a Factura" onclick="dlgEventoPagoAplazado.show();" update="">
+                            <f:setPropertyActionListener target="#{matriculaGestion.facturaSeleccionada}" value="#{factura}"/>
+                        </p:commandButton> 
+                        <p:commandButton id="botonComent" icon="ui-icon-comment" styleClass="#{(factura.observaciones eq null or factura.observaciones eq '') ? '' : 'greenyellow'}"
+                                         onclick="dlgEditarComentarioFactura.show();" update=":comentario_factura :comentario_factura:editorFacturaObs"
+                                         >
+                            <f:setPropertyActionListener target="#{matriculaGestion.facturaSeleccionada}" value="#{factura}"/>
+                        </p:commandButton> 
+                        <p:tooltip for="botonComent" >
+                            <p:outputLabel escape="false" value="#{(factura.observaciones eq null or factura.observaciones eq '') ? 'La factura no contiene observaciones.' :factura.observaciones }"/>
+                        </p:tooltip>
+                        <p:commandButton disabled="#{factura.matriculaFacturaList.size() ne 2}" icon="ui-icon-gear" title="Editar importe de la Factura" onclick="#{(factura.importe le -0.0001)?'dlgImporteAbonoEditar.show();':'dlgEditarImporte.show();'}" update=":importe_factura :importe_factura:importe_f :importe_factura:importe_p">
+                            <f:setPropertyActionListener target="#{matriculaGestion.facturaSeleccionada}" value="#{factura}"/>
+                        </p:commandButton> 
+                        <p:commandButton icon="ui-icon-disk" title="Guardar Datos de Factura" rendered="#{not (factura.importe le -0.0001)}"
+                                         onclick="dlgGuardarFactura.show();" update=":formulario_principal :formulario_principal:messages :formulario_principal:growl :formulario_principal:tabla_facturas">
+                            <f:setPropertyActionListener target="#{matriculaGestion.facturaSeleccionada}" value="#{factura}"/>
+                        </p:commandButton>  
+                        <p:commandButton icon="ui-icon-trash" title="Eliminar Factura" onclick="dlgEliminarFactura.show();" >
+                            <f:setPropertyActionListener target="#{matriculaGestion.facturaSeleccionada}" value="#{factura}"/>
+                        </p:commandButton>
+
+                    </p:column> 
+                    <p:rowExpansion>
+                        <p:dataTable  filterEvent="change"  style="margin-left: 100px;" var="historicoFactura" value="#{factura.facturaHistoricoEstadoList}" sortBy="#{historicoFactura.facturaHistoricoEstadoPK.fecha}">
+                            <p:column headerText="Fecha" sortBy="#{historicoFactura.facturaHistoricoEstadoPK.fecha}">
+                                <h:outputText value="#{historicoFactura.facturaHistoricoEstadoPK.fechaString}"></h:outputText>
+                            </p:column>
+                            <p:column headerText="Estado" sortBy="#{historicoFactura.estado.nombre}">
+                                <h:outputText value="#{historicoFactura.estado.nombre}"></h:outputText>
+                            </p:column>
+                        </p:dataTable>
+                    </p:rowExpansion>
+                </p:dataTable>
+            </p:fieldset>
+            <!--p:fieldset toggleable="#-{not (matriculaGestion.borrado or matriculaGestion.modoAlta)}" collapsed="#-{matriculaGestion.borrado or matriculaGestion.modoAlta}" legend="Documentación" styleClass="campoRellena" id="documentacion">
+
+            </p:fieldset-->
+
+            <p:fieldset  toggleable="#{not (matriculaGestion.borrado or matriculaGestion.modoAlta)}" collapsed="#{matriculaGestion.borrado or matriculaGestion.modoAlta}" legend="Eventos" styleClass="campoRellena" id="eventos">
+                <c:if test="#{sesionActual.tienePermiso(13)}">
+                    <p>Generar Eventos:</p>
+                    <div style="float: left;">
+                        <p:commandButton value="Matrícula de Baja" styleClass="bg-red"  onclick="dlgDetalleNuevoEventoBoton.show();" update=":aniadir_evento_boton">
+                            <f:setPropertyActionListener target="#{matriculaGestion.evento_a_agenerar}" value="#{descripcionEventos.getMATRICULA_BAJA()}"/>
+
+                        </p:commandButton>
+
+                    </div>
+                    <div style="text-align: right;">
+                        <p:commandButton value="Diploma Adicional"  onclick="dlgDetalleNuevoEventoBoton.show();" update=":aniadir_evento_boton">
+                            <f:setPropertyActionListener target="#{matriculaGestion.evento_a_agenerar}" value="#{descripcionEventos.getDIPLOMA_ADICCIONAL()}"/> 
+                        </p:commandButton>&nbsp;|&nbsp;
+                        <p:commandButton value="Recep. Ficha de Registro"  onclick="dlgDetalleNuevoEventoBoton.show();" update=":aniadir_evento_boton">
+                            <f:setPropertyActionListener target="#{matriculaGestion.evento_a_agenerar}" value="#{descripcionEventos.getRECEPCION_FICHA_REGISTRO()}"/>
+
+                        </p:commandButton>
+                        <p:commandButton value="Recep. Evaluación"  onclick="dlgDetalleNuevoEventoBoton.show();" update=":aniadir_evento_boton">
+                            <f:setPropertyActionListener target="#{matriculaGestion.evento_a_agenerar}" value="#{descripcionEventos.getRECEPCION_EVALUACION()}"/>
+
+                        </p:commandButton>
+                        <p:commandButton value="Recep. Cuestionario de Calidad"  onclick="dlgDetalleNuevoEventoBoton.show();" update=":aniadir_evento_boton">
+                            <f:setPropertyActionListener target="#{matriculaGestion.evento_a_agenerar}" value="#{descripcionEventos.getRECEPCION_CUESTIONARIO_CALIDAD()}"/>
+
+                        </p:commandButton>
+                        <p:commandButton value="Recep. Recibí Diploma"  onclick="dlgDetalleNuevoEventoBoton.show();" update=":aniadir_evento_boton">
+                            <f:setPropertyActionListener target="#{matriculaGestion.evento_a_agenerar}" value="#{descripcionEventos.getRECEPCION_DIPLOMA()}"/>
+
+                        </p:commandButton>
+                        <p:commandButton value="Recep. Acreditación"  onclick="dlgDetalleNuevoEventoBoton.show();" update=":aniadir_evento_boton">
+                            <f:setPropertyActionListener target="#{matriculaGestion.evento_a_agenerar}" value="#{descripcionEventos.getRECEPCION_ACREDITACION()}"/>
+
+                        </p:commandButton>
+                        <p:commandButton value="Seg. Tutorial"  onclick="dlgDetalleNuevoEventoBoton.show();" update=":aniadir_evento_boton">
+                            <f:setPropertyActionListener target="#{matriculaGestion.evento_a_agenerar}" value="#{descripcionEventos.getSEGUIMIENTO_TUTORIAL()}"/>
+
+                        </p:commandButton>
+                    </div>
+                    <hr/>
+                </c:if>
+                <p:dataTable  filterEvent="change" value="#{matriculaGestion.matriculaSeleccionada.eventoList}" var="evento" id="tabla_eventos"
+                              sortBy="#{evento.fechaCreacion}" sortOrder="descending"
+                              emptyMessage="No existen eventos asociados a la matrícula"
+                              >
+                    <p:column headerText="Descripción">
+                        <p:outputLabel value="#{evento.descripcion}"/>
+                        <p:outputLabel value="#{evento.documentacionEvento}"/>
+                    </p:column>
+                    <p:column headerText="Estado">
+                        <p:outputLabel value="#{evento.estadoLargo}"/>
+                    </p:column>
+                    <p:column headerText="Fecha de Creación">
+                        <p:outputLabel value="#{Fecha.getFechaDiaMesAnio(evento.fechaCreacion)}"/>
+                    </p:column>
+                    <p:column headerText="Fecha de Realización">
+                        <p:outputLabel value="#{Fecha.getFechaDiaMesAnio(evento.fechaRealizacion)}"/>
+                    </p:column>
+                    <p:column headerText="Fecha de Vencimiento">
+                        <p:outputLabel value="#{Fecha.getFechaDiaMesAnio(evento.fechaVencimiento)}"/>
+                    </p:column>
+                    <p:column style="width:80px; text-align: center;">  
+                        <p:commandButton title="Generar Diploma" icon="ui-icon-print" rendered="#{evento.tipo.id eq 4}" update=":formulario_principal"  actionListener="#{matriculaGestion.generarDiploma(evento)}" oncomplete="$('.boton_descarga').click();">
+                        </p:commandButton>  
+                        <p:commandButton id="selectButtonVer" process="@this tabla_eventos" update=":detalles_de_evento" title="Ver" icon="ui-icon-search" oncomplete="dlgDetalleEvento.show();" styleClass="#{(evento.observaciones eq null or evento.observaciones eq '') ? '' : 'greenyellow'}" >
+                            <f:setPropertyActionListener target="#{controlCalendario.eventId}" value="#{evento.id}"/>
+                        </p:commandButton>   
+                    </p:column>
+                </p:dataTable>
+                <c:if test="#{sesionActual.tienePermiso(13)}">
+                    <br/>
+                    <div style="text-align: right;">
+                        <p:commandButton style="margin:5px;float:right;" id="boton_descarga" styleClass="boton_descarga" icon="ui-icon-print" value="Descargar Documentación" rendered="#{matriculaGestion.urlDiploma ne ''}" onclick="window.location = '../../../../#{matriculaGestion.urlDiploma}'" />
+                        <p:commandButton style="margin:5px;" value="Generar Diploma Principal" update="formulario_principal" actionListener="#{matriculaGestion.generarDiploma(null)}" oncomplete="$('.boton_descarga').click();">
+
+                        </p:commandButton>
+                        <p:commandButton rendered="#{matriculaGestion.matriculaSeleccionada.empresaMatriculaCcc.empresaMatricula.representacionLegal}" style="margin:5px;" value="Generar RLT" update="formulario_principal" actionListener="#{matriculaGestion.generarRLT}" oncomplete="$('.boton_descarga').click();">
+
+                        </p:commandButton>
+                        <p:commandButton rendered="#{matriculaGestion.matriculaSeleccionada.empresaMatriculaCcc.empresaMatricula.representacionLegal}" disabled="#{matriculaGestion.matriculaSeleccionada.emailEnvio eq ''}" style="margin:5px;" value="Enviar RLT" title="Se le enviará el e-mail a: #{matriculaGestion.matriculaSeleccionada.emailEnvio}" icon="ui-icon-mail-closed" update="formulario_principal" actionListener="#{matriculaGestion.generarRLTEmail}"
+                                         onclick="if (!confirm('¿Seguro que desea enviarle por e-mail el RLT a #{matriculaGestion.matriculaSeleccionada.emailEnvio}?')) {
+                                    return false;
+                                }"
+                                         id="enviar_email_rlt"
+                                         >
+                            <p:contextMenu for="enviar_email_rlt" >  
+                                <p:menuitem  value="Cambiar e-mail (#{matriculaGestion.matriculaSeleccionada.emailEnvio})" icon="ui-icon-pencil" update=":cambia_email :cambia_email:valor_email" oncomplete="dlgEditarEmail.show()">
+
+                                </p:menuitem>
+                            </p:contextMenu>
+                        </p:commandButton>
+                    </div>
+                </c:if>
+            </p:fieldset>
+            <p:fieldset  toggleable="#{not (matriculaGestion.borrado or matriculaGestion.modoAlta)}" collapsed="true" legend="Datos Grupo" styleClass="campoRellena" id="datosGrupo">
+                <p:dataTable  filterEvent="change" var="t" value="#{matriculaGestion.matriculaSeleccionada.grupo.tutorList}" style="width: 770px; margin: 10px auto;"
+                              emptyMessage="El grupo no tiene tutores asociados"
+                              id="tabla_tutores_asociados"
+                              >
+                    <f:facet name="header">  
+                        Tutores del grupo
+                    </f:facet>  
+                    <p:column style="width:20px" headerText="Horario">  
+                        <p:rowToggler />  
+                    </p:column>  
+                    <p:column headerText="Nif">
+                        <h:outputText value="#{t.persona.nif}"/>
+                    </p:column>
+                    <p:column headerText="Nombre">
+                        <h:outputText value="#{t.persona.nombre} #{t.persona.apellido1} #{t.persona.apellido2}"/>
+                    </p:column>  
+                    <p:column headerText="Email">
+                        <h:outputText value="#{t.persona.email}"/>
+                    </p:column>  
+                    <p:rowExpansion >
+                        <div style="margin: 0px auto; text-align: center;">
+                            <p:dataList value="#{grupoGestion.horarios}" style="text-align: center;" var="hor" type="none" id="tablaTutorias">
+                                <table style="display: inline-block; width:72px; text-align: center; margin: 0px;">
+                                    <tr><th style="border: solid 1px black;">
+                                            #{hor.horarioInicioString} - #{hor.horarioFinString}
+                                        </th></tr><tr><td>
+                                            <p:commandButton process="tablaTutorias" update="tablaTutorias :formulario_principal:growl :formulario_principal:messages"  ajax="true" 
+                                                             rendered="#{matriculaGestion.matriculaSeleccionada.grupo.contieneHorario(hor, t)}" icon="ui-icon-check"
+                                                             style="background-color: greenyellow;opacity: 1.0;" styleClass="greenyellow" disabled="true"
+                                                             >
+                                            </p:commandButton> 
+                                            <p:commandButton process="tablaTutorias" update="tablaTutorias :formulario_principal:growl :formulario_principal:messages" ajax="true" 
+                                                             rendered="#{!matriculaGestion.matriculaSeleccionada.grupo.contieneHorario(hor, t)}" icon="ui-icon-close" disabled="true" style="opacity: 1.0;">
+                                            </p:commandButton> 
+                                            (#{t.getNumCursosHorario(hor)})
+                                        </td></tr>
+                                </table>
+                            </p:dataList>
+                        </div>
+                    </p:rowExpansion>
+                </p:dataTable>
+
+                <div style="margin: auto; width: 800px;">
+                    <h:outputLabel value="Observaciones de Grupo:" rendered="#{not matriculaGestion.modoAlta}"/>
+                    <p:editor style="margin-left: 30px;" width="700" styleClass="noTransp"  disabled="#{not sesionActual.tienePermiso(13)}" required="false" id="editorOtracosa" value="#{matriculaGestion.matriculaSeleccionada.grupo.observaciones}" rendered="#{not matriculaGestion.modoAlta}"/>  
+                </div>
+            </p:fieldset>
+
+            <p:commandButton disabled="#{matriculaGestion.borrado}" id="botonGuarda" actionListener="#{matriculaGestion.guarda}" rendered="#{sesionActual.tienePermiso(13)}" value="Guardar" icon="ui-icon-check" update="@all :aviso_Importe" ajax="false" styleClass="botonAplicar"/> 
+            <p:commandButton value="Salir" icon="ui-icon ui-icon-arrowreturn-1-w" onclick="confirmation.show()" styleClass="botonAplicar"/>
+            <p:commandButton id="botonBorrado" rendered="#{sesionActual.tienePermiso(15)}" disabled="#{matriculaGestion.borrado or matriculaGestion.modoAlta}" style="float: left; " value="Eliminar"  icon="ui-icon-trash" onclick="confirmationEliminar.show()" styleClass="botonAplicar bg-red"/>  
+            <p:commandButton actionListener="#{matriculaGestion.elimina}" rendered="#{sesionActual.tienePermiso(15)}" update="messages growl botonGuarda botonBorrado formulario_principal" styleClass="boton_borrar_objeto"/> 
+
+        </ui:define>
+        <ui:define name="dialogos">
+
+            <p:dialog id="editarEmail" widgetVar="dlgEditarEmail"  rendered="#{sesionActual.tienePermiso(13)}"
+                      header="Editar e-mail" width="400">  
+                <h:form id="cambia_email" style="text-align: center;">
+                    <p:commandButton onsuccess="dlgEditarEmail.hide();" update="valor_email :formulario_principal:growl :formulario_principal:messages :formulario_principal" style="margin:5px;" rendered="#{matriculaGestion.matriculaSeleccionada.empresaMatriculaCcc.empresaMatricula.empresa.email ne ''}"  value="#{matriculaGestion.matriculaSeleccionada.empresaMatriculaCcc.empresaMatricula.empresa.email} (Empresa Matriculada)">
+                        <f:setPropertyActionListener target="#{matriculaGestion.matriculaSeleccionada.emailEnvio}" value="#{matriculaGestion.matriculaSeleccionada.empresaMatriculaCcc.empresaMatricula.empresa.email}"/>
+                    </p:commandButton>
+                    <p:commandButton onsuccess="dlgEditarEmail.hide();" update="valor_email :formulario_principal:growl :formulario_principal:messages :formulario_principal" style="margin:5px;" rendered="#{matriculaGestion.matriculaSeleccionada.alumno.persona.email ne ''}" value="#{matriculaGestion.matriculaSeleccionada.alumno.persona.email} (Alumno Matriculado)">
+                        <f:setPropertyActionListener target="#{matriculaGestion.matriculaSeleccionada.emailEnvio}" value="#{matriculaGestion.matriculaSeleccionada.alumno.persona.email}"/>
+                    </p:commandButton>
+                    <p:inputText style="width:90%;text-align: center;margin:5px;" label="e-mail" value="#{matriculaGestion.matriculaSeleccionada.emailEnvio}" validator="#{validarVista.validaEmail}" required="true" id="valor_email">
+                        <f:ajax event="change" render="valor_email :formulario_principal:growl :formulario_principal:messages"/>
+                    </p:inputText>
+                    <p style="text-align: center;"><p:commandButton value="Guardar" update="cambia_email :formulario_principal" onclick="dlgEditarEmail.hide();" /></p>
+                </h:form>
+            </p:dialog>
+
+            <p:dialog header="Seleccionar Dirección" widgetVar="dlgDireccion" resizable="true" rendered="#{sesionActual.tienePermiso(13)}">   
+                <h:form id="form_direccion">
+                    <div class="valor">
+                        <p:selectOneMenu styleClass="valor" value="#{matriculaGestion.matriculaSeleccionada.direccionEnvio.tipoVia}">
+                            <f:selectItems value="#{direccionVista.tiposVia}" var="tvia" itemValue="#{tvia}" itemLabel="#{tvia.nombre}" />
+                        </p:selectOneMenu>&nbsp;&nbsp;
+                        <p:inputText styleClass="valor" value="#{matriculaGestion.matriculaSeleccionada.direccionEnvio.via}"/>, Número: 
+                        <p:inputText styleClass="valor" value="#{matriculaGestion.matriculaSeleccionada.direccionEnvio.numero}"/>,&nbsp;
+                        <p:inputText styleClass="valor" value="#{matriculaGestion.matriculaSeleccionada.direccionEnvio.extra}"/>.
+                        <h:outputText id="cpl_loc" value="CP: #{matriculaGestion.matriculaSeleccionada.direccionEnvio.cpLocalidad.cpLocalidadPK.cp}, #{matriculaGestion.matriculaSeleccionada.direccionEnvio.cpLocalidad.localidad1.nombre} (#{matriculaGestion.matriculaSeleccionada.direccionEnvio.cpLocalidad.localidad1.provincia.nombre})."/>
+                    </div>
+                    <p:dataTable  filterEvent="change" var="cpl" value="#{direccionVista.cpLocalidades}" lazy="true"
+                                  emptyMessage="No existen CP en el Sistema con los criterios seleccionados."
+                                  style="width:500px; margin: 5px auto;"
+                                  paginator="true"
+                                  rows="5" 
+                                  paginatorTemplate="{PreviousPageLink} {NextPageLink} {RowsPerPageDropdown}"  
+                                  rowsPerPageTemplate="5,10,15,30"
+                                  paginatorPosition="top"
+                                  >
+                        <f:facet name="header">  
+                            Seleccionar CP
+                        </f:facet>
+                        <p:column headerText="CP" filterBy="#{cpl.cp}" 
+                                  filterMatchMode="contains"
+                                  sortBy="#{cpl.cp}"
+                                  >
+                            <h:outputText value="#{cpl.cp}"/>
+                        </p:column>
+                        <p:column headerText="Localidad" filterBy="#{cpl.localidadNombre}" 
+                                  filterMatchMode="contains"
+                                  sortBy="#{cpl.localidadNombre}"
+                                  >
+                            <h:outputText value="#{cpl.localidadNombre}"/>
+                        </p:column>
+                        <p:column headerText="Provincia" filterBy="#{cpl.provinciaNombre}" 
+                                  filterMatchMode="exact"
+                                  filterOptions="#{desplegableVista.provinciasOptions}"  
+                                  sortBy="#{cpl.provinciaNombre}"
+                                  >
+                            <h:outputText value="#{cpl.provinciaNombre}"/>
+                        </p:column>
+                        <p:column style="width:10px;">  
+                            <p:commandButton id="select_CP" icon="ui-icon-check" title="Seleccionar" ajax="true" update=":form_direccion">  
+                                <f:setPropertyActionListener value="#{cpl.cpLoc}" target="#{matriculaGestion.matriculaSeleccionada.direccionEnvio.cpLocalidad}" />  
+                            </p:commandButton>  
+                        </p:column>
+                    </p:dataTable>
+
+                    <p:commandButton id="select_direccion" styleClass="botonAplicar" onclick="dlgDireccion.close()" icon="ui-icon-check" value="Aplicar" ajax="true" update=":formulario_principal:texto_direccionEnvio">  
+                    </p:commandButton>  
+                    <br/><br/>
+                    <hr/>
+                </h:form>
+            </p:dialog>
+            <p:dialog header="Añadir Forma de Pago" widgetVar="dlgNuevaFormaPago" resizable="true" rendered="#{sesionActual.tienePermiso(21)}">
+                <h:form id="aniadir_forma_pago">
+                    <p:outputLabel value="Nombre de Nueva Forma de Pago: "/>
+                    <p:inputText value="#{matriculaGestion.nombre_nueva_forma_pago}"/>
+                    <br/><br/>
+                    <p:commandButton actionListener="#{matriculaGestion.guardaNuevaFormaPago}"  onclick="dlgNuevaFormaPago.close()"  value="Guardar" icon="ui-icon-check" update=":formulario_principal:messages :formulario_principal:growl :formulario_principal:formaPago" styleClass="botonAplicar"/> 
+
+                </h:form>
+            </p:dialog>
+
+
+
+            <p:confirmDialog header="Aviso Crédito Disponible" widgetVar="avisoImporte" id="aviso_Importe" message="Atención: el crédito disponible de ésta empresa (#{matriculaGestion.importeEmpresa} €) excede el precio de ésta matrícula (se queda en #{matriculaGestion.importeBonificar} €). ¿Seguro que desea continuar?" rendered="#{sesionActual.tienePermiso(13)}" visible="#{matriculaGestion.muestraDialogoImporte}" >
+                <h:form>
+                    <p:commandButton actionListener="#{matriculaGestion.guardaCorrecto}" styleClass="botonAplicar" value="Sí" onclick="avisoImporte.hide();" update="@all :aviso_Importe" ajax="false"/>
+                    <p:commandButton actionListener="#{matriculaGestion.nuevoEvento}" styleClass="botonAplicar" value="No" onclick="avisoImporte.hide();"/>
+                </h:form>
+            </p:confirmDialog>
+
+            <script type="text/javascript">
+                            $(function() {
+                                if (#{matriculaGestion.muestraDialogoImporte}) {
+                                    avisoImporte.show();
+                                }
+
+                            });
+
+            </script>
+
+            <p:confirmDialog header="Nuevo Evento" widgetVar="dlgDetalleNuevoEventoBoton" message="Introduzca los datos:" rendered="#{sesionActual.tienePermiso(13)}" >
+                <h:form id="aniadir_evento_boton">
+                    <p:fieldset rendered="#{matriculaGestion.evento_a_agenerar eq descripcionEventos.getDIPLOMA_ADICCIONAL()}" style="border:none;">
+                        <p style="text-align: right;">Alumno: <p:inputText id="al1" value="#{matriculaGestion.alumnoALUMNOA}" size="100">
+                                <f:ajax event="change"  render="al1" /> 
+                            </p:inputText></p>
+                        <p style="text-align: right;">DNI: <p:inputText id="al2" value="#{matriculaGestion.alumnoDNIA}" size="10">
+                                <f:ajax event="change" render="al2" /> 
+                            </p:inputText></p>
+                    </p:fieldset>
+                    <p:fieldset rendered="#{matriculaGestion.evento_a_agenerar eq descripcionEventos.getMATRICULA_BAJA()}" style="border:none;">
+                        <div style="text-align: center; width: 100%; vertical-align: middle;">Motivo de baja: <p:selectOneMenu value="#{matriculaGestion.motivoBaja}">  
+                                <f:selectItem itemLabel="Sin crédito" itemValue="Sin crédito" /> 
+                                <f:selectItem itemLabel="Por cliente" itemValue="Por cliente" />  
+                                <f:selectItem itemLabel="Por comercial" itemValue="Por comercial" />   
+                            </p:selectOneMenu>  </div><br/><br/>
+                    </p:fieldset>
+                    <p:commandButton actionListener="#{matriculaGestion.nuevoEvento}" styleClass="botonAplicar" value="Guardar" style="margin: 0px 10px;" ajax="false" process=":aniadir_evento_boton"/>
+
+                    <p:calendar id="calNuevoEventoboton" styleClass="botonAplicar" navigator="true" value="#{matriculaGestion.fechaNuevoEvento}" >
+                        <f:ajax event="dateSelect" render="calNuevoEventoboton"/> 
+                    </p:calendar>
+                    <p:outputLabel value="Fecha de Creación del Nuevo Evento:&nbsp;" style="float:right;"/>
+
+                </h:form>
+            </p:confirmDialog>
+            <p:dialog header="Asociar Alumno" widgetVar="dlgAlumno" resizable="true" rendered="#{sesionActual.tienePermiso(13)}">
+                <h:form id="aniadir_alumno">
+                    <div style="text-align: center;">
+                        <p:button value="Nuevo Alumno" href="../persona/persona.xhtml?matricula=#{matriculaGestion.matriculaID}" />  
+                    </div>
+                    <p:dataTable  filterEvent="change" var="persona" value="#{personaVista.alumnos}" filteredValue="#{personaVista.alumnosFiltrados}" lazy="true"
+                                  emptyMessage="No existen Personas con los criterios seleccionados."
+                                  style="width:500px; margin: 5px auto;"
+                                  paginator="true"
+                                  rows="5" 
+                                  paginatorTemplate="{PreviousPageLink} {NextPageLink} {RowsPerPageDropdown}"  
+                                  rowsPerPageTemplate="5,10,15,30"
+                                  paginatorPosition="top"
+                                  >
+                        <p:column id="c_nif" filterBy="#{persona.nif}" sortBy="#{persona.nif}"
+                                  headerText="NIF"  
+                                  filterMatchMode="contains" >  
+                            <h:outputText value="#{persona.nif}" /> 
+                        </p:column>
+                        <p:column id="c_nombre" filterBy="#{persona.nombre}" sortBy="#{persona.nombre}"
+                                  headerText="Nombre"  
+                                  filterMatchMode="contains" >  
+                            <h:outputText value="#{persona.nombre}" /> 
+                        </p:column>
+                        <p:column style="width:10px;">  
+                            <p:commandButton id="select_persona" onclick="dlgAlumno.close()" icon="ui-icon-check" title="Seleccionar" ajax="true" update=":formulario_principal:valorAlumno">  
+                                <f:setPropertyActionListener value="#{persona.alumno}" target="#{matriculaGestion.aniadirAlumno}" />  
+                            </p:commandButton>  
+                        </p:column>
+                    </p:dataTable>
+                </h:form>
+            </p:dialog>
+            <p:dialog header="Asociar Empresa" widgetVar="dlgEmpresaCCC" resizable="true" rendered="#{sesionActual.tienePermiso(13)}">
+                <h:form id="aniadir_empresaCCC">
+                    <p:dataTable  filterEvent="change" var="empresa" value="#{matriculaGestion.matriculaSeleccionada.empresaMatriculaCcc.empresaMatricula.empresaMatriculaCccList}"
+                                  lazy="false"
+                                  emptyMessage=""
+                                  style="width:500px; margin: 5px auto;"
+                                  paginator="true"
+                                  rows="5" 
+                                  paginatorTemplate="{PreviousPageLink} {NextPageLink} {RowsPerPageDropdown}"  
+                                  rowsPerPageTemplate="5,10,15,30"
+                                  paginatorPosition="top"
+                                  >
+                        <p:column id="e_nif" sortBy="#{empresa.empresaMatricula.nif}"
+                                  headerText="NIF"  
+                                  filterMatchMode="contains"
+                                  filterBy="#{empresa.empresaMatricula.nif}"
+                                  >  
+                            <h:outputText value="#{empresa.empresaMatricula.nif}" /> 
+                        </p:column>
+                        <p:column id="e_rs" sortBy="#{empresa.empresaMatricula.empresa.razonSocial}"
+                                  headerText="Razón Social"  
+                                  filterMatchMode="contains" filterBy="#{empresa.empresaMatricula.empresa.razonSocial}" >  
+                            <h:outputText value="#{empresa.empresaMatricula.empresa.razonSocial}" /> 
+                        </p:column>
+                        <p:column id="e_ccc" sortBy="#{empresa.empresaMatriculaCccPK.ccc}"
+                                  headerText="CCC"  
+                                  filterMatchMode="contains" filterBy="#{empresa.empresaMatriculaCccPK.ccc}"  >  
+                            <h:outputText value="#{empresa.empresaMatriculaCccPK.ccc}" /> 
+                        </p:column>
+                        <p:column style="width:10px;">  
+                            <p:commandButton id="select_empresa" onclick="dlgEmpresaCCC.close()" icon="ui-icon-check" title="Seleccionar" ajax="true" update=":formulario_principal:valorEmpresa">  
+                                <f:setPropertyActionListener value="#{empresa}" target="#{matriculaGestion.matriculaSeleccionada.empresaMatriculaCcc}" />  
+                            </p:commandButton>  
+                        </p:column>
+                    </p:dataTable>
+                </h:form>
+            </p:dialog>
+            <p:dialog header="Asociar Empresa" widgetVar="dlgEmpresa" resizable="true" rendered="#{sesionActual.tienePermiso(13)}">
+                <h:form id="aniadir_empresa">
+                    <div style="text-align: center;">
+                        <p:button value="Nueva Empresa" href="../empresa/empresa.xhtml?matricula=#{matriculaGestion.matriculaID}" />  
+                    </div>
+                    <p:dataTable  filterEvent="change" rendered="#{(empty matriculaGestion.empresas_asoc)}" var="empresa_laz" value="#{matriculaGestion.todasEmpresasCCC}"
+                                  lazy="true"
+                                  emptyMessage="No existen Empresas con asociadas al alumno. Seleccione un alumno para seleccionar sus empresas asociadas, o cree una empresa nueva."
+                                  style="width:500px; margin: 5px auto;"
+                                  paginator="true"
+                                  rows="5" 
+                                  paginatorTemplate="{PreviousPageLink} {NextPageLink} {RowsPerPageDropdown}"  
+                                  rowsPerPageTemplate="5,10,15,30"
+                                  paginatorPosition="top"
+                                  >
+                        <p:column id="e_nif" sortBy="#{empresa_laz.nif}"
+                                  headerText="NIF"  
+                                  filterMatchMode="contains"
+                                  filterBy="#{empresa_laz.nif}"
+                                  >  
+                            <h:outputText value="#{empresa_laz.nif}" /> 
+                        </p:column>
+                        <p:column id="e_rs" sortBy="#{empresa_laz.razonSocial}"
+                                  headerText="Razón Social"  
+                                  filterMatchMode="contains" filterBy="#{empresa_laz.razonSocial}" >  
+                            <h:outputText value="#{empresa_laz.razonSocial}" /> 
+                        </p:column>
+                        <p:column id="e_ccc" sortBy="#{empresa_laz.ccc}"
+                                  headerText="CCC"  
+                                  filterMatchMode="contains" filterBy="#{empresa_laz.ccc}"  >  
+                            <h:outputText value="#{empresa_laz.ccc}" /> 
+                        </p:column>
+                        <p:column style="width:10px;">  
+                            <p:commandButton id="select_empresa" onclick="dlgEmpresa.close()" icon="ui-icon-check" title="Seleccionar" ajax="true" update=":formulario_principal:valorEmpresa">  
+                                <f:setPropertyActionListener value="#{empresa_laz.empresamatriculaccc}" target="#{matriculaGestion.matriculaSeleccionada.empresaMatriculaCcc}" />  
+                                <f:setPropertyActionListener value="#{(empty matriculaGestion.matriculaSeleccionada.matriculaComercialList)? empresa_laz.empresamatriculaccc.empresaMatricula.empresa.comercial.comercialSuperior:null}" target="#{matriculaGestion.comercialMatricula}" /> 
+                            </p:commandButton>  
+                        </p:column>
+                    </p:dataTable>
+                    <p:dataTable  filterEvent="change" rendered="#{not (empty matriculaGestion.empresas_asoc)}" var="empresa" value="#{matriculaGestion.empresas_asoc}"
+                                  lazy="false"
+                                  emptyMessage="No existen Empresas con asociadas al alumno. Seleccione un alumno para seleccionar sus empresas asociadas, o cree una empresa nueva."
+                                  style="width:500px; margin: 5px auto;"
+                                  paginator="true"
+                                  rows="5" 
+                                  paginatorTemplate="{PreviousPageLink} {NextPageLink} {RowsPerPageDropdown}"  
+                                  rowsPerPageTemplate="5,10,15,30"
+                                  paginatorPosition="top"
+                                  >
+                        <p:column id="e_nif" sortBy="#{empresa.empresaMatricula.nif}"
+                                  headerText="NIF"  
+                                  filterMatchMode="contains"
+                                  filterBy="#{empresa.empresaMatricula.nif}"
+                                  >  
+                            <h:outputText value="#{empresa.empresaMatricula.nif}" /> 
+                        </p:column>
+                        <p:column id="e_rs" sortBy="#{empresa.empresaMatricula.empresa.razonSocial}"
+                                  headerText="Razón Social"  
+                                  filterMatchMode="contains" filterBy="#{empresa.empresaMatricula.empresa.razonSocial}" >  
+                            <h:outputText value="#{empresa.empresaMatricula.empresa.razonSocial}" /> 
+                        </p:column>
+                        <p:column id="e_ccc" sortBy="#{empresa.empresaMatriculaCccPK.ccc}"
+                                  headerText="CCC"  
+                                  filterMatchMode="contains" filterBy="#{empresa.empresaMatriculaCccPK.ccc}"  >  
+                            <h:outputText value="#{empresa.empresaMatriculaCccPK.ccc}" /> 
+                        </p:column>
+                        <p:column style="width:10px;">  
+                            <p:commandButton id="select_empresa" onclick="dlgEmpresa.close()" icon="ui-icon-check" title="Seleccionar" ajax="true" update=":formulario_principal:valorEmpresa">  
+                                <f:setPropertyActionListener value="#{empresa}" target="#{matriculaGestion.matriculaSeleccionada.empresaMatriculaCcc}" />  
+                            </p:commandButton>  
+                        </p:column>
+                    </p:dataTable>
+                </h:form>
+            </p:dialog>
+            <p:dialog header="Asociar Grupo" widgetVar="dlgGrupo" resizable="true" rendered="#{sesionActual.tienePermiso(13)}">
+                <h:form id="aniadir_grupo">
+                    <div style="text-align: center;">
+                        <p:button value="Nueva Acción Formatia" href="../accionFormativa/accionFormativa.xhtml?matricula=#{matriculaGestion.matriculaID}" />  
+                        <p:button value="Nuevo Grupo" href="../grupo/grupo.xhtml?matricula=#{matriculaGestion.matriculaID}" />  
+                    </div>
+                    <p:dataTable  filterEvent="change" var="grupo" value="#{matriculaGestion.grupos}" filteredValue="#{grupoVista.gruposFiltrados}"
+                                  lazy="true"
+                                  emptyMessage="No existen grupos con los criterios seleccionados."
+                                  style="width:600px; margin: 5px auto;"
+                                  paginator="true"
+                                  rows="5" 
+                                  paginatorTemplate="{PreviousPageLink} {NextPageLink} {RowsPerPageDropdown}"  
+                                  rowsPerPageTemplate="5,10,15,30"
+                                  paginatorPosition="top"
+                                  widgetVar="tablaGrupo"
+                                  >
+                        <p:column id="g0" filterBy="#{grupo.id_accion_formativa}" sortBy="#{grupo.id_accion_formativa}"
+                                  headerText="ID AF."  
+                                  filterMatchMode="contains" >  
+                            <h:outputText value="#{grupo.id_accion_formativa}" /> 
+                        </p:column>
+                        <p:column id="g1" filterBy="#{grupo.nombreAf}" sortBy="#{grupo.nombreAf}"
+                                  headerText="Acción Formativa"  
+                                  filterMatchMode="contains" >  
+                            <h:outputText value="#{grupo.nombreAf}" /> 
+                        </p:column>
+                        <p:column filterStyleClass="g2" filterBy="#{grupo.nombreGrupo}" sortBy="#{grupo.nombreGrupo}"
+                                  headerText="Grupo"  
+                                  filterMatchMode="contains" >  
+                            <h:outputText value="#{grupo.nombreGrupo}" /> 
+                        </p:column>
+                        <p:column id="g3"
+                                  headerText="Proveedor"  
+                                  filterMatchMode="contains" >  
+                            <h:outputText value="#{grupo.grupo.proveedor1}" /> 
+                        </p:column>
+                        <p:column style="width:10px;">  
+                            <p:commandButton id="select_grupo" onclick="dlgGrupo.close()" icon="ui-icon-check" title="Seleccionar" ajax="true" update=":formulario_principal:valorGrupo">  
+                                <f:setPropertyActionListener value="#{grupo.grupo}" target="#{matriculaGestion.matriculaSeleccionada.grupo}" /> 
+                                <f:setPropertyActionListener value="#{matriculaGestion.matriculaSeleccionada.precio eq null? grupo.grupo.accionFormativa1.precio : matriculaGestion.matriculaSeleccionada.precio}" target="#{matriculaGestion.matriculaSeleccionada.precio}" /> 
+                            </p:commandButton>  
+                        </p:column>
+                    </p:dataTable>
+                </h:form>
+            </p:dialog>
+            <p:confirmDialog id="eliminarDir" widgetVar="dlgEliminarDireccion" message="¿Seguro que desea eliminar la dirección de esta matrícula?"   rendered="#{sesionActual.tienePermiso(13)}"
+                             header="Borrar Dirección del grupo" severity="alert">  
+                <h:form id="borrar_direccion">
+                    <p:commandButton styleClass="botonAplicar" value="Sí"  oncomplete="dlgEliminarDireccion.hide()"  
+                                     actionListener="#{matriculaGestion.borrarDireccion}" update=":formulario_principal:messages :formulario_principal:growl :formulario_principal:texto_direccionEnvio"/>  
+                    <p:commandButton styleClass="botonAplicar" value="No" onclick="dlgEliminarDireccion.hide()" type="button" />   
+                </h:form>
+            </p:confirmDialog> 
+            <p:confirmDialog id="eliminarFac" widgetVar="dlgEliminarFactura" message="¿Seguro que desea eliminar la factura?"  rendered="#{sesionActual.tienePermiso(13)}"
+                             header="Borrar Factura" severity="alert">   
+                <h:form id="borrar_factura">
+                    <p:commandButton styleClass="botonAplicar" value="Sí"  oncomplete="dlgEliminarFactura.hide()"  
+                                     actionListener="#{matriculaGestion.borrarFactura}" update=":formulario_principal :formulario_principal:messages :formulario_principal:growl :formulario_principal:tabla_facturas"/>  
+                    <p:commandButton styleClass="botonAplicar" value="No" onclick="dlgEliminarFactura.hide()" type="button" />   
+                </h:form>
+            </p:confirmDialog> 
+
+            <p:confirmDialog id="d_dlgEventoPagoAplazado" widgetVar="dlgEventoPagoAplazado" message="Introduzca datos del evento:"  rendered="#{sesionActual.tienePermiso(13)}"
+                             header="Generar Evento de Pago Aplazado" severity="alert">  
+                <h:form id="form_EventoPagoAplazado">
+                    <p>Fecha de Vencimiento: <p:calendar id="calPagoAp" value="#{matriculaGestion.fechaEvento}" mindate="#{matriculaGestion.hoy}" validator="#{matriculaGestion.validaFechaHoy}" >
+                            <f:ajax event="dateSelect" render="calPagoAp"/>
+                        </p:calendar> - Importe: <p:spinner id="importe_n" style="margin-right: 5px; " size="4" value="#{matriculaGestion.importeEvento}" validator="#{matriculaGestion.validaImporte}" min="0.0" max="#{matriculaGestion.matriculaSeleccionada.importeSinFacturar+matriculaGestion.facturaSeleccionada.importe}">
+                            <p:ajax update=":formulario_principal:messages :formulario_principal:growl importe_n" process="@this" />  
+                        </p:spinner>€</p>
+                    <p:commandButton styleClass="botonAplicar" ajax="false" value="Guardar"  oncomplete="dlgEditarImporte.hide()"  
+                                     actionListener="#{matriculaGestion.guardarEvento}" update=":formulario_principal :formulario_principal:messages :formulario_principal:growl :formulario_principal:tabla_eventos"/>  
+                </h:form>
+            </p:confirmDialog>
+            <p:confirmDialog id="editarImporte" widgetVar="dlgEditarImporte" message="Introduzca el importe de la factura"  rendered="#{sesionActual.tienePermiso(13)}"
+                             header="Editar Importe de Factura" severity="alert">  
+                <h:form id="importe_factura">
+                    <div style="text-align: right; width: 190px; padding: 3px;">
+                        IMPORTE <p:spinner id="importe_f" style="margin-top: 6px; margin-right: 5px; " size="4" value="#{matriculaGestion.facturaSeleccionada.importe}" validator="#{matriculaGestion.validaImporte}" min="0.0" >
+                            <p:ajax update=":formulario_principal:messages :formulario_principal:growl importe_f" process="@this" />  
+                        </p:spinner> €
+                    </div>
+                    <div style="text-align: right; width: 190px;padding: 3px;">
+                        ORGANIZACIÓN
+                        <p:spinner id="importe_p" style="margin-top: 6px; margin-right: 5px;" size="3" value="#{matriculaGestion.facturaSeleccionada.porcentaje}" min="0" max="100">
+                            <p:ajax update="importe_p importe_factura" process="@this" />  
+                        </p:spinner> %
+
+                    </div><div style="text-align: right; width: 180px;padding: 3px;">(IMPARTICIÓN al #{100-matriculaGestion.facturaSeleccionada.porcentaje}%)
+                    </div>
+                    <p:commandButton styleClass="botonAplicar" ajax="false" value="Guardar"  oncomplete="dlgEditarImporte.hide()"  
+                                     actionListener="#{matriculaGestion.guardarFactura}" update=":formulario_principal :formulario_principal:messages :formulario_principal:growl :formulario_principal:tabla_facturas"/>  
+
+                </h:form>
+            </p:confirmDialog> 
+            <p:confirmDialog id="comentFac" widgetVar="dlgEditarComentarioFactura" message="Introduzca observaciones para la Factura"  rendered="#{sesionActual.tienePermiso(13)}"
+                             header="Editar Observaciones Factura" severity="alert">  
+                <h:form id="comentario_factura">
+                    <p:editor value="#{matriculaGestion.facturaSeleccionada.observaciones}" id="editorFacturaObs"/>
+                    <p:commandButton styleClass="botonGuardarFactura" ajax="false" value="Guardar"  oncomplete="dlgEditarComentarioFactura.hide()"
+                                     actionListener="#{matriculaGestion.guardarFactura}" update=":formulario_principal :formulario_principal:messages :formulario_principal:growl :formulario_principal:tabla_facturas"/>  
+                </h:form>
+            </p:confirmDialog> 
+            <p:confirmDialog id="guardarFac" widgetVar="dlgGuardarFactura" message="¿Seguro que desea guardar la factura?"  rendered="#{sesionActual.tienePermiso(13)}"
+                             header="Guardar Factura" severity="alert">  
+                <h:form id="guardar_factura">
+                    <p:commandButton styleClass="botonAplicar" value="Sí"  oncomplete="dlgGuardarFactura.hide()"  
+                                     actionListener="#{matriculaGestion.guardarFactura}" update=":formulario_principal :formulario_principal:messages :formulario_principal:growl :formulario_principal:tabla_facturas"/>  
+                    <p:commandButton styleClass="botonAplicar" value="No" onclick="dlgGuardarFactura.hide()" type="button" />   
+                </h:form>
+            </p:confirmDialog> 
+
+            <p:confirmDialog id="editarabonoImporte" widgetVar="dlgImporteAbono" message="Introduzca el importe de la factura de abono"  rendered="#{sesionActual.tienePermiso(13)}"
+                             header="Editar Importe de Factura" severity="alert">  
+                <h:form id="importeabono_factura">
+                    <div style="text-align: right; width: 190px; padding: 3px;">
+                        IMPORTE <p:spinner id="importe_abono" style="margin-top: 6px; margin-right: 5px; " size="4" value="#{matriculaGestion.importeMatriculaAbono}" validator="#{matriculaGestion.validaImporteAbono}" max="0.0">
+                            <p:ajax update=":formulario_principal:messages :formulario_principal:growl importe_abono" process="@this" />  
+                        </p:spinner> €
+                    </div>
+                    <p:commandButton styleClass="botonAplicar" ajax="false" value="Guardar"  oncomplete="dlgImporteAbono.hide()"  
+                                     actionListener="#{matriculaGestion.aniadeFacturaAbono}" update=":formulario_principal :formulario_principal:messages :formulario_principal:growl :formulario_principal:tabla_facturas"/>  
+
+                </h:form>
+            </p:confirmDialog> 
+
+            <p:confirmDialog id="editarabonoImporteEditar" widgetVar="dlgImporteAbonoEditar" message="Introduzca el importe de la factura de abono"  rendered="#{sesionActual.tienePermiso(13)}"
+                             header="Editar Importe de Factura" severity="alert">  
+                <h:form id="importeabono_facturaEditar">
+                    <div style="text-align: right; width: 190px; padding: 3px;">
+                        IMPORTE <p:spinner id="importe_abonoEditar" style="margin-top: 6px; margin-right: 5px; " size="4" value="#{matriculaGestion.facturaSeleccionada.importe}" validator="#{matriculaGestion.validaImporteAbono}" max="0.0">
+                            <p:ajax update=":formulario_principal:messages :formulario_principal:growl importe_abonoEditar" process="@this" />  
+                        </p:spinner> €
+                    </div>
+                    <p:commandButton styleClass="botonAplicar" ajax="false" value="Guardar"  oncomplete="dlgImporteAbonoEditar.hide()"  
+                                     actionListener="#{matriculaGestion.guardarFactura}" update=":formulario_principal :formulario_principal:messages :formulario_principal:growl :formulario_principal:tabla_facturas"/>  
+
+                </h:form>
+            </p:confirmDialog> 
+
+
+            <p:dialog modal="true" header="Asociar Estructura Comercial" widgetVar="dlgEstructuraComercial" resizable="true" rendered="#{sesionActual.tienePermiso(13)}">
+                <h:form id="estructuracomercialdialog3">
+                    <p:dataTable  filterEvent="change" value="#{personaGestion.comerciales}" var="com" filteredValue="#{personaGestion.comercialesFiltrados}"
+                                  emptyMessage="No existen Comerciales con los criterios seleccionados."
+                                  style="width:500px; margin: 5px auto;"
+                                  paginator="true"
+                                  rows="5" 
+                                  paginatorTemplate="{FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                                  rowsPerPageTemplate="5,10,15,30"
+                                  paginatorPosition="top">
+                        <p:column filterBy="#{com.nombre}" filterMatchMode="contains" headerText="Nombre">#{com.nombre}</p:column>
+                        <p:column filterBy="#{com.nombreSuperior}" filterMatchMode="contains" headerText="Superior">#{com.nombreSuperior}</p:column>
+                        <p:column filterBy="#{com.comercialTipo.nombre}" filterMatchMode="contains" headerText="Tipo">#{com.comercialTipo.nombre}</p:column>
+                        <p:column style="width:10px;">  
+                            <p:commandButton id="select_com" onclick="dlgEstructuraComercial.close()" icon="ui-icon-check" title="Seleccionar" ajax="true" update=":formuario_superior">  
+                                <f:setPropertyActionListener value="#{com}" target="#{matriculaGestion.comercialMatricula}" /> 
+                            </p:commandButton>  
+                        </p:column>
+
+                    </p:dataTable>
+                    <p:commandButton styleClass="botonAplicar" id="select_nocom" onclick="dlgEstructuraComercial.close()" value="Sin nivel superior" title="Seleccionar" ajax="true" update=":formuario_superior">  
+                        <f:setPropertyActionListener value="#{null}" target="#{matriculaGestion.comercialMatricula}" />  
+                    </p:commandButton> 
+                </h:form>
+            </p:dialog>
+        </ui:define>
+    </ui:composition>
+</html>

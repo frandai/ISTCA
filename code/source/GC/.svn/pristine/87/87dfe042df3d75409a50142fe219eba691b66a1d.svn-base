@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:p="http://primefaces.org/ui">
+
+    <ui:composition template="/template.xhtml">
+        <ui:define name="title">
+            <h:outputText value="Usuarios"></h:outputText>
+        </ui:define>
+        <ui:define name="body">
+            <p:button value="Nuevo Usuario" href="usuario.xhtml" styleClass="separador" rendered="#{sesionActual.tienePermiso(16)}"/>  
+            <h:panelGrid columns="2" style="float: right;">  
+                <p:panel id="generar_excel">  
+                    <h:commandLink
+                        onclick="#{matriculaVista.todasLasPaginas?'validaTodasPag(); if(!lanzaProc){return false;};':''}"
+                        >  
+                        <p:graphicImage value="/img/excel.png" style="height: 30px;"  />  
+                        <p:dataExporter type="xls" target="dataTable" fileName="usuarios" pageOnly="#{not matriculaVista.todasLasPaginas}" postProcessor="#{utilidadesVista.postProcessXLS}" />  
+                    </h:commandLink>  
+                    <p:contextMenu for="generar_excel" >  
+                        <p:menuitem actionListener="#{matriculaVista.cambiaValorPag}" value="#{matriculaVista.todasLasPaginas?'Generar Excel para esta página':'Generar Excel para todas las páginas'}" update="@this generar_excel" process="@this" />
+                    </p:contextMenu>
+                    <p:tooltip for="generar_excel" value="#{matriculaVista.todasLasPaginas?'Generar Excel para todas las páginas':'Generar Excel para esta página'}" />
+
+                </p:panel>  
+            </h:panelGrid >  
+            <p:fieldset legend="Columnas a Mostrar" collapsed="true" toggleable="true"  styleClass="separador">  
+                <span><h:outputText value="Usuario " />
+                    <p:selectBooleanCheckbox value="#{usuarioVista.muestraUsuario}"  />  </span>
+
+                <span><h:outputText value="NIF " />  
+                    <p:selectBooleanCheckbox value="#{usuarioVista.muestraNIF}"/> </span>
+
+                <span> <h:outputText value="Nombre " />  
+                    <p:selectBooleanCheckbox value="#{usuarioVista.muestraNombre}"/> </span>
+
+                <span><h:outputText value="Accesible " />  
+                    <p:selectBooleanCheckbox value="#{usuarioVista.muestraActivo}"/> </span>
+                <p:commandButton value="Aplicar" update="dataTable" styleClass="botonAplicar"/>
+
+            </p:fieldset>
+            <p:dataTable  filterEvent="change" id="dataTable" var="usuario" value="#{usuarioVista.usuarios}" widgetVar="usuarioTable"   
+                          filteredValue="#{usuarioVista.usuariosFiltrados}"
+                          emptyMessage="No se encuentran usuarios" styleClass="separador"
+                          paginator="true" rows="5" 
+                          paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                          currentPageReportTemplate="{totalRecords} Filas (página {currentPage} de {totalPages})"
+                          rowsPerPageTemplate="5,10,15,25,50,100"
+
+                          >  
+
+
+                <p:column id="c_usuario" filterBy="#{usuario.usuario}"   
+                          sortBy="#{usuario.usuario}" 
+                          filterMatchMode="contains" rendered="#{usuarioVista.muestraUsuario}">
+                    <f:facet name="header">  
+                        <h:outputText value="Usuario" />  
+                    </f:facet> 
+                    <h:outputText value="#{usuario.usuario}" />  
+                </p:column>  
+                <p:column id="c_nif" filterBy="#{usuario.nif}"   
+                          sortBy="#{usuario.nif}" 
+                          filterMatchMode="contains" rendered="#{usuarioVista.muestraNIF}">  
+                    <f:facet name="header">  
+                        <h:outputText value="NIF" />  
+                    </f:facet> 
+                    <h:outputText value="#{usuario.nif}" />  
+                </p:column>  
+                <p:column id="c_nombre_ap" filterBy="#{usuario.persona.nombre} #{usuario.persona.apellido1} #{usuario.persona.apellido2}" 
+                          sortBy="#{usuario.persona.nombre} #{usuario.persona.apellido1} #{usuario.persona.apellido2}"
+                          filterMatchMode="contains" rendered="#{usuarioVista.muestraNombre}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Nombre y apellidos" />  
+                    </f:facet> 
+                    <h:outputText value="#{usuario.persona.nombre} #{usuario.persona.apellido1} #{usuario.persona.apellido2}" />  
+                </p:column>  
+                <p:column id="c_accesible" filterBy="#{usuario.accesible? 'Sí':'No'}"   
+                          sortBy="#{usuario.accesible? 'Sí':'No'}"
+                          rendered="#{usuarioVista.muestraActivo}"
+                          filterOptions="#{desplegableVista.sinoOptions}"  
+                          filterMatchMode="exact" style="text-align: center;">  
+                    <f:facet name="header">  
+                        <h:outputText value="Accesible" />  
+                    </f:facet> 
+                    <h:outputText value="#{usuario.accesible? 'Sí':'No'}" />  
+                </p:column> 
+                <p:column style="width:4%" exportable="false">    
+                    <p:button id="selectButton" title="Ver" icon="ui-icon-search" href="usuario.xhtml?usuario=#{usuario.nif}"/>  
+                </p:column> 
+            </p:dataTable>  
+
+        </ui:define>
+    </ui:composition>
+</html>

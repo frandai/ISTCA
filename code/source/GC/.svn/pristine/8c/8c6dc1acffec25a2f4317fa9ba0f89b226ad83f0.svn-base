@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='UTF-8' ?> 
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://java.sun.com/jsf/core">
+    <h:head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title><ui:insert name="title">Login</ui:insert></title>
+        <h:outputStylesheet library="css" name="default.css" />
+    </h:head>
+
+    <h:body>
+        #{lanzador.lanzar}
+        <h:form id="form_ent"> 
+            <p:fieldset legend="Login" style="margin: 50px auto; width: 400px;" id="panel">   
+                <p:messages id="messages" /> 
+                <p:panelGrid columns="2" style="margin: auto;">  
+                    <h:outputLabel for="Usuario" value="Usuario:" />  
+                    <p:inputText id="Usuario" required="true" label="Usuario" value="#{sesionActual.usuario}" />  
+                    <h:outputLabel for="pass" value="Contraseña:" />  
+                    <p:password id="pass" required="true" label="Contraseña" value="#{sesionActual.password}"/> 
+                    <f:facet name="footer">  
+                        <p:commandButton type="Entrar" ajax="false" actionListener="#{sesionActual.entra}" value="Entrar" icon="ui-icon-check" style="float:right;" update="panel"/>  
+                    </f:facet>  
+                </p:panelGrid> 
+            </p:fieldset>
+
+        </h:form>
+        <h:form>
+            <p:fieldset legend="Recordar Contraseña" id="no_passwd" collapsed="true" toggleable="true"  style="margin: auto; width: 400px;">
+                <h:panelGrid columns="3" style="margin: auto;"> 
+                    <h:outputLabel for="Usuario_rec" value="Usuario:" />  
+                    <p:inputText id="Usuario_rec" required="true" label="Usuario a Recordar" value="#{sesionActual.usuario_recuerda}" />  
+                    <p:commandButton value="Recordar" update="no_passwd :form_ent:messages" actionListener="#{sesionActual.recuerda}"/> 
+                </h:panelGrid>
+            </p:fieldset>  
+        </h:form>
+        <p:ajaxStatus>  
+            <f:facet name="start">  
+                <div style="color:black;padding:5px 30px;position:fixed;right:50px;bottom:50px;background-color: white;border: solid 1px black;-webkit-border-radius: 10px;
+                     -moz-border-radius: 10px;
+                     border-radius: 10px;" >
+                    Cargando <img src="#{request.contextPath}/img/l.gif" height="20px;"/>
+                </div>  
+            </f:facet>  
+            <f:facet name="complete">  
+                <h:outputText value="" />  
+            </f:facet>  
+        </p:ajaxStatus>  
+        <p style="text-align: center;font-family: Arial,sans-serif;font-size: 11px;">Resolución Recomendada: 1440 x 900. Navegador Recomendado: <a href="https://www.google.com/intl/es/chrome/browser/?hl=es">Google Chrome</a>.</p>
+    </h:body>
+
+</html>

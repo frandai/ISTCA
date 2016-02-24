@@ -1,0 +1,140 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package datos;
+
+import java.io.Serializable;
+import java.util.Date;
+import javax.persistence.Column;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinColumns;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+import javax.xml.bind.annotation.XmlRootElement;
+
+/**
+ *
+ *
+ */
+@Entity
+@Table(name = "TUTORIA_HORARIO", schema = "public")
+@XmlRootElement
+@NamedQueries({
+    @NamedQuery(name = "TutoriaHorario.findAll", query = "SELECT t FROM TutoriaHorario t"),
+    @NamedQuery(name = "TutoriaHorario.findByAccionFormativa", query = "SELECT t FROM TutoriaHorario t WHERE t.tutoriaHorarioPK.accionFormativa = :accionFormativa"),
+    @NamedQuery(name = "TutoriaHorario.findByGrupo", query = "SELECT t FROM TutoriaHorario t WHERE t.tutoriaHorarioPK.grupo = :grupo"),
+    @NamedQuery(name = "TutoriaHorario.findByTutor", query = "SELECT t FROM TutoriaHorario t WHERE t.tutoriaHorarioPK.tutor = :tutor"),
+    @NamedQuery(name = "TutoriaHorario.findByHorario", query = "SELECT t FROM TutoriaHorario t WHERE t.tutoriaHorarioPK.horario = :horario")})
+public class TutoriaHorario implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+    @EmbeddedId
+    protected TutoriaHorarioPK tutoriaHorarioPK;
+    @JoinColumn(name = "TUTOR", referencedColumnName = "NIF", nullable = false, insertable = false, updatable = false)
+    @ManyToOne(optional = false)
+    private Tutor tutor1;
+    @JoinColumn(name = "HORARIO", referencedColumnName = "ID", nullable = false, insertable = false, updatable = false)
+    @ManyToOne(optional = false)
+    private Horario horario1;
+    @JoinColumns({
+        @JoinColumn(name = "ACCION_FORMATIVA", referencedColumnName = "ACCION_FORMATIVA", nullable = false, insertable = false, updatable = false),
+        @JoinColumn(name = "GRUPO", referencedColumnName = "ID", nullable = false, insertable = false, updatable = false)})
+    @ManyToOne(optional = false)
+    private Grupo grupo1;
+    @Column
+    private Short horas;
+
+    public Short getHoras() {
+        return horas;
+    }
+
+    public void setHoras(Short horas) {
+        this.horas = horas;
+    }
+
+    public TutoriaHorario() {
+    }
+
+    public TutoriaHorario(TutoriaHorarioPK tutoriaHorarioPK) {
+        this.tutoriaHorarioPK = tutoriaHorarioPK;
+    }
+
+    public TutoriaHorario(int accionFormativa, int grupo, String tutor, int horario) {
+        this.tutoriaHorarioPK = new TutoriaHorarioPK(accionFormativa, grupo, tutor, horario);
+    }
+
+    public TutoriaHorarioPK getTutoriaHorarioPK() {
+        return tutoriaHorarioPK;
+    }
+
+    public void setTutoriaHorarioPK(TutoriaHorarioPK tutoriaHorarioPK) {
+        this.tutoriaHorarioPK = tutoriaHorarioPK;
+    }
+
+    public Tutor getTutor1() {
+        return tutor1;
+    }
+
+    public void setTutor1(Tutor tutor1) {
+        this.tutor1 = tutor1;
+    }
+
+    public Horario getHorario1() {
+        return horario1;
+    }
+
+    public void setHorario1(Horario horario1) {
+        this.horario1 = horario1;
+    }
+
+    public Grupo getGrupo1() {
+        return grupo1;
+    }
+
+    public void setGrupo1(Grupo grupo1) {
+        this.grupo1 = grupo1;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (tutoriaHorarioPK != null ? tutoriaHorarioPK.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (!(object instanceof TutoriaHorario)) {
+            return false;
+        }
+        TutoriaHorario other = (TutoriaHorario) object;
+        if ((this.tutoriaHorarioPK == null && other.tutoriaHorarioPK != null) || (this.tutoriaHorarioPK != null && !this.tutoriaHorarioPK.equals(other.tutoriaHorarioPK))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "datos.TutoriaHorario[ tutoriaHorarioPK=" + tutoriaHorarioPK + " ]";
+    }
+
+    public int getNumCursosHorario() {
+        int n = 0;
+        Date ahora = new Date();
+        for (TutoriaHorario th : tutor1.getTutoriaHorarioList()) {
+            if (th.getHorario1().getHoraInicio().equals(horario1.getHoraInicio())
+                    && th.getGrupo1().getfInicio().before(ahora)
+                    && th.getGrupo1().getFFin().after(ahora)) {
+                n++;
+            }
+        }
+        return n;
+    }
+}

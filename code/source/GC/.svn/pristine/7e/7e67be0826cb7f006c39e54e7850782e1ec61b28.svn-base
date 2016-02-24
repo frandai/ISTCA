@@ -1,0 +1,81 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package datos;
+
+import java.io.Serializable;
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.Embeddable;
+import javax.validation.constraints.NotNull;
+
+/**
+ *
+ * @author sergio
+ */
+@Embeddable
+public class LiquidacionPerfilLineaPK implements Serializable {
+    @Basic(optional = false)
+    @NotNull
+    @Column(name = "LIQUIDACION_PERFIL", nullable = false)
+    private int liquidacionPerfil;
+    @Basic(optional = false)
+    @NotNull
+    @Column(nullable = false)
+    private int comercial;
+
+    public LiquidacionPerfilLineaPK() {
+    }
+
+    public LiquidacionPerfilLineaPK(int liquidacionPerfil, int comercial) {
+        this.liquidacionPerfil = liquidacionPerfil;
+        this.comercial = comercial;
+    }
+
+    public int getLiquidacionPerfil() {
+        return liquidacionPerfil;
+    }
+
+    public void setLiquidacionPerfil(int liquidacionPerfil) {
+        this.liquidacionPerfil = liquidacionPerfil;
+    }
+
+    public int getComercial() {
+        return comercial;
+    }
+
+    public void setComercial(int comercial) {
+        this.comercial = comercial;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (int) liquidacionPerfil;
+        hash += (int) comercial;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (!(object instanceof LiquidacionPerfilLineaPK)) {
+            return false;
+        }
+        LiquidacionPerfilLineaPK other = (LiquidacionPerfilLineaPK) object;
+        if (this.liquidacionPerfil != other.liquidacionPerfil) {
+            return false;
+        }
+        if (this.comercial != other.comercial) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "datos.LiquidacionPerfilLineaPK[ liquidacionPerfil=" + liquidacionPerfil + ", comercial=" + comercial + " ]";
+    }
+    
+}

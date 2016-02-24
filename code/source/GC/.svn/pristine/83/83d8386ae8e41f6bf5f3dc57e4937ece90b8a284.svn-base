@@ -1,0 +1,38 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package util;
+
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.List;
+import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+/**
+ *
+ * @author fran
+ */
+public class Zip {
+    static byte[] buf = new byte[1024];
+    
+    public static String comprimir(String ruta_absoluta_entrada, Set<String> archivos, String arhivo_absoluto_salida) throws FileNotFoundException, IOException{
+        ZipOutputStream out = new ZipOutputStream(new FileOutputStream(arhivo_absoluto_salida));
+        for (String archivo : archivos) {
+            FileInputStream in = new FileInputStream(ruta_absoluta_entrada+archivo);
+            out.putNextEntry(new ZipEntry(archivo));
+            int len;
+            while ((len = in.read(buf)) > 0) {
+                out.write(buf, 0, len);
+            }
+            out.closeEntry();
+            in.close();
+        }
+        out.close();
+        return arhivo_absoluto_salida;
+    }
+}

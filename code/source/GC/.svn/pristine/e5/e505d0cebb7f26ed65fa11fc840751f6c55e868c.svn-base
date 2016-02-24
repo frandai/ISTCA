@@ -1,0 +1,100 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package datos;
+
+import java.io.Serializable;
+import java.util.Date;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+import javax.xml.bind.annotation.XmlRootElement;
+
+/**
+ *
+ * @author sergio
+ */
+@Entity
+@Table(name = "FACTURA_HISTORICO_ESTADO",  schema = "public")
+@XmlRootElement
+@NamedQueries({
+    @NamedQuery(name = "FacturaHistoricoEstado.findAll", query = "SELECT f FROM FacturaHistoricoEstado f"),
+    @NamedQuery(name = "FacturaHistoricoEstado.findByFactura", query = "SELECT f FROM FacturaHistoricoEstado f WHERE f.facturaHistoricoEstadoPK.factura = :factura"),
+    @NamedQuery(name = "FacturaHistoricoEstado.findByFecha", query = "SELECT f FROM FacturaHistoricoEstado f WHERE f.facturaHistoricoEstadoPK.fecha = :fecha")})
+public class FacturaHistoricoEstado implements Serializable {
+    private static final long serialVersionUID = 1L;
+    @EmbeddedId
+    protected FacturaHistoricoEstadoPK facturaHistoricoEstadoPK;
+    @JoinColumn(name = "ESTADO", referencedColumnName = "ID", nullable = false)
+    @ManyToOne(optional = false)
+    private FacturaEstado estado;
+    @JoinColumn(name = "FACTURA", referencedColumnName = "ID", nullable = false, insertable = false, updatable = false)
+    @ManyToOne(optional = false)
+    private Factura factura1;
+
+    public FacturaHistoricoEstado() {
+    }
+
+    public FacturaHistoricoEstado(FacturaHistoricoEstadoPK facturaHistoricoEstadoPK) {
+        this.facturaHistoricoEstadoPK = facturaHistoricoEstadoPK;
+    }
+
+    public FacturaHistoricoEstado(String factura, Date fecha) {
+        this.facturaHistoricoEstadoPK = new FacturaHistoricoEstadoPK(factura, fecha);
+    }
+
+    public FacturaHistoricoEstadoPK getFacturaHistoricoEstadoPK() {
+        return facturaHistoricoEstadoPK;
+    }
+
+    public void setFacturaHistoricoEstadoPK(FacturaHistoricoEstadoPK facturaHistoricoEstadoPK) {
+        this.facturaHistoricoEstadoPK = facturaHistoricoEstadoPK;
+    }
+
+    public FacturaEstado getEstado() {
+        return estado;
+    }
+
+    public void setEstado(FacturaEstado estado) {
+        this.estado = estado;
+    }
+
+    public Factura getFactura1() {
+        return factura1;
+    }
+
+    public void setFactura1(Factura factura1) {
+        this.factura1 = factura1;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (facturaHistoricoEstadoPK != null ? facturaHistoricoEstadoPK.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (!(object instanceof FacturaHistoricoEstado)) {
+            return false;
+        }
+        FacturaHistoricoEstado other = (FacturaHistoricoEstado) object;
+        if ((this.facturaHistoricoEstadoPK == null && other.facturaHistoricoEstadoPK != null) || (this.facturaHistoricoEstadoPK != null && !this.facturaHistoricoEstadoPK.equals(other.facturaHistoricoEstadoPK))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "datos.FacturaHistoricoEstado[ facturaHistoricoEstadoPK=" + facturaHistoricoEstadoPK + " ]";
+    }
+    
+}

@@ -1,0 +1,124 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package vista;
+
+import bean.GrupoFacade;
+import datos.Empresa;
+import datos.Grupo;
+import datosVista.Accionformativavista;
+import datosVista.Grupovista;
+import datosVistaFacade.GrupovistaFacade;
+import java.io.Serializable;
+import java.util.List;
+import javax.ejb.EJB;
+import javax.faces.bean.ManagedBean;
+import javax.faces.bean.SessionScoped;
+import javax.faces.bean.ViewScoped;
+import lazyDataModel.LazyGrupoDataModel;
+import org.primefaces.model.LazyDataModel;
+
+/**
+ *
+ *
+ */
+@ManagedBean(name = "grupoVista")
+@ViewScoped
+public class GrupoVista implements Serializable {
+
+    @EJB
+    private GrupovistaFacade grupoFacade;
+    private LazyDataModel<Grupovista> grupos;
+    private List<Grupovista> gruposFiltrados;
+    private boolean muestraAccionFormantiva = true;
+    private boolean muestraNombre = true;
+    private boolean muestraTutor = true;
+    private boolean muestraHorario = true;
+    private boolean muestraFInicio = true;
+    private boolean muestraFFin = true;
+    private boolean muestraModalidad = false;
+    private boolean muestraProveedor = false;
+
+    public boolean isMuestraProveedor() {
+        return muestraProveedor;
+    }
+
+    public void setMuestraProveedor(boolean muestraProveedor) {
+        this.muestraProveedor = muestraProveedor;
+    }
+
+    public boolean isMuestraModalidad() {
+        return muestraModalidad;
+    }
+
+    public void setMuestraModalidad(boolean muestraModalidad) {
+        this.muestraModalidad = muestraModalidad;
+    }
+
+    public GrupoVista() {
+    }
+
+    public LazyDataModel<Grupovista> getGrupos() {
+        if (grupos == null) {
+            grupos = new LazyGrupoDataModel(grupoFacade);
+        }
+        return grupos;
+    }
+
+    public List<Grupovista> getGruposFiltrados() {
+        return gruposFiltrados;
+    }
+
+    public void setGruposFiltrados(List<Grupovista> gruposFiltrados) {
+        this.gruposFiltrados = gruposFiltrados;
+    }
+
+    public boolean isMuestraAccionFormantiva() {
+        return muestraAccionFormantiva;
+    }
+
+    public void setMuestraAccionFormantiva(boolean muestraAccionFormantiva) {
+        this.muestraAccionFormantiva = muestraAccionFormantiva;
+    }
+
+    public boolean isMuestraNombre() {
+        return muestraNombre;
+    }
+
+    public void setMuestraNombre(boolean muestraNombre) {
+        this.muestraNombre = muestraNombre;
+    }
+
+    public boolean isMuestraFInicio() {
+        return muestraFInicio;
+    }
+
+    public void setMuestraFInicio(boolean muestraFInicio) {
+        this.muestraFInicio = muestraFInicio;
+    }
+
+    public boolean isMuestraFFin() {
+        return muestraFFin;
+    }
+
+    public void setMuestraFFin(boolean muestraFFin) {
+        this.muestraFFin = muestraFFin;
+    }
+
+    public boolean isMuestraHorario() {
+        return muestraHorario;
+    }
+
+    public void setMuestraHorario(boolean muestraHorario) {
+        this.muestraHorario = muestraHorario;
+    }
+
+    public boolean isMuestraTutor() {
+        return muestraTutor;
+    }
+
+    public void setMuestraTutor(boolean muestraTutor) {
+        this.muestraTutor = muestraTutor;
+    }
+}

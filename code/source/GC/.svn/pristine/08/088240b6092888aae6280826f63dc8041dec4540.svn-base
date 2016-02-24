@@ -1,0 +1,46 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package bean;
+
+import datos.Persona;
+import javax.ejb.Stateless;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+
+/**
+ *
+ * @author sergio
+ */
+@Stateless
+public class PersonaFacade extends AbstractFacade<Persona> {
+
+    @PersistenceContext(unitName = "GC_DAIPU")
+    private EntityManager em;
+
+    @Override
+    protected EntityManager getEntityManager() {
+        return em;
+    }
+
+    public PersonaFacade() {
+        super(Persona.class);
+    }
+    /**
+     * Función para editar el NIF de las Personas (por EJB, al ser la clave
+     * primaria, le hace una copia al objeto. Hay que hacerlo en SQL.
+     *
+     * @param personaSeleccionada
+     * @param NIfPrimario
+     * @return
+     */
+    public Persona cambiaNif(Persona personaSeleccionada, String NIfPrimario) {
+        Query query = em.createQuery("update Persona p set p.nif = :nifNuevo  where p.nif = :nifAnt");
+        query.setParameter("nifAnt", NIfPrimario);
+        query.setParameter("nifNuevo", personaSeleccionada.getNif());
+        query.executeUpdate();
+        return find(personaSeleccionada.getNif());
+    }
+}

@@ -1,0 +1,212 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package datos;
+
+import java.io.Serializable;
+import java.util.Date;
+import java.util.List;
+import javax.persistence.Basic;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinColumns;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
+
+/**
+ *
+ * @author sergio
+ */
+@Entity
+@Table( schema = "public")
+@XmlRootElement
+@NamedQueries({
+    @NamedQuery(name = "Pedido.findAll", query = "SELECT p FROM Pedido p"),
+    @NamedQuery(name = "Pedido.findById", query = "SELECT p FROM Pedido p WHERE p.pedidoPK.id = :id"),
+    @NamedQuery(name = "Pedido.findByFechaPedido", query = "SELECT p FROM Pedido p WHERE p.fechaPedido = :fechaPedido"),
+    @NamedQuery(name = "Pedido.findByFechaSalidaAlmacen", query = "SELECT p FROM Pedido p WHERE p.fechaSalidaAlmacen = :fechaSalidaAlmacen"),
+    @NamedQuery(name = "Pedido.findByFechaRecepcion", query = "SELECT p FROM Pedido p WHERE p.fechaRecepcion = :fechaRecepcion"),
+    @NamedQuery(name = "Pedido.findByEmpresaSumi", query = "SELECT p FROM Pedido p WHERE p.pedidoPK.empresaSumi = :empresaSumi"),
+    @NamedQuery(name = "Pedido.findByObservacion", query = "SELECT p FROM Pedido p WHERE p.observacion = :observacion")})
+public class Pedido implements Serializable {
+    private static final long serialVersionUID = 1L;
+    @EmbeddedId
+    protected PedidoPK pedidoPK;
+    @Basic(optional = false)
+    @NotNull
+    @Column(name = "FECHA_PEDIDO", nullable = false)
+    @Temporal(TemporalType.DATE)
+    private Date fechaPedido;
+    @Column(name = "FECHA_SALIDA_ALMACEN")
+    @Temporal(TemporalType.DATE)
+    private Date fechaSalidaAlmacen;
+    @Column(name = "FECHA_RECEPCION")
+    @Temporal(TemporalType.DATE)
+    private Date fechaRecepcion;
+    @Size(max = 2147483647)
+    @Column(length = 2147483647)
+    private String observacion;
+    @JoinColumns({
+        @JoinColumn(name = "EMPRESA_SUMI", referencedColumnName = "ID", nullable = false, insertable = false, updatable = false),
+        @JoinColumn(name = "FACTURA", referencedColumnName = "PROVEEDOR")})
+    @ManyToOne(optional = false)
+    private ProveedorFactura proveedorFactura;
+    @JoinColumn(name = "EMPRESA_SUMI", referencedColumnName = "NIF", nullable = false, insertable = false, updatable = false)
+    @ManyToOne(optional = false)
+    private Proveedor proveedor;
+    @JoinColumn(name = "EMPRESA_RECEP", referencedColumnName = "NIF", nullable = false)
+    @ManyToOne(optional = false)
+    private Proveedor empresaRecep;
+    @JoinColumn(name = "ESTADO", referencedColumnName = "ID", nullable = false)
+    @ManyToOne(optional = false)
+    private PedidoEstado estado;
+    @JoinColumn(name = "FORMA_PAGO", referencedColumnName = "ID")
+    @ManyToOne
+    private FormaPago formaPago;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "pedido1")
+    private List<PedidoLinea> pedidoLineaList;
+
+    public Pedido() {
+    }
+
+    public Pedido(PedidoPK pedidoPK) {
+        this.pedidoPK = pedidoPK;
+    }
+
+    public Pedido(PedidoPK pedidoPK, Date fechaPedido) {
+        this.pedidoPK = pedidoPK;
+        this.fechaPedido = fechaPedido;
+    }
+
+    public Pedido(String id, String empresaSumi) {
+        this.pedidoPK = new PedidoPK(id, empresaSumi);
+    }
+
+    public PedidoPK getPedidoPK() {
+        return pedidoPK;
+    }
+
+    public void setPedidoPK(PedidoPK pedidoPK) {
+        this.pedidoPK = pedidoPK;
+    }
+
+    public Date getFechaPedido() {
+        return fechaPedido;
+    }
+
+    public void setFechaPedido(Date fechaPedido) {
+        this.fechaPedido = fechaPedido;
+    }
+
+    public Date getFechaSalidaAlmacen() {
+        return fechaSalidaAlmacen;
+    }
+
+    public void setFechaSalidaAlmacen(Date fechaSalidaAlmacen) {
+        this.fechaSalidaAlmacen = fechaSalidaAlmacen;
+    }
+
+    public Date getFechaRecepcion() {
+        return fechaRecepcion;
+    }
+
+    public void setFechaRecepcion(Date fechaRecepcion) {
+        this.fechaRecepcion = fechaRecepcion;
+    }
+
+    public String getObservacion() {
+        return observacion;
+    }
+
+    public void setObservacion(String observacion) {
+        this.observacion = observacion;
+    }
+
+    public ProveedorFactura getProveedorFactura() {
+        return proveedorFactura;
+    }
+
+    public void setProveedorFactura(ProveedorFactura proveedorFactura) {
+        this.proveedorFactura = proveedorFactura;
+    }
+
+    public Proveedor getProveedor() {
+        return proveedor;
+    }
+
+    public void setProveedor(Proveedor proveedor) {
+        this.proveedor = proveedor;
+    }
+
+    public Proveedor getEmpresaRecep() {
+        return empresaRecep;
+    }
+
+    public void setEmpresaRecep(Proveedor empresaRecep) {
+        this.empresaRecep = empresaRecep;
+    }
+
+    public PedidoEstado getEstado() {
+        return estado;
+    }
+
+    public void setEstado(PedidoEstado estado) {
+        this.estado = estado;
+    }
+
+    public FormaPago getFormaPago() {
+        return formaPago;
+    }
+
+    public void setFormaPago(FormaPago formaPago) {
+        this.formaPago = formaPago;
+    }
+
+    @XmlTransient
+    public List<PedidoLinea> getPedidoLineaList() {
+        return pedidoLineaList;
+    }
+
+    public void setPedidoLineaList(List<PedidoLinea> pedidoLineaList) {
+        this.pedidoLineaList = pedidoLineaList;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (pedidoPK != null ? pedidoPK.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (!(object instanceof Pedido)) {
+            return false;
+        }
+        Pedido other = (Pedido) object;
+        if ((this.pedidoPK == null && other.pedidoPK != null) || (this.pedidoPK != null && !this.pedidoPK.equals(other.pedidoPK))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "datos.Pedido[ pedidoPK=" + pedidoPK + " ]";
+    }
+    
+}

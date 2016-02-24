@@ -1,0 +1,525 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:c="http://java.sun.com/jsp/jstl/core">
+
+    <ui:composition template="/template.xhtml">
+        <ui:define name="title">
+            <h:outputText value="#{grupoGestion.modoAlta? 'Nuevo' : 'Gestión'} grupo"></h:outputText>
+        </ui:define>
+        <ui:define name="body">
+            <c:if test="#{grupoGestion.noExistenResponsables}">
+                <script>alert("No existen tutores responsables asociados al Proveedor Principal (personal con teléfono asociado).");</script>
+            </c:if>
+
+            <c:if test="#{grupoGestion.grupoSeleccionado.pendienteDeGestionar}">
+                <p style="text-align: center;" class="valor">#{grupoGestion.grupoSeleccionado.accionFormativa1.nombre} (#{grupoGestion.grupoSeleccionado.accionFormativa1.id}) - #{grupoGestion.grupoSeleccionado.nombre}</p>
+            </c:if>
+            <c:if test="#{not grupoGestion.grupoSeleccionado.pendienteDeGestionar }">
+                <p:fieldset legend="Grupo" styleClass="campoRellena" id="datosGrupo">
+                    <div style="float: right; min-width: 440px">
+                        <p style="float: left">
+                            <br>
+                                <p:selectBooleanButton styleClass="noTransp"  disabled="#{not sesionActual.tienePermiso(10)}" style="margin: 0px 5px;" onLabel="Con aportación privada" offLabel="Grupo Bonificado" value="#{grupoGestion.grupoSeleccionado.aportPrivada}"/>
+                            </br>
+                            <br>
+                                <p:outputLabel value="Medios Propios"/>
+                                <p:selectBooleanButton id="MP" styleClass="noTransp"  disabled="#{not sesionActual.tienePermiso(10)}" value="#{grupoGestion.grupoSeleccionado.mediosP}" style="margin-left: 5px" onLabel="Sí" offLabel="No" onIcon="ui-icon-check" offIcon="ui-icon-close" >
+                                    <f:ajax event="change" render="MP"/> 
+                                </p:selectBooleanButton>
+
+                            </br> 
+                            <br>
+                                <p:outputLabel value="Medios Empresa Organizadora"/>
+                                <p:selectBooleanButton id="MEO" styleClass="noTransp"  disabled="#{not sesionActual.tienePermiso(10)}" value="#{grupoGestion.grupoSeleccionado.mediosEO}" style="margin-left: 5px" onLabel="Sí" offLabel="No" onIcon="ui-icon-check" offIcon="ui-icon-close" >                                
+                                    <f:ajax event="change" render="MEO"/> 
+                                </p:selectBooleanButton>
+                            </br>
+                            <br>
+                                <p:outputLabel value="Medios Colaboradores"/>
+                                <p:selectBooleanButton id="MC" value="#{grupoGestion.grupoSeleccionado.mediosC}" styleClass="noTransp"  disabled="#{not sesionActual.tienePermiso(10)}" style="margin-left: 5px" onLabel="Sí" offLabel="No" onIcon="ui-icon-check" offIcon="ui-icon-close" >
+                                    <f:ajax event="change" render="MC"/> 
+                                </p:selectBooleanButton>
+                            </br>
+                            <br/><hr/>
+                            <div>    
+                                <h:outputLabel value="Responsable:" styleClass="separador"/>
+                                <h:outputLabel id="numero_responsable" value="#{grupoGestion.grupoSeleccionado.personaTelefono.persona1.nombre} #{grupoGestion.grupoSeleccionado.personaTelefono.persona1.apellido1} #{grupoGestion.grupoSeleccionado.personaTelefono.persona1.apellido2} (#{grupoGestion.grupoSeleccionado.personaTelefono.personaTelefonoPK.numero})">
+                                </h:outputLabel>
+                                <p:commandButton icon="ui-icon-search" title="Cambiar Responsable" type="button" onclick="dlgResponsable.show()" styleClass="valor" rendered="#{sesionActual.tienePermiso(10)}" />
+                            </div><hr/>
+                            <div>    
+                                <h:outputLabel value="Proveedor de tutorías:" styleClass="separador"/>
+                                <h:outputLabel id="tabla_proveedores_asociado" value="#{grupoGestion.grupoSeleccionado.proveedor1.empresa.razonSocial} (#{grupoGestion.grupoSeleccionado.proveedor1.nif})">
+                                </h:outputLabel>
+                                <p:commandButton icon="ui-icon-search" title="Cambiar Proveedor" type="button" onclick="dlgAniadirProveedor.show()" styleClass="valor" rendered="#{empty grupoGestion.grupoSeleccionado.tutorList and sesionActual.tienePermiso(10)}" id="botonCambiaP" />
+                            </div>
+                            <hr/>
+                            <div>    
+                                <h:outputLabel value="Dirección Impartición:" styleClass="separador"/><br/>
+                                <h:outputLabel styleClass="valor" id="texto_direccion" value="
+                                               #{grupoGestion.grupoSeleccionado.direccionList.size()==0?'': grupoGestion.grupoSeleccionado.direccionList.get(0).tipoVia.abreviatura} 
+                                               #{grupoGestion.grupoSeleccionado.direccionList.size()==0?'': grupoGestion.grupoSeleccionado.direccionList.get(0).via} #{grupoGestion.grupoSeleccionado.direccionList.size()==0?'': grupoGestion.grupoSeleccionado.direccionList.get(0).numero} #{grupoGestion.grupoSeleccionado.direccionList.size()==0?'': grupoGestion.grupoSeleccionado.direccionList.get(0).extra}, #{grupoGestion.grupoSeleccionado.direccionList.size()==0?'': grupoGestion.grupoSeleccionado.direccionList.get(0).cpLocalidad.cpLocalidadPK.cp} 
+                                               #{grupoGestion.grupoSeleccionado.direccionList.size()==0?'': grupoGestion.grupoSeleccionado.direccionList.get(0).cpLocalidad.localidad1.nombre} (#{grupoGestion.grupoSeleccionado.direccionList.size()==0?'': grupoGestion.grupoSeleccionado.direccionList.get(0).cpLocalidad.localidad1.provincia.nombre})"/>
+                                <p:commandButton icon="ui-icon-search" title="Cambiar Dirección" type="button" onclick="dlgDireccion.show()" styleClass="separador" rendered="#{sesionActual.tienePermiso(10)}" />
+                                <p:commandButton icon="ui-icon-trash" onclick="dlgEliminarDireccion.show();" type="button" styleClass="separador" rendered="#{sesionActual.tienePermiso(10)}" />
+                            </div><hr/>
+                        </p>    
+                    </div>
+                    <div>
+                        <h:outputLabel value="ID. AF-G:" styleClass="separador"/>
+                        <p:inputText required="true" id="id_grupo" value="#{grupoGestion.grupoSeleccionado.accionFormativa1.id}-#{grupoGestion.grupoSeleccionado.grupoPK.id}" readonly="true" rendered="#{sesionActual.tienePermiso(10)}" >
+                            <f:ajax event="change" render="id_grupo"/> 
+                        </p:inputText>
+                        <p:outputLabel rendered="#{not sesionActual.tienePermiso(10)}" styleClass="valor" value="#{grupoGestion.grupoSeleccionado.accionFormativa1.id}"/>
+                    </div>
+                    <div>    
+                        <h:outputLabel value="Nombre Grupo:" styleClass="separador" />
+                        <p:inputText readonly="true" label="Nombre Grupo" id="nombre_grupo" value="#{grupoGestion.grupoSeleccionado.nombre}" rendered="#{sesionActual.tienePermiso(10)}">
+                        </p:inputText>
+                        <p:outputLabel rendered="#{not sesionActual.tienePermiso(10)}" styleClass="valor" value="#{grupoGestion.grupoSeleccionado.accionFormativa1.id}"/>
+                    </div>
+
+                    <div>    
+                        <h:outputLabel value="Acción Formativa:" styleClass="separador"/>
+                        <h:outputLabel id="accion_formativa" style="width: auto; text-align: left;" value="#{grupoGestion.grupoSeleccionado.accionFormativa1.nombre} (#{grupoGestion.grupoSeleccionado.accionFormativa1.modalidad.nombre}) - #{grupoGestion.grupoSeleccionado.accionFormativa1.horas} horas" />
+                        <p:commandButton icon="ui-icon-search" title="Cambiar Acción Formativa" type="button" onclick="dlgAccionFormativa.show()" styleClass="valor" rendered="#{sesionActual.tienePermiso(10)}"/>
+                    </div>
+
+
+
+                    <div>
+                        <p:outputLabel value="Días docentes:" styleClass="separador" />
+                        <p:dataTable  filterEvent="change" value="#{grupoGestion.grupoSeleccionado}" style="width:100px; margin-left: 10px;">
+                            <c:forEach items="#{grupoGestion.parDiaSemana}" var="dia">
+                                <p:column headerText="#{dia.s}">
+                                    <p:selectBooleanCheckbox value="#{dia.b}"
+                                                             id="dia_#{dia.s}"
+                                                             styleClass="noTransp"  disabled="#{not sesionActual.tienePermiso(10)}"
+                                                             >
+                                        <f:ajax event="change" id="dia_#{dia.s}"/> 
+                                    </p:selectBooleanCheckbox>
+                                </p:column>
+                            </c:forEach>
+                        </p:dataTable>
+                    </div>
+                    <br/>
+                    <div>
+                        <h:outputLabel value="Fecha de Inicio: " styleClass="separador"/>
+                        <p:calendar lang="es" navigator="true" value="#{grupoGestion.grupoSeleccionado.FInicio}" maxdate="#{(grupoGestion.grupoSeleccionado.FFin eq null)? '' : grupoGestion.grupoSeleccionado.FFin}" id="fi_grupo" showOn="button" rendered="#{sesionActual.tienePermiso(10)}" >
+                            <f:ajax event="dateSelect" render="ff_grupo ff_grupo1 nombre_grupo"/>
+                        </p:calendar>  
+                        <p:outputLabel rendered="#{not sesionActual.tienePermiso(10)}" styleClass="valor" value="#{Fecha.getFechaDiaMesAnio(grupoGestion.grupoSeleccionado.FInicio)}"/>
+                    </div>
+                    <div>
+                        <h:outputLabel value="Fecha de Fin: " styleClass="separador"/>
+                        <p:calendar lang="es" navigator="true" value="#{grupoGestion.grupoSeleccionado.FFin}" id="ff_grupo" showOn="button" mindate="#{(grupoGestion.grupoSeleccionado.FInicio eq null)? '' : grupoGestion.grupoSeleccionado.FInicio}" rendered="#{sesionActual.tienePermiso(10)}" > 
+                            <f:ajax event="dateSelect" render="fi_grupo ff_grupo1 ff_grupo"/>
+                        </p:calendar>
+                        <p:outputLabel rendered="#{not sesionActual.tienePermiso(10)}" styleClass="valor" value="#{Fecha.getFechaDiaMesAnio(grupoGestion.grupoSeleccionado.FFin)}"/>
+                        <p:commandButton actionListener="#{grupoGestion.recalcularFechaFin}" update="ff_grupo, ff_grupo1, fi_grupo, growl, messages, :dialogoFechaFin" ajax="true" icon="ui-icon-arrowrefresh-1-s" styleClass="separador" title="Recalcular Fecha de Fin" rendered="#{sesionActual.tienePermiso(10)}" />
+                    </div>
+                    <p:fieldset style="border:none;" rendered="#{grupoGestion.grupoSeleccionado.accionFormativa1.modalidad.id eq '7' or grupoGestion.grupoSeleccionado.accionFormativa1.modalidad.id eq '9'}" id="seccionManiana">
+                        <div style="margin: 5px; padding: 5px; border: dashed 1px silver; width:360px;">
+                            <p:selectBooleanCheckbox style="height: 12px;" value="#{grupoGestion.seleccionaHorarioManiana}" styleClass="noTransp"  disabled="#{not sesionActual.tienePermiso(10)}">
+                                <f:ajax event="change" render="horaIM horaFM"/>
+                            </p:selectBooleanCheckbox>
+                            Mañana desde las 
+                            <p:calendar lang="es" value="#{grupoGestion.grupoSeleccionado.horaIM}" rendered="#{sesionActual.tienePermiso(10)}" minHour="5" maxHour="#{(grupoGestion.grupoSeleccionado.horaFM eq null)? 16 : grupoGestion.grupoSeleccionado.horaFM.hours}" id="horaIM" disabled="#{!grupoGestion.seleccionaHorarioManiana}" size="5" pattern="HH:mm" timeOnly="true"  >
+                                <f:ajax event="change" render="horaFM"/>
+                            </p:calendar>
+                            <p:outputLabel rendered="#{not sesionActual.tienePermiso(10)}" styleClass="valor" value="#{Fecha.getFechaHoraMinuto(grupoGestion.grupoSeleccionado.horaIM)}"/>
+                            hasta las 
+                            <p:calendar lang="es" value="#{grupoGestion.grupoSeleccionado.horaFM}" rendered="#{sesionActual.tienePermiso(10)}" maxHour="16" minHour="#{(grupoGestion.grupoSeleccionado.horaIM eq null)? 5 : grupoGestion.grupoSeleccionado.horaIM.hours}" id="horaFM" disabled="#{!grupoGestion.seleccionaHorarioManiana}" size="5"  pattern="HH:mm" timeOnly="true" >
+                                <f:ajax event="change" render="horaIM"/>
+                            </p:calendar>
+                            <p:outputLabel rendered="#{not sesionActual.tienePermiso(10)}" styleClass="valor" value="#{Fecha.getFechaHoraMinuto(grupoGestion.grupoSeleccionado.horaFM)}"/>
+                            .
+                        </div>
+                    </p:fieldset>
+                    <p:fieldset style="border:none;" rendered="#{grupoGestion.grupoSeleccionado.accionFormativa1.modalidad.id eq '7' or grupoGestion.grupoSeleccionado.accionFormativa1.modalidad.id eq '9'}" id="seccionTarde">
+                        <div style="margin: 5px; padding: 5px; border: dashed 1px silver; width:360px;">
+                            <p:selectBooleanCheckbox style="height: 12px;" value="#{grupoGestion.seleccionaHorarioTarde}" styleClass="noTransp"  disabled="#{not sesionActual.tienePermiso(10)}">
+                                <f:ajax event="change" render="horaIT horaFT"/>
+                            </p:selectBooleanCheckbox>
+                            Tarde desde las 
+                            <p:calendar rendered="#{sesionActual.tienePermiso(10)}" lang="es" value="#{grupoGestion.grupoSeleccionado.horaIT}" minHour="16" maxHour="#{(grupoGestion.grupoSeleccionado.horaFT eq null)? 24 : grupoGestion.grupoSeleccionado.horaFT.hours}" id="horaIT" disabled="#{!grupoGestion.seleccionaHorarioTarde}" size="5" pattern="HH:mm" timeOnly="true"  >
+                                <f:ajax event="change" render="horaFT"/>
+                            </p:calendar>
+                            <p:outputLabel rendered="#{not sesionActual.tienePermiso(10)}" styleClass="valor" value="#{Fecha.getFechaHoraMinuto(grupoGestion.grupoSeleccionado.horaIT)}"/>
+                            hasta las 
+                            <p:calendar rendered="#{sesionActual.tienePermiso(10)}" lang="es" value="#{grupoGestion.grupoSeleccionado.horaFT}" maxHour="24" minHour="#{(grupoGestion.grupoSeleccionado.horaIT eq null)? 16 : grupoGestion.grupoSeleccionado.horaIT.hours}" id="horaFT" disabled="#{!grupoGestion.seleccionaHorarioTarde}" size="5"  pattern="HH:mm" timeOnly="true" >
+                                <f:ajax event="change" render="horaIT"/>
+                            </p:calendar>
+                            <p:outputLabel rendered="#{not sesionActual.tienePermiso(10)}" styleClass="valor" value="#{Fecha.getFechaHoraMinuto(grupoGestion.grupoSeleccionado.horaFT)}"/>
+                            .
+                        </div>
+                    </p:fieldset>
+                    <div style="margin: auto; width: 700px; float: left;">
+                        <h:outputLabel value="Observaciones:"/>
+                        <p:editor styleClass="noTransp"  disabled="#{not sesionActual.tienePermiso(10)}" style="margin-left: 30px;" width="700" required="false" id="editorOtracosa" value="#{grupoGestion.grupoSeleccionado.observaciones}"/>  
+                    </div>
+                </p:fieldset>
+            </c:if>
+            <p:fieldset legend="Datos de tutores" styleClass="campoRellena TutoresGrupo" id="TutoresGrupo"> 
+                <script type="text/javascript">
+                    $(function() {
+                        $('.ui-row-toggler').click();
+                    });
+                </script>
+                <p:dataTable  filterEvent="change" var="t" value="#{grupoGestion.grupoSeleccionado.tutorList}" style="width: 770px; margin: 10px auto;"
+                              emptyMessage="El grupo no tiene tutores asociados"
+                              id="tabla_tutores_asociados"
+                              >
+                    <f:facet name="header">  
+                        Tutores del grupo
+                        <p:commandButton icon="ui-icon-plus" style="width:16px; height: 16px;" onclick="dlgTutores.show();" rendered="#{sesionActual.tienePermiso(10)}"  />
+                    </f:facet>  
+                    <p:column style="width:20px" headerText="Horario">  
+                        <p:rowToggler rendered="#{not grupoGestion.grupoSeleccionado.pendienteDeGestionar}" />  
+                    </p:column>  
+                    <p:column headerText="Nif">
+                        <h:outputText value="#{t.persona.nif}"/>
+                    </p:column>
+                    <p:column headerText="Nombre">
+                        <h:outputText value="#{t.persona.nombre} #{t.persona.apellido1} #{t.persona.apellido2}"/>
+                    </p:column>  
+                    <p:column headerText="Email">
+                        <h:outputText value="#{t.persona.email}"/>
+                    </p:column>  
+
+                    <p:column style="width:80px;"> 
+                        <p:commandButton icon="ui-icon-trash" onclick="dlgEliminarTutor.show();" rendered="#{sesionActual.tienePermiso(10)}" >
+                            <f:setPropertyActionListener value="#{t}" target="#{grupoGestion.tutorSeleccionado}" /> 
+                        </p:commandButton>
+                    </p:column> 
+                    <p:rowExpansion rendered="#{not grupoGestion.grupoSeleccionado.pendienteDeGestionar}">
+                        <div style="margin: 0px auto; text-align: center;">
+                            <p:dataList rendered="#{!grupoGestion.modoAlta}" value="#{grupoGestion.horarios}" style="text-align: center;" var="hor" type="none" id="tablaTutorias">
+                                <table style="display: inline-block; width:72px; text-align: center; margin: 0px;">
+                                    <tr><th style="border: solid 1px black;">
+                                            #{hor.horarioInicioString} - #{hor.horarioFinString}
+                                        </th></tr><tr><td>
+                                            <p:commandButton process="tablaTutorias" update="tablaTutorias :formulario_principal:growl :formulario_principal:messages"  ajax="true" 
+                                                             rendered="#{grupoGestion.contieneHorario(hor, t)}" icon="ui-icon-check"
+                                                             style="background-color: greenyellow;" styleClass="greenyellow noTransp"
+                                                             disabled="#{not sesionActual.tienePermiso(10)}"
+                                                             >
+                                                <f:setPropertyActionListener value="#{t}" target="#{grupoGestion.tutorSeleccionado}" />  
+                                                <f:setPropertyActionListener value="#{hor}" target="#{grupoGestion.borraHorario}" />  
+                                            </p:commandButton> 
+                                            <p:commandButton process="tablaTutorias" update="tablaTutorias :formulario_principal:growl :formulario_principal:messages" ajax="true" 
+                                                             rendered="#{!grupoGestion.contieneHorario(hor, t)}" icon="ui-icon-close"
+                                                             styleClass="noTransp"  disabled="#{not sesionActual.tienePermiso(10)}"
+                                                             >
+                                                <f:setPropertyActionListener value="#{t}" target="#{grupoGestion.tutorSeleccionado}" /> 
+                                                <f:setPropertyActionListener value="#{hor}" target="#{grupoGestion.aniadeHorario}" />  
+                                            </p:commandButton> 
+                                            (#{t.getNumCursosHorario(hor)})
+                                        </td></tr>
+                                </table>
+                            </p:dataList>
+                            <p:dataList rendered="#{grupoGestion.modoAlta}" value="#{t.horarioGeneracionGrupo}" style="text-align: center;" var="horari" type="none" id="tablaTutorias2">
+                                <table style="display: inline-block; width:72px; text-align: center; margin: 0px;">
+                                    <tr><th style="border: solid 1px black;">
+                                            #{horari.hora}
+                                        </th></tr><tr><td>
+                                            <p:selectBooleanButton id="btchge" onLabel="" offLabel="" onIcon="ui-icon-check" offIcon="ui-icon-close" style="width: 25px;height: 25px;" value="#{horari.seleccionado}" >
+                                                <f:ajax event="change" render="btchge btchge2"/> 
+                                            </p:selectBooleanButton>
+                                            <p:outputLabel id="btchge2" value="(#{(t.getNumCursosHorario(horari.hor) + (horari.seleccionado? 1 : 0))})"/>
+                                        </td></tr>
+                                </table>
+                            </p:dataList>
+                            <p style="text-align: center;">Horas de Tutoría: <p:spinner id="horT" min="0" value="#{t.horasTutoria}"  rendered="#{sesionActual.tienePermiso(10)}" >
+                                    <f:ajax event="change" render="horT"/>
+                                </p:spinner>
+                                <p:outputLabel rendered="#{not sesionActual.tienePermiso(10)}" styleClass="valor" value="#{t.horasTutoria}"/>
+                            </p>
+                        </div>
+                    </p:rowExpansion>
+                </p:dataTable>
+                <c:if test="#{not grupoGestion.grupoSeleccionado.pendienteDeGestionar}">
+                    <p style="text-align: right;">
+                        <div style="float:right;">
+                            <h:outputLabel value="Fecha de Fin Grupo: " styleClass="separador"/>
+                            <p:calendar lang="es" navigator="true" rendered="#{sesionActual.tienePermiso(10)}" value="#{grupoGestion.grupoSeleccionado.FFin}" id="ff_grupo1" showOn="button" mindate="#{(grupoGestion.grupoSeleccionado.FInicio eq null)? '' : grupoGestion.grupoSeleccionado.FInicio}" > 
+                                <f:ajax event="dateSelect" render="fi_grupo ff_grupo1 ff_grupo"/>
+                            </p:calendar>
+                            <p:outputLabel rendered="#{not sesionActual.tienePermiso(10)}" styleClass="valor" value="#{Fecha.getFechaDiaMesAnio(grupoGestion.grupoSeleccionado.FFin)}"/>
+                            <p:commandButton actionListener="#{grupoGestion.recalcularFechaFin}" rendered="#{sesionActual.tienePermiso(10)}" update="ff_grupo,ff_grupo1, fi_grupo, growl, messages, :dialogoFechaFin" ajax="true" icon="ui-icon-arrowrefresh-1-s" styleClass="separador" title="Recalcular Fecha de Fin" />
+                        </div>
+                    </p>
+                </c:if>
+            </p:fieldset>
+
+
+            <p:commandButton actionListener="#{grupoGestion.guarda}" rendered="#{sesionActual.tienePermiso(10)}" value="Guardar" icon="ui-icon-check" update="messages growl" styleClass="botonAplicar" ajax="false" disabled="#{accionFormativaGestion.borrado}" id="botonGuarda"/> 
+            <p:commandButton value="#{grupoGestion.vieneDesdeMatricula?'Volver a Matrícula':'Salir'}" icon="#{grupoGestion.vieneDesdeMatricula?'ui-icon ui-icon-arrowreturnthick-1-w':'ui-icon ui-icon-arrowreturn-1-w'}"
+                             immediate="#{grupoGestion.vieneDesdeMatricula}"
+                             onclick="#{grupoGestion.vieneDesdeMatricula?validarVista.volverMatricula(grupoGestion.matID):'confirmation.show()'}" styleClass="botonAplicar"/>
+
+            <p:commandButton rendered="#{not grupoGestion.grupoSeleccionado.pendienteDeGestionar and sesionActual.tienePermiso(12)}" id="botonBorrado" disabled="#{grupoGestion.borrado or grupoGestion.modoAlta}" style="float: left; " value="Eliminar"  icon="ui-icon-trash" onclick="confirmationEliminar.show()" styleClass="botonAplicar bg-red"/>  
+            <p:commandButton  rendered="#{not grupoGestion.grupoSeleccionado.pendienteDeGestionar and sesionActual.tienePermiso(12)}" actionListener="#{grupoGestion.elimina}" update="messages growl botonGuarda botonBorrado formulario_principal" styleClass="boton_borrar_objeto"/> 
+
+        </ui:define>
+
+        <ui:define name="dialogos">
+
+
+            <p:confirmDialog id="confirmDialog" message="¿Seguro que desea eliminar el tutor de este grupo?"  rendered="#{sesionActual.tienePermiso(10)}"
+                             header="Borrar Tutor del grupo" severity="alert" widgetVar="dlgEliminarTutor">  
+                <h:form id="borrar_tutor">
+                    <p:commandButton styleClass="botonAplicar" value="Sí"  oncomplete="dlgEliminarTutor.hide()"  
+                                     actionListener="#{grupoGestion.borrarTutor}" update=":formulario_principal :formulario_principal:TutoresGrupo" />  
+                    <p:commandButton styleClass="botonAplicar" value="No" onclick="dlgEliminarTutor.hide()" type="button" />   
+                </h:form>
+            </p:confirmDialog> 
+            <c:if test="#{not grupoGestion.grupoSeleccionado.pendienteDeGestionar and sesionActual.tienePermiso(10)}">
+                <p:dialog header="Seleccionar Acción Formativa" widgetVar="dlgAccionFormativa" resizable="true">   
+                    <h:form id="form_accionFormativa">
+                        <p:dataTable  filterEvent="change" var="act" value="#{grupoGestion.accionesFormativas}" 
+                                      emptyMessage="No existen Acciones Formativas en el sistema"
+                                      style="width:500px; margin: 5px auto;"
+                                      paginator="true"
+                                      rows="5" 
+                                      paginatorTemplate="{FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                                      rowsPerPageTemplate="5,10,15,30"
+                                      >
+                            <f:facet name="header">  
+                                Acciones Formativas
+                            </f:facet>
+                            <p:column headerText="Referencia" filterBy="#{act.id}" 
+                                      filterMatchMode="contains"  
+                                      sortBy="#{act.id}"
+                                      id="id"
+                                      >
+                                <h:outputText value="#{act.id}"/>
+                            </p:column>
+                            <p:column headerText="Nombre" filterBy="#{act.nombre}" 
+                                      filterMatchMode="contains"
+                                      sortBy="#{act.nombre}"
+                                      id="nombre_grupo"
+                                      >
+                                <h:outputText value="#{act.nombre}" />
+                            </p:column>
+                            <p:column headerText="Modalidad" filterBy="#{act.modalidad.nombre}" 
+                                      filterMatchMode="contains"
+                                      sortBy="#{act.modalidad.nombre}"
+                                      >
+                                <h:outputText value="#{act.modalidad.nombre}" />
+                            </p:column>
+                            <p:column style="width:10px;">  
+                                <p:commandButton id="select_accionFormativa" onclick="dlgAccionFormativa.close()" icon="ui-icon-check" title="Seleccionar" ajax="true" >  
+                                    <f:setPropertyActionListener value="#{act}" target="#{grupoGestion.grupoSeleccionado.accionFormativa1}" />  
+                                    <f:setPropertyActionListener value="#{act.proveedorList.get(0)}" target="#{grupoGestion.proveedorSelect}" />  
+                                </p:commandButton>  
+                            </p:column>
+                        </p:dataTable>
+                    </h:form>
+                </p:dialog>  
+
+
+                <p:dialog id="dialogoFechaFin"  
+                          header="Cálculo de Fecha de Fin" widgetVar="dlgFechaFin" visible="#{grupoGestion.mostrarHorasFechaFin}"> 
+                    <h:form id="form_dialogoFechaFin"> 
+                        <p>Introduzca las horas diarias que contrendrá el grupo: <p:spinner id="numHFF" min="0" max="24" value="#{grupoGestion.horasFechaFin}">
+                                <f:ajax render="numHFF"/>
+                            </p:spinner> &nbsp;
+                            <p:commandButton value="Generar"  actionListener="#{grupoGestion.recalcularFechaFin}" update=":formulario_principal:ff_grupo, :formulario_principal:ff_grupo1, :formulario_principal:fi_grupo, :formulario_principal:growl, :formulario_principal:messages, :dialogoFechaFin" ajax="true" icon="ui-icon-arrowrefresh-1-s" title="Recalcular Fecha de Fin" />
+                        </p>
+                        <hr/>
+                        <p>Si desea generar la Fecha de Fin con horarios de tutorías, debe de <p:commandButton ajax="true" icon="ui-icon-plus" value="Añadir Tutores" onclick="dlgFechaFin.hide();
+                                dlgTutores.show();" process="@this"  >
+                                <f:setPropertyActionListener target="#{grupoGestion.mostrarHorasFechaFin}" value="#{false}"/>
+                            </p:commandButton> </p>
+                    </h:form>
+                </p:dialog>
+
+                <p:confirmDialog id="eliminarDir" widgetVar="dlgEliminarDireccion" message="¿Seguro que desea eliminar la dirección de este grupo?"  
+                                 header="Borrar Dirección del grupo" severity="alert">  
+                    <h:form id="borrar_direccion">
+                        <p:commandButton styleClass="botonAplicar" value="Sí"  oncomplete="dlgEliminarDireccion.hide()"  
+                                         actionListener="#{grupoGestion.borrarDireccion}" update=":formulario_principal:texto_direccion"/>  
+                        <p:commandButton styleClass="botonAplicar" value="No" onclick="dlgEliminarDireccion.hide()" type="button" />   
+                    </h:form>
+                </p:confirmDialog> 
+                <p:dialog header="Seleccionar Responsable" widgetVar="dlgResponsable" resizable="true">   
+                    <h:form id="form_Responsable">
+                        <p:dataTable  filterEvent="change" var="res" value="#{grupoGestion.responsables}" 
+                                      emptyMessage="No existen tutores responsables en el sistema"
+                                      style="width:500px; margin: 5px auto;"
+                                      paginator="true"
+                                      rows="5" 
+                                      paginatorTemplate="{FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                                      rowsPerPageTemplate="5,10,15,30"
+                                      >
+                            <f:facet name="header">  
+                                Responsables
+                            </f:facet>
+                            <p:column headerText="Nombre" filterBy="#{res.persona1.nombre} #{res.persona1.apellido1} #{res.persona1.apellido2}" 
+                                      filterMatchMode="contains"  
+                                      sortBy="#{res.persona1.nombre} #{res.persona1.apellido1} #{res.persona1.apellido2}"
+                                      >
+                                <h:outputText value="#{res.persona1.nombre} #{res.persona1.apellido1} #{res.persona1.apellido2}"/>
+                            </p:column>
+                            <p:column headerText="Teléfono" filterBy="#{res.personaTelefonoPK.numero}" 
+                                      filterMatchMode="contains"
+                                      sortBy="#{res.personaTelefonoPK.numero}"
+                                      >
+                                <h:outputText value="#{res.personaTelefonoPK.numero}"/>
+                            </p:column>
+                            <p:column headerText="Tipo Teléfono"
+                                      filterBy="#{res.tipo}"
+                                      filterMatchMode="contains"
+                                      sortBy="#{res.tipo}"
+                                      >
+                                <h:outputText value="#{res.tipo}"/>
+                            </p:column>
+                            <p:column>
+                                <p:commandButton id="select_tutor" onclick="dlgResponsable.close()" icon="ui-icon-check" title="Seleccionar" ajax="true" update=":formulario_principal:numero_responsable" >  
+                                    <f:setPropertyActionListener value="#{res}" target="#{grupoGestion.grupoSeleccionado.personaTelefono}" />  
+                                </p:commandButton> 
+                            </p:column>
+                        </p:dataTable>
+                        <br></br>
+                    </h:form>
+                </p:dialog> 
+                <p:dialog header="Seleccionar Dirección" widgetVar="dlgDireccion" resizable="true">   
+                    <h:form id="form_direccion">
+                        <div class="valor">
+                            <p:selectOneMenu styleClass="valor" value="#{grupoGestion.grupoSeleccionado.direccionList.get(0).tipoVia}">
+                                <f:selectItems value="#{direccionVista.tiposVia}" var="tvia" itemValue="#{tvia}" itemLabel="#{tvia.nombre}" />
+                            </p:selectOneMenu>&nbsp;&nbsp;
+                            <p:inputText styleClass="valor" value="#{grupoGestion.grupoSeleccionado.direccionList.get(0).via}"/>, Número: 
+                            <p:inputText styleClass="valor" value="#{grupoGestion.grupoSeleccionado.direccionList.get(0).numero}"/>,&nbsp;
+                            <p:inputText styleClass="valor" value="#{grupoGestion.grupoSeleccionado.direccionList.get(0).extra}"/>.
+                            <h:outputText id="cpl_loc" value="CP: #{grupoGestion.grupoSeleccionado.direccionList.get(0).cpLocalidad.cpLocalidadPK.cp}, #{grupoGestion.grupoSeleccionado.direccionList.get(0).cpLocalidad.localidad1.nombre} (#{grupoGestion.grupoSeleccionado.direccionList.get(0).cpLocalidad.localidad1.provincia.nombre})."/>
+                        </div>
+                        <p:dataTable  filterEvent="change" var="cpl" value="#{direccionVista.cpLocalidades}" lazy="true"
+                                      emptyMessage="No existen CP en el Sistema con los criterios seleccionados."
+                                      style="width:500px; margin: 5px auto;"
+                                      paginator="true"
+                                      rows="5" 
+                                      paginatorTemplate="{PreviousPageLink} {NextPageLink} {RowsPerPageDropdown}"  
+                                      rowsPerPageTemplate="5,10,15,30"
+                                      paginatorPosition="top"
+                                      >
+                            <f:facet name="header">  
+                                Seleccionar CP
+                            </f:facet>
+                            <p:column headerText="CP" filterBy="#{cpl.cp}" 
+                                      filterMatchMode="contains"
+                                      sortBy="#{cpl.cp}"
+                                      >
+                                <h:outputText value="#{cpl.cp}"/>
+                            </p:column>
+                            <p:column headerText="Localidad" filterBy="#{cpl.localidadNombre}" 
+                                      filterMatchMode="contains"
+                                      sortBy="#{cpl.localidadNombre}"
+                                      >
+                                <h:outputText value="#{cpl.localidadNombre}"/>
+                            </p:column>
+                            <p:column headerText="Provincia" filterBy="#{cpl.provinciaNombre}" 
+                                      filterMatchMode="exact"
+                                      filterOptions="#{desplegableVista.provinciasOptions}"  
+                                      sortBy="#{cpl.provinciaNombre}"
+                                      >
+                                <h:outputText value="#{cpl.provinciaNombre}"/>
+                            </p:column>
+                            <p:column style="width:10px;">  
+                                <p:commandButton id="select_CP" icon="ui-icon-check" title="Seleccionar" ajax="true" update=":form_direccion">  
+                                    <f:setPropertyActionListener value="#{cpl.cpLoc}" target="#{grupoGestion.grupoSeleccionado.direccionList.get(0).cpLocalidad}" />  
+                                </p:commandButton>  
+                            </p:column>
+                        </p:dataTable>
+                        <p:commandButton id="select_direccion" styleClass="botonAplicar" onclick="dlgDireccion.close()" icon="ui-icon-check" value="Aplicar" ajax="true" update=":formulario_principal:texto_direccion">  
+                        </p:commandButton>  
+                        <br/><br/>
+                        <hr/>
+                    </h:form>
+
+                </p:dialog>
+                <p:dialog header="Seleccionar Proveedor" widgetVar="dlgAniadirProveedor" resizable="true">   
+                    <h:form id="form_proovedor">
+                        <p:dataTable  filterEvent="change" var="pro" value="#{grupoGestion.grupoSeleccionado.accionFormativa1.proveedorList}" 
+                                      emptyMessage="No existen proveedores asociados a la acción formativa seleccionada."
+                                      style="width:500px; margin: 5px auto;"
+                                      paginator="true"
+                                      rows="5" 
+                                      paginatorTemplate="{FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                                      rowsPerPageTemplate="5,10,15,30"
+                                      >
+                            <f:facet name="header">  
+                                Proveedores de Tutorías
+                            </f:facet>
+                            <p:column headerText="NIF" filterBy="#{pro.nif}" 
+                                      filterMatchMode="contains"   
+                                      sortBy="#{pro.nif}"
+                                      >
+                                <h:outputText value="#{pro.nif}"/>
+                            </p:column>
+                            <p:column headerText="Razón Social" filterBy="#{pro.empresa.razonSocial}" 
+                                      filterMatchMode="contains"
+                                      sortBy="#{pro.empresa.razonSocial}"
+                                      >
+                                <h:outputText value="#{pro.empresa.razonSocial}"/>
+                            </p:column>
+                            <p:column>
+                                <p:commandButton id="select_proveedor" onclick="dlgAniadirProveedor.close()" icon="ui-icon-check" title="Seleccionar" ajax="true" update=":formulario_principal:tabla_proveedores_asociado" >  
+                                    <f:setPropertyActionListener value="#{pro}" target="#{grupoGestion.proveedorSelect}" />  
+                                </p:commandButton> 
+                            </p:column>
+                        </p:dataTable>
+                        <br></br>
+                    </h:form>
+                </p:dialog>
+            </c:if>
+            <p:dialog header="Seleccionar Tutores" widgetVar="dlgTutores" resizable="true" rendered="#{sesionActual.tienePermiso(10)}">   
+                <h:form id="form_tutores">
+                    <p:dataTable  filterEvent="change" var="tut" value="#{grupoGestion.grupoSeleccionado.pendienteDeGestionar? grupoGestion.tutorEmpresaList : grupoGestion.grupoSeleccionado.tutorGestionList}" 
+                                  emptyMessage="No existen tutores. Añada los tutores al grupo 'Pendiente de Gestionar' para poder seleccionarlos."
+                                  style="width:500px; margin: 5px auto;"
+                                  paginator="true"
+                                  rows="5" 
+                                  paginatorTemplate="{FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                                  rowsPerPageTemplate="5,10,15,30"
+                                  >
+                        <f:facet name="header">  
+                            Tutores
+                        </f:facet>
+                        <p:column headerText="NIF" filterBy="#{tut.nif}" 
+                                  filterMatchMode="contains"  
+                                  sortBy="#{tut.nif}"
+                                  >
+                            <h:outputText value="#{tut.persona.nif}"/>
+                        </p:column>
+                        <p:column headerText="Nombre" filterBy="#{tut.persona.nombre} #{tut.persona.apellido1} #{tut.persona.apellido2}" 
+                                  filterMatchMode="contains"
+                                  sortBy="#{tut.persona.nombre} #{tut.persona.apellido1} #{tut.persona.apellido2}"
+                                  >
+                            <h:outputText value="#{tut.persona.nombre} #{tut.persona.apellido1} #{tut.persona.apellido2}"/>
+                        </p:column>
+                        <p:column headerText="Email"
+                                  filterBy="#{tut.persona.email}"
+                                  filterMatchMode="contains"
+                                  sortBy="#{tut.persona.email}"
+                                  >
+                            <h:outputText value="#{tut.persona.email}"/>
+                        </p:column>
+                        <p:column>
+                            <p:commandButton id="select_tutor" onclick="dlgTutores.close()" icon="ui-icon-check" title="Seleccionar" ajax="true" update=":formulario_principal:tabla_tutores_asociados" >  
+                                <f:setPropertyActionListener value="#{tut}" target="#{grupoGestion.aniadirTutor}" />  
+                            </p:commandButton> 
+                        </p:column>
+                    </p:dataTable>
+                    <br></br>
+                </h:form>
+            </p:dialog> 
+        </ui:define>
+    </ui:composition>
+</html>

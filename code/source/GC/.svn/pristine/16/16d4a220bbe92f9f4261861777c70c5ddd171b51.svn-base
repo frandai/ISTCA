@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:c="http://java.sun.com/jsp/jstl/core">
+
+    <ui:composition template="/template.xhtml">
+        <ui:define name="title">
+            <h:outputText value="Invetario"></h:outputText>
+        </ui:define>
+        <ui:define name="body">
+            <p:button value="Nuevo Pedido" href="/faces/JSF/vista/empresa/persona.xhtml" styleClass="separador"/>
+            <h:panelGrid columns="2" style="float: right;">  
+                <p:panel>  
+                    <h:commandLink>  
+                        <p:graphicImage value="/img/excel.png" style="height: 30px;" />  
+                        <p:dataExporter type="xls" target="dataTable" fileName="pedidos" />  
+                    </h:commandLink>  
+
+                </p:panel>  
+            </h:panelGrid> 
+            <p:fieldset legend="Columnas a Mostrar" collapsed="true" toggleable="true"  styleClass="separador">  
+
+                <span><h:outputText value="id " />
+                    <p:selectBooleanCheckbox value="#{inventarioVista.muestraId}"  />  </span>
+                <span><h:outputText value="Estado " />
+                    <p:selectBooleanCheckbox value="#{inventarioVista.muestraEstado}"  />  </span>
+                <span><h:outputText value="Suministrador " />
+                    <p:selectBooleanCheckbox value="#{inventarioVista.muestraSumin}"  />  </span>
+                <span><h:outputText value="Receptor " />
+                    <p:selectBooleanCheckbox value="#{inventarioVista.muestraRecep}"  />  </span>
+                <p:commandButton value="Aplicar" update="dataTable" styleClass="botonAplicar"/>
+            </p:fieldset>
+            <p:dataTable  filterEvent="change" id="dataTable" var="pedidolinea" value="#{inventarioVista.pedidos}" widgetVar="inventarioTable"   
+                         filteredValue="#{inventarioVista.pedidosFiltrados}"
+                         emptyMessage="No se encuentran líneas de pedidos" styleClass="separador"
+                         paginator="true" rows="5"   
+                         paginatorTemplate="{FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                         rowsPerPageTemplate="5,10,15,25,50,100"
+                         >  
+
+                <p:column id="c_id" filterBy="#{pedido.id}"   
+                          headerText="ID" 
+                          sortBy="#{pedido.id}"
+                          rendered="#{inventarioVista.muestraId}"  >  
+                    <h:outputText value="#{pedido.id}"  />  
+                </p:column>
+                <p:column id="c_estado" filterBy="#{pedido.estado}"   
+                          headerText="Estado" 
+                          sortBy="#{pedido.estado}"
+                          rendered="#{inventarioVista.muestraEstado}"  >  
+                    <h:outputText value="#{pedido.estado}"  />
+                </p:column>
+                
+                <p:column id="c_sumin" filterBy="#{pedido.pedidoPK.empresaSumi}"   
+                          headerText="Suministrador" 
+                          sortBy="#{pedido.pedidoPK.empresaSumi}"
+                          rendered="#{inventarioVista.muestraSumin}"  >  
+                    <h:outputText value="#{pedido.pedidoPK.empresaSumi}"  />  
+                </p:column>
+                <p:column id="c_recep" filterBy="#{pedido.empresaRecep.empresa.razonSocial}"   
+                          headerText="Receptor" 
+                          sortBy="#{pedido.empresaRecep.empresa.razonSocial}"
+                          rendered="#{inventarioVista.muestraRecep}"  >  
+                    <h:outputText value="#{pedido.empresaRecep.empresa.razonSocial}"  />  
+                </p:column>
+                <p:column style="width:4%">  
+                    <p:commandButton id="selectButton" icon="ui-icon-search" title="Ver" action="empresa.xhtml" ajax="false">  
+
+                    </p:commandButton>  
+                </p:column>
+            </p:dataTable>  
+        </ui:define>
+    </ui:composition>
+</html>

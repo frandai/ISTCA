@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:c="http://java.sun.com/jsp/jstl/core">
+
+    <ui:composition template="/template.xhtml">
+        <ui:define name="title">
+            <h:outputText value="Calendario"></h:outputText>
+        </ui:define>
+        <ui:define name="body">
+            <div style="margin:auto;">
+                <p:fieldset legend="Filtro Calendario" toggleable="true" collapsed="true" style="width: 75%; margin: auto;"> 
+                    <p>Estados Seleccionados: <p:selectBooleanButton value="#{controlCalendario.estado_pendiente}" id="e1" onLabel="Pendiente" offLabel="Pendiente" style="margin: 3px;"/>
+                        <p:selectBooleanButton value="#{controlCalendario.estado_realizado}" id="e2" onLabel="Realizado" offLabel="Realizado" style="margin: 3px;"/>
+                        <p:selectBooleanButton value="#{controlCalendario.estado_vencido}" id="e3" onLabel="Vencido" offLabel="Vencido" style="margin: 3px;">
+                       
+                        </p:selectBooleanButton>
+                       
+
+                    </p>
+                    <p>Tipos de Evento:
+                        <c:forEach items="#{controlCalendario.tiposEvento}" var="teve">
+                            <p:selectBooleanButton rendered="#{teve.id ne 4}" onLabel="#{teve.nombre}" offLabel="#{teve.nombre}" value="#{teve.seleccionado}" style="margin: 3px;"/>
+                        </c:forEach>
+                    </p>
+                    <p>Descripciones de Evento:
+                        <c:forEach items="#{controlCalendario.numEstados}" var="numest">
+                            <p:selectBooleanButton rendered="#{numest.s gt 0}" onLabel="#{descripcionEventos.getTextoDescripcionContiene(numest.s)}" offLabel="#{descripcionEventos.getTextoDescripcionContiene(numest.s)}" value="#{numest.b}" style="margin: 3px;"/>
+                        </c:forEach>
+                    </p>
+                    <div>
+                        <p:commandButton styleClass="botonAplicar aplicado" style="margin-top: 15px;" actionListener="#{controlCalendario.guardaDatos}" value="Aplicar" update="calendario_ev" onclick="$('html, body').animate({scrollTop:$('.calendario_ev').position().top}, 'slow');"/>
+                        
+                        <div style="float:left;">
+                            Mostrar eventos por Fecha de:&nbsp;
+                            <p:selectOneButton value="#{controlCalendario.eventos_fecha}">  
+                                <f:selectItem itemLabel="Creación" itemValue="1" />  
+                                <f:selectItem itemLabel="Realización" itemValue="2" />  
+                                <f:selectItem itemLabel="Vencimiento" itemValue="3" />  
+                            </p:selectOneButton> 
+                        </div>
+                    </div>
+                </p:fieldset>
+                <div style="text-align: right; position: relative;width: 75%;margin: auto;height: 10px;">
+                    <p:selectBooleanButton onLabel="Calendario" offLabel="Agenda" style="position: relative; top:9px; left: 80px;" value="#{controlCalendario.agenda}">
+                        <p:ajax event="change" process="@this" update="@form"  />
+                    </p:selectBooleanButton>
+                </div>
+                <p:fieldset rendered="#{controlCalendario.agenda}" style="border:none;">
+                    <p style="float:left; position: relative; top: -10px;">Desde: <p:calendar required="true" value="#{controlCalendario.fechainicio_agenda}" lang="es" label="F. Fin - Desde" navigator="true"  showOn="button" styleClass="valor" >
+                            <p:ajax event="dateSelect" process="@this agendaEventos" update="agendaEventos messages growl" /> 
+                        </p:calendar> - Hasta: <p:calendar value="#{controlCalendario.fechafin_agenda}" required="true"  lang="es" label="F. Fin - Hasta" navigator="true"  showOn="button" styleClass="valor"   >
+                            <p:ajax event="dateSelect" process="@this agendaEventos" update="agendaEventos messages growl" /> 
+                        </p:calendar></p>
+                    <p:dataTable  filterEvent="change"   var="evento" value="#{controlCalendario.eventos_agenda}" filteredValue="#{controlCalendario.eventos_agenda_filtrados}" id="agendaEventos" style=" margin: 0px 60px;"
+                                   emptyMessage="No existen eventos con los datos introducidos"
+                                   paginator="true" rows="5"   
+                                   paginatorTemplate="{FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                                   rowsPerPageTemplate="5,10,15,25,50,100"
+                                   sortBy="#{controlCalendario.eventos_fecha eq 1? (evento.fechaCreacion) : (controlCalendario.eventos_fecha eq 2? evento.fechaRealizacion : evento.fechaVencimiento)}"
+
+                                   sortOrder="descending">
+                        <p:column headerText="Nombre"  sortBy="#{evento.nifID}" filterBy="#{evento.nifID}" filterMatchMode="contains">
+                            #{evento.nifID}
+                        </p:column>
+                        <p:column headerText="Evento"  sortBy="#{evento.descripcion}" filterBy="#{evento.descripcion}" filterMatchMode="contains">
+                            <div style="min-width:240px;text-align: center;">&nbsp;#{evento.descripcion} #{evento.documentacionEvento}
+                                <div style="float:left;" class="#{evento.claseEvento}"><div style="width: 15px; height: 15px;"></div></div>
+                            </div>
+                        </p:column>
+                        <p:column headerText="Estado"  sortBy="#{evento.estadoLargo}" filterBy="#{evento.estadoLargo}" filterMatchMode="contains">
+                            #{evento.estadoLargo}
+                        </p:column>
+                        <p:column headerText="F. Creación"  sortBy="#{evento.fechaCreacion}" filterStyleClass="calendarFilter" filterBy="#{Fecha.getFechaDiaMesAnio(evento.fechaCreacion)}" filterMatchMode="contains">
+                            #{Fecha.getFechaDiaMesAnio(evento.fechaCreacion)}
+                        </p:column>
+                        <p:column headerText="F. Realización"  sortBy="#{evento.fechaRealizacion}" filterStyleClass="calendarFilter" filterBy="#{Fecha.getFechaDiaMesAnio(evento.fechaRealizacion)}" filterMatchMode="contains">
+                            #{Fecha.getFechaDiaMesAnio(evento.fechaRealizacion)}
+                        </p:column>
+                        <p:column headerText="F. Vencimineto"  sortBy="#{evento.fechaVencimiento}" filterStyleClass="calendarFilter" filterBy="#{Fecha.getFechaDiaMesAnio(evento.fechaVencimiento)}" filterMatchMode="contains">
+                            #{Fecha.getFechaDiaMesAnio(evento.fechaVencimiento)}
+                        </p:column>
+                        <p:column style="width:4%">  
+                            <p:commandButton process="@this" styleClass="#{(evento.observaciones eq null or evento.observaciones eq '') ? '' : 'greenyellow'}" id="selectButton" title="Ver" icon="ui-icon-search" update=":formulario_principal:growl :detalles_de_evento" oncomplete="dlgDetalleEvento.show();" >
+                                <f:setPropertyActionListener target="#{controlCalendario.eventId}" value="#{evento.id}"/>
+                            </p:commandButton>   
+                        </p:column>
+                    </p:dataTable>
+                </p:fieldset>
+                <p:schedule value="#{controlCalendario.lazyEventModel}" locale="es" style="width: 75%; margin: auto;"
+                            draggable="false"
+                            rightHeaderTemplate="month,agendaWeek"
+                            slotMinutes="1440"
+                            resizable="false"
+                            id="calendario_ev"
+                            styleClass="calendario_ev"
+                            timeZone="#{Fecha.getTimeZone()}"
+                            rendered="#{not controlCalendario.agenda}"
+                            >
+                    <p:ajax event="eventSelect" listener="#{controlCalendario.onEventSelect}" update="growl :detalles_de_evento" oncomplete="dlgDetalleEvento.show();" />  
+                </p:schedule>  
+                <br/>
+                <p:fieldset legend="Leyenda Calendario" toggleable="true" collapsed="true" style="width: 75%; margin: auto;">  
+                    Estados Posibles:
+                    <div class="evento1 estadoP"><div style="border: solid 1px; float:left;margin: 5px;color: white;">Pendiente</div></div>
+                    <div class="evento1 estadoR"><div style="border: solid 1px;float:left;margin: 5px;color: white;  ">Realizado</div></div>
+                    <div class="evento1 estadoV"><div style="border: solid 1px;float:left;margin: 5px;color: white; ">Vencido</div></div>
+                    <br/>
+                    <br/>
+                    <hr/>
+                    <p>Eventos Posibles:</p>
+                    <p:dataList value="#{controlCalendario.numEstados}" var="est" styleClass="listaHoriz">
+                        <div class="#{descripcionEventos.getClaseEventoInt(est.s)}">
+                            <div style="text-align: center;color:white;">
+                                #{descripcionEventos.getTextoDescripcionContiene(est.s)}
+                            </div>
+                        </div>
+                    </p:dataList>
+                </p:fieldset>
+            </div>
+        </ui:define>
+
+        <ui:define name="dialogos">
+            
+        </ui:define>
+
+    </ui:composition>
+</html>

@@ -1,0 +1,72 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package util;
+
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.pdf.*;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+
+/**
+ * Clase para generar PDF.
+ *
+ * @author fran
+ */
+public class Pdf {
+
+    /**
+     * Rellena un PDF con los datos introducidos
+     *
+     * @param campos Datos del PDF a generar. Estrucutra: [i][0] -> Nombre del
+     * campo; [i][1]-> Valor del campo
+     * @param ruta_pdf_plantilla Ruta ABSOLUTA de la plantilla a usar
+     * @param ruta_pdf_guardar Ruta ABSOLUTA de dónde guardar el PDF generado
+     * @throws IOException
+     * @throws DocumentException
+     */
+    public static void rellenarPDF(String[][] campos, String ruta_pdf_plantilla, String ruta_pdf_guardar, boolean campos_editables) throws IOException,
+            DocumentException {
+        // leo la plantilla
+        PdfReader reader = new PdfReader(ruta_pdf_plantilla);
+
+        // creo la salida
+        PdfStamper stamp = new PdfStamper(reader, new FileOutputStream(ruta_pdf_guardar));
+
+        // relleno los campos
+        AcroFields form1 = stamp.getAcroFields();
+        for (int i = 0; i < campos.length; i++) {
+            form1.setField(campos[i][0], campos[i][1]);
+        }
+
+        // acepto y cierro
+        stamp.setFormFlattening(!campos_editables);
+        stamp.close();
+        reader.close();
+        System.out.println("[PDF][" + Fecha.getFechaAnioMesDiaHoraMinutoSegundo(new Date()) + "]Se ha generado un PDF usando la plantilla: " + ruta_pdf_plantilla + ", guardado en: " + ruta_pdf_guardar + "");
+
+    }
+
+    public static void concatenarPDF(ArrayList<String> PDF, String PDFsalida) throws FileNotFoundException, DocumentException, IOException {
+
+        PdfCopyFields copy =
+                new PdfCopyFields(new FileOutputStream(VariablesSistema.ruta_absoluta_proyecto + PDFsalida));
+        for (int i = 0; i < (PDF.size()); i++) {
+            if (!PDF.get(i).equals("")) {
+                try {
+                    copy.addDocument(new PdfReader(VariablesSistema.ruta_absoluta_proyecto + PDF.get(i)));
+                } catch (Exception e) {
+                }
+            }
+
+        }
+        try {
+            copy.close();
+        } catch (Exception e) {
+        }
+    }
+}

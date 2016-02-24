@@ -1,0 +1,205 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package datosVista;
+
+import datos.Empresa;
+import datos.Matricula;
+import java.io.Serializable;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+import javax.validation.constraints.Size;
+import javax.xml.bind.annotation.XmlRootElement;
+
+/**
+ *
+ *
+ */
+@Entity
+@Table(schema = "public")
+@XmlRootElement
+@NamedQueries({
+    @NamedQuery(name = "Empresavista.findAll", query = "SELECT e FROM Empresavista e"),
+    @NamedQuery(name = "Empresavista.findByNif", query = "SELECT e FROM Empresavista e WHERE e.nif = :nif"),
+    @NamedQuery(name = "Empresavista.findByRazonSocial", query = "SELECT e FROM Empresavista e WHERE e.razonSocial = :razonSocial"),
+    @NamedQuery(name = "Empresavista.findByTelefono", query = "SELECT e FROM Empresavista e WHERE e.telefono = :telefono"),
+    @NamedQuery(name = "Empresavista.findByProvinciaNombre", query = "SELECT e FROM Empresavista e WHERE e.provinciaNombre = :provinciaNombre"),
+    @NamedQuery(name = "Empresavista.findByLocalidadNombre", query = "SELECT e FROM Empresavista e WHERE e.localidadNombre = :localidadNombre"),
+    @NamedQuery(name = "Empresavista.findByActividad", query = "SELECT e FROM Empresavista e WHERE e.actividad = :actividad"),
+    @NamedQuery(name = "Empresavista.findByEcSuperior", query = "SELECT e FROM Empresavista e WHERE e.ecSuperior = :ecSuperior"),
+    @NamedQuery(name = "Empresavista.findByNivelEc", query = "SELECT e FROM Empresavista e WHERE e.nivelEc = :nivelEc"),
+    @NamedQuery(name = "Empresavista.findByTipo", query = "SELECT e FROM Empresavista e WHERE e.tipo = :tipo"),
+    @NamedQuery(name = "Empresavista.findByNombre", query = "SELECT e FROM Empresavista e WHERE e.nombre = :nombre"),
+    @NamedQuery(name = "Empresavista.findByCotSs", query = "SELECT e FROM Empresavista e WHERE e.cotSs = :cotSs")})
+public class Empresavista implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+    @Size(max = 2147483647)
+    @Id
+    private String nif;
+    @Size(max = 2147483647)
+    @Column(name = "razon_social")
+    private String razonSocial;
+    @Size(max = 2147483647)
+    private String telefono;
+    @Size(max = 2147483647)
+    @Column(name = "provincia_nombre")
+    private String provinciaNombre;
+    @Size(max = 2147483647)
+    @Column(name = "localidad_nombre")
+    private String localidadNombre;
+    @Size(max = 2147483647)
+    private String actividad;
+    @Size(max = 2147483647)
+    @Column(name = "ec_superior")
+    private String ecSuperior;
+    @Size(max = 2147483647)
+    @Column(name = "nivel_ec")
+    private String nivelEc;
+    @Size(max = 2147483647)
+    private String tipo;
+    @Size(max = 2147483647)
+    private String nombre;
+    @Size(max = 2147483647)
+    @Column(name = "cot_ss")
+    private String cotSs;
+    @Column(name = "email")
+    private String mail;
+    @JoinColumn(name = "nif", referencedColumnName = "nif", updatable = false, insertable = false, nullable = false)
+    @OneToOne
+    private Empresa empresa;
+    @Column(name = "credito_disponible_anio_actual")
+    private Double creditoDisponibleAnioActual;
+    @Column(name = "credito_asignado_anio_actual")
+    private Double creditoAsignadoAnioActual;
+
+    public Double getCreditoDisponibleAnioActual() {
+        return creditoDisponibleAnioActual;
+    }
+
+    public void setCreditoDisponibleAnioActual(Double creditoDisponibleAnioActual) {
+        this.creditoDisponibleAnioActual = creditoDisponibleAnioActual;
+    }
+
+    public Double getCreditoAsignadoAnioActual() {
+        return creditoAsignadoAnioActual;
+    }
+
+    public void setCreditoAsignadoAnioActual(Double creditoAsignadoAnioActual) {
+        this.creditoAsignadoAnioActual = creditoAsignadoAnioActual;
+    }
+
+    public String getMail() {
+        return mail;
+    }
+
+    public void setMail(String mail) {
+        this.mail = mail;
+    }
+
+    public Empresa getEmpresa() {
+        return empresa;
+    }
+
+    public void setEmpresa(Empresa empresa) {
+        this.empresa = empresa;
+    }
+
+    public Empresavista() {
+    }
+
+    public String getNif() {
+        return nif;
+    }
+
+    public void setNif(String nif) {
+        this.nif = nif;
+    }
+
+    public String getRazonSocial() {
+        return razonSocial;
+    }
+
+    public void setRazonSocial(String razonSocial) {
+        this.razonSocial = razonSocial;
+    }
+
+    public String getTelefono() {
+        return telefono;
+    }
+
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
+    }
+
+    public String getProvinciaNombre() {
+        return provinciaNombre;
+    }
+
+    public void setProvinciaNombre(String provinciaNombre) {
+        this.provinciaNombre = provinciaNombre;
+    }
+
+    public String getLocalidadNombre() {
+        return localidadNombre;
+    }
+
+    public void setLocalidadNombre(String localidadNombre) {
+        this.localidadNombre = localidadNombre;
+    }
+
+    public String getActividad() {
+        return actividad;
+    }
+
+    public void setActividad(String actividad) {
+        this.actividad = actividad;
+    }
+
+    public String getEcSuperior() {
+        return ecSuperior;
+    }
+
+    public void setEcSuperior(String ecSuperior) {
+        this.ecSuperior = ecSuperior;
+    }
+
+    public String getNivelEc() {
+        return nivelEc;
+    }
+
+    public void setNivelEc(String nivelEc) {
+        this.nivelEc = nivelEc;
+    }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public String getCotSs() {
+        return cotSs;
+    }
+
+    public void setCotSs(String cotSs) {
+        this.cotSs = cotSs;
+    }
+}

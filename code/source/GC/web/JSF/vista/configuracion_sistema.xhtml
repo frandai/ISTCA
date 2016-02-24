@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:c="http://java.sun.com/jsp/jstl/core">
+
+    <ui:composition template="/template.xhtml">
+        <ui:define name="title">
+            <h:outputText value="Configuración del Sistema"></h:outputText>
+        </ui:define>
+        <ui:define name="body">
+            <p:fieldset legend="Configuración del Sistema" styleClass="campoRellena" id="datosSistema" style="margin: auto; width: 50%;">
+                <div>
+                    <h:outputLabel value="Ruta Absoluta del Proyecto:" styleClass="separador" style="width: 200px;"/>
+                    <p:inputText label="Ruta Absoluta del Proyecto" required="true" id="ruta_proyecto" styleClass="valor" size="80" value="#{configuracionSistemaGestion.sistema.rutaProyecto}" >
+                        <f:ajax event="change" render="ruta_proyecto"/> 
+                    </p:inputText>
+                </div>
+                <div>
+                    <h:outputLabel value="Dirección de envíos de E-mail:" styleClass="separador" style="width: 200px;"/>
+                    <p:inputText label="Dirección de envíos de E-mail" validator="#{validarVista.validaEmail}" styleClass="valor" required="true" id="email_enviar" size="80" value="#{configuracionSistemaGestion.sistema.emailEnviar}" >
+                        <f:ajax event="change" render="email_enviar"/> 
+                    </p:inputText>
+                </div>
+                <div>
+                    <h:outputLabel value="Cotraseña de envíos de E-mail:" styleClass="separador" style="width: 200px;"/>
+                    <p:inputText label="Cotraseña de envíos de E-mail" required="true" styleClass="valor" id="email_password" size="80" value="#{configuracionSistemaGestion.sistema.passwordEmail}" >
+                        <f:ajax event="change" render="email_password"/> 
+                    </p:inputText>
+                </div>
+                <div>
+                    <h:outputLabel value="Servidor SMTP de envíos de E-mail:" styleClass="separador" style="width: 200px;"/>
+                    <p:inputText label="Servidor SMTP de envíos de E-mail" required="true" styleClass="valor" id="email_dominio" size="80" value="#{configuracionSistemaGestion.sistema.dominioEmail}" >
+                        <f:ajax event="change" render="email_dominio"/> 
+                    </p:inputText>
+                </div>
+                <div>
+                    <h:outputLabel value="Firma para envíos de E-mail:" styleClass="separador" style="width: 200px;"/><br/>
+                    <p:editor label="Firma para envíos de E-mail" styleClass="noTransp" style="margin-left: 60px;" width="700" required="true" id="editor" value="#{configuracionSistemaGestion.sistema.firmaEmail}"/>  
+                </div>
+                <br/><br/>
+                <div style="text-align: center;">
+                    <c:if test="#{configuracionSistemaGestion.existeProveedorPrincipal}">
+                        <h:outputLabel value="NIF del Proveedor Principal:" styleClass="separador" style="width: 200px;"/>
+                        <p:inputText label="NIF del Proveedor Principal" required="true" styleClass="valor" id="nif_prov" size="80" value="#{configuracionSistemaGestion.sistema.NIFempresaprincipal}" >
+                        <f:ajax event="change" render="nif_prov"/> 
+                    </p:inputText>
+                    </c:if>
+                    <c:if test="#{not configuracionSistemaGestion.existeProveedorPrincipal}">
+                        <p:commandButton type="button" onclick="window.location.href = './empresa/empresa.xhtml?crearProveedor=si'" value="Crear Proveedor Principal"/>
+                    </c:if>
+                    <c:if test="#{not configuracionSistemaGestion.existePersonaAdministrador}">
+                        <p:commandButton type="button" onclick="if(confirm('¿la Persona Administradora es Representante Legal del Proveedor Principal?')){window.location.href = './usuario/usuario.xhtml?crearUsuario=si';}else{window.location.href = './persona/persona.xhtml?crearAdministrador=si';}" value="Crear Persona Administradora"/>
+                    </c:if>
+                    <c:if test="#{not configuracionSistemaGestion.existeUsuarioAdministrador}">
+                        <p:commandButton type="button" onclick="window.location.href = './usuario/usuario.xhtml?crearUsuario=si';"  value="Crear Usuario Administrador"/>
+                    </c:if>
+                </div>
+            </p:fieldset>
+
+
+            <p:commandButton actionListener="#{configuracionSistemaGestion.guarda}" value="Guardar" icon="ui-icon-check" update="messages growl botonGuarda volver_1" styleClass="botonAplicar" ajax="false" id="botonGuarda" process="@this"/> 
+            <p:commandButton type="button" onclick="window.location.href = './login.xhtml';"  value="Conectar a Plataforma" rendered="#{configuracionSistemaGestion.isGuardado()}" icon="ui-icon ui-icon-arrowreturnthick-1-w" id="volver_1" styleClass="botonAplicar"/>
+        
+            <p:commandButton 
+                id="botonBorrado" style="float: left; " value="Cargar Valores de Fábrica"  icon="ui-icon-trash" onclick="confirmationEliminar.show()" styleClass="botonAplicar bg-red"/>  
+          <p:commandButton 
+              immediate="true"
+              actionListener="#{configuracionSistemaGestion.elimina}" update="messages growl botonGuarda botonBorrado formulario_principal" styleClass="boton_borrar_objeto" onclick="alert('El sistema se está reiniciando. Espere unos instantes y recargue la página.')"/> 
+        
+        </ui:define>
+    </ui:composition>
+</html>

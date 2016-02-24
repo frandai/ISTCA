@@ -1,0 +1,919 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package gestion;
+
+import bean.GrupoFacade;
+import datos.Grupo;
+import datos.GrupoPK;
+import java.io.Serializable;
+import javax.ejb.EJB;
+import javax.faces.application.FacesMessage;
+import javax.faces.bean.ManagedBean;
+import javax.faces.bean.ViewScoped;
+import javax.faces.event.ActionEvent;
+import vista.UtilidadesVista;
+import bean.AccionFormativaFacade;
+import datos.AccionFormativa;
+import java.util.List;
+import datos.DiaSemana;
+import bean.DiaSemanaFacade;
+import bean.DireccionFacade;
+import bean.EmpresaFacade;
+import bean.EventoFacade;
+import bean.TutorFacade;
+import datos.Tutor;
+import datos.Horario;
+import bean.HorarioFacade;
+import bean.MatriculaFacade;
+import bean.PersonaTelefonoFacade;
+import bean.TutoriaHorarioFacade;
+import datos.Direccion;
+import datos.Empresa;
+import datos.Evento;
+import datos.Matricula;
+import datos.Persona;
+import datos.PersonaTelefono;
+import datos.Proveedor;
+import datos.TutoriaHorario;
+import datos.TutoriaHorarioPK;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import javax.faces.bean.ManagedProperty;
+import util.Fecha;
+import util.ParStringBoolean;
+import util.VariablesSistema;
+import util.descripcionEventos;
+import util.horarioAuxiliarTutor;
+import vista.SesionActual;
+
+/**
+ *
+ * @author frandai
+ */
+@ManagedBean(name = "grupoGestion")
+@ViewScoped
+public class GrupoGestion implements Serializable {
+
+    @ManagedProperty("#{sesionActual}")
+    private SesionActual sesionActual;
+    @EJB
+    private GrupoFacade grupoFacade;
+    private boolean modoAlta;//Variable booleana que identifica si estamos en Modo de Alta
+    //o Modo de Guardado
+    private Grupo grupoSeleccionado;
+    @EJB
+    private AccionFormativaFacade accionFormativaFacade;
+    private List<AccionFormativa> accionesFormativas;//Listado de AF que puede seleccionar el Grupo
+    @EJB
+    private DiaSemanaFacade diasFacade;
+    private List<DiaSemana> dias;//Listado de días de la semana para el Grupo
+    private Tutor tutorSeleccionado;//Variable auxiliar para gestionar Tutor
+    @EJB
+    private HorarioFacade horariosFacade;
+    private List<Horario> horarios;//Lista de horarios que puede seleccionar para tutoría
+    @EJB
+    private TutoriaHorarioFacade tutoriaHFacade;
+    @EJB
+    private DireccionFacade direccionFacade;
+    @EJB
+    private EmpresaFacade empresaFacade;
+    private List<PersonaTelefono> responsables; //Listado de Responsables que pueden elegirse para el Grupo
+    private ArrayList<ParStringBoolean> parDiaSemana;//Variable auxiliar para seleccionar los días de la semana del Grupo
+    private boolean seleccionaHorarioManiana;//Variable auxiliar para identificar si el curso tiene horario de mañana
+    private boolean seleccionaHorarioTarde;//Variable auxiliar para identificar si el curso tiene horario de tarde
+    private boolean borrado;//Variable auxiliar para identificar si el curso se ha borrado
+    private Direccion direccionBorrar;
+    private boolean vieneDesdeMatricula;//Variable booleana que indica si viene desde la página 
+    //de Gestión de Matrícula, para hacer las gestiones determinadas.
+    @EJB
+    private EventoFacade evfac;
+    @EJB
+    private MatriculaFacade matfac;
+    private boolean mostrarHorasFechaFin; //Variable que controla si se muestra el diálogo de configuración de la fecha de fin
+    private int horasFechaFin;//Variable que guarda las horas de los tutores externos
+    private List<Tutor> tutorEmpresaList = null;//Muestra los tutores que pueden seleccionarse de cierta AF
+    private Matricula matricula;//Variable que guara la matrícula de forma auxiliar si vien desde matrícula
+    private String matID;//Identificador de la Matrícula para volver a la Gestión de Matrículas
+    @EJB
+    private MatriculaFacade matFacade;
+
+    public String getMatID() {
+        return matID;
+    }
+
+    public void setMatID(String matID) {
+        this.matID = matID;
+    }
+/**
+ * Rellena los tutores a seleccionar según la AF seleccionada
+ * @return 
+ */
+    public List<Tutor> getTutorEmpresaList() {
+        if (tutorEmpresaList == null && getGrupoSeleccionado() != null && getGrupoSeleccionado().getAccionFormativa1() != null) {
+            tutorEmpresaList = new ArrayList<Tutor>();
+            for (Proveedor p : getGrupoSeleccionado().getAccionFormativa1().getProveedorList()) {
+                for (Persona pr : p.getEmpresa().getPersonaList()) {
+                    if (pr.getTutor() != null) {
+                        tutorEmpresaList.add(pr.getTutor());
+                    }
+                }
+            }
+        }
+        return tutorEmpresaList;
+    }
+
+    public void setTutorEmpresaList(List<Tutor> tutorEmpresaList) {
+        this.tutorEmpresaList = tutorEmpresaList;
+    }
+
+    public int getHorasFechaFin() {
+        return horasFechaFin;
+    }
+
+    public void setHorasFechaFin(int horasFechaFin) {
+        if (horasFechaFin > 0 && horasFechaFin < 25) {
+            this.horasFechaFin = horasFechaFin;
+        }
+    }
+/**
+ * Rellena la Matrícula si viene de la gestión de matrícula
+ * @return 
+ * 
+ */
+    public Matricula getMatricula() {
+        if (matricula == null) {
+            if (getSesionActual().getMatriculasAFin().containsKey(matID)) {
+                matricula = getSesionActual().getMatriculasAFin().get(matID).getMatriculaSeleccionada();
+            } else {
+                matricula = matFacade.find(Integer.parseInt(matID));
+            }
+        }
+        return matricula;
+    }
+
+    public void setMatricula(Matricula matricula) {
+        this.matricula = matricula;
+    }
+
+    public boolean isVieneDesdeMatricula() {
+        return vieneDesdeMatricula;
+    }
+
+    public void setVieneDesdeMatricula(boolean vieneDesdeMatricula) {
+        this.vieneDesdeMatricula = vieneDesdeMatricula;
+    }
+/**
+ * Constructor de la clase: inicializa las variables de modo de alta, desde matrícula
+ * 
+ */
+    public GrupoGestion() {
+        modoAlta = (UtilidadesVista.getParametroReq("grupo") == null || UtilidadesVista.getParametroReq("accionformativa") == null);
+        vieneDesdeMatricula = (UtilidadesVista.getParametroReq("matricula") != null);
+        if (vieneDesdeMatricula) {
+            matID = UtilidadesVista.getParametroReq("matricula");
+        }
+    }
+
+    public boolean isModoAlta() {
+        return modoAlta;
+    }
+
+    public void setModoAlta(boolean modoAlta) {
+        this.modoAlta = modoAlta;
+    }
+/**
+ * Busca el Grupo Seleccionado.
+ * Inicializa las variables.
+ * Si es Nuevo Grupo, se crea un objeto Grupo con variables por defecto.
+ * 
+ * @return 
+ */
+    public Grupo getGrupoSeleccionado() {
+        if (grupoSeleccionado == null) {
+            String grupo = UtilidadesVista.getParametroReq("grupo");
+            String accionFormativa = UtilidadesVista.getParametroReq("accionformativa");
+            if (grupo != null && accionFormativa != null) {
+                grupoSeleccionado = grupoFacade.find(new GrupoPK(Integer.parseInt(accionFormativa), Integer.parseInt(grupo)));
+                seleccionaHorarioManiana = grupoSeleccionado.getHoraIM() != null;
+                seleccionaHorarioTarde = grupoSeleccionado.getHoraIT() != null;
+            } else {
+                grupoSeleccionado = new Grupo();
+                grupoSeleccionado.setTutorList(new ArrayList<Tutor>());
+                grupoSeleccionado.setDiaSemanaList(new ArrayList<DiaSemana>());
+                for (DiaSemana d : getDias()) {
+                    if (!d.getId().equals("S") && !d.getId().equals("D")) {
+                        grupoSeleccionado.getDiaSemanaList().add(d);
+                    }
+                }
+                try {
+                    grupoSeleccionado.setPersonaTelefono(getSesionActual().getUsuario_conectado().getPersona().getPersonaTelefonoList().get(0));
+                } catch (Exception e) {
+                }
+                if (vieneDesdeMatricula) {
+                    try {
+                        AccionFormativa af = accionFormativaFacade.find(getMatricula().getGrupo().getAccionFormativa1().getId());
+                        grupoSeleccionado.setAccionFormativa1(af);
+                        setProveedorSelect(af.getProveedorList().get(0));
+
+                    } catch (Exception e) {
+                    }
+                }
+            }
+        }
+        if (parDiaSemana == null) {
+            parDiaSemana = new ArrayList<ParStringBoolean>();
+            for (DiaSemana d : getDias()) {
+                parDiaSemana.add(new ParStringBoolean(d.getId(), grupoSeleccionado.getDiaSemanaList().contains(d)));
+            }
+        }
+        if (grupoSeleccionado.getDireccionList() == null) {
+            grupoSeleccionado.setDireccionList(new ArrayList<Direccion>());
+        }
+        if (grupoSeleccionado.getDireccionList().isEmpty()) {
+            grupoSeleccionado.getDireccionList().add(new Direccion());
+        }
+        return grupoSeleccionado;
+    }
+
+    public void setGrupoSeleccionado(Grupo grupoSeleccionado) {
+        this.grupoSeleccionado = grupoSeleccionado;
+    }
+
+    public List<AccionFormativa> getAccionesFormativas() {
+        if (accionesFormativas == null) {
+            accionesFormativas = accionFormativaFacade.findAll();
+        }
+        return accionesFormativas;
+    }
+
+    public void setAccionesFormativas(List<AccionFormativa> accionesFormativas) {
+        this.accionesFormativas = accionesFormativas;
+    }
+
+    public List<DiaSemana> getDias() {
+        if (dias == null) {
+            dias = diasFacade.findAll();
+        }
+        return dias;
+    }
+
+    public void setDias(List<DiaSemana> dias) {
+        this.dias = dias;
+    }
+
+    public Tutor getTutorSeleccionado() {
+        return tutorSeleccionado;
+    }
+
+    public void setTutorSeleccionado(Tutor tutorSeleccionado) {
+        this.tutorSeleccionado = tutorSeleccionado;
+    }
+
+    public List<Horario> getHorarios() {
+        if (horarios == null) {
+            horarios = horariosFacade.findAll();
+        }
+
+        return horarios;
+    }
+
+    public void setHorarios(List<Horario> horarios) {
+        this.horarios = horarios;
+    }
+/**
+ * Los responsables a elegir serán las Personas (y teléfonos) asociados al Proveedor Principal
+ * 
+ * @return 
+ */
+    public List<PersonaTelefono> getResponsables() {
+        if (responsables == null) {
+            responsables = new ArrayList<PersonaTelefono>();
+            Empresa e = empresaFacade.find(VariablesSistema.NIF_empresa_principal);
+            for (Persona p : e.getPersonaList()) {
+                responsables.addAll(p.getPersonaTelefonoList());
+            }
+        }
+
+        return responsables;
+    }
+
+    public void setResponsables(List<PersonaTelefono> responsables) {
+        this.responsables = responsables;
+    }
+
+    public Tutor getAniadirTutor() {
+        return null;
+    }
+/**
+ * Añade el tutor al Grupo y genera el Horario por Defecto
+ * @param t 
+ */
+    public void setAniadirTutor(Tutor t) {
+        for (Tutor tut : grupoSeleccionado.getTutorList()) {
+            if (t.equals(tut)) {
+                return;
+            }
+        }
+        t.setHorarioGeneracionGrupo(getHorarioDefecto());
+        t.setHorasTutoria(new Short("" + (getGrupoSeleccionado().getAccionFormativa1().getHoras() / (getGrupoSeleccionado().getTutorList().size() + 1))));
+        grupoSeleccionado.getTutorList().add(t);
+    }
+
+    public Proveedor getProveedorSelect() {
+        return grupoSeleccionado.getProveedor1();
+    }
+/**
+ * Según el proveedor elegido, se configura el Grupo.
+ * @param prov 
+ */
+    public void setProveedorSelect(Proveedor prov) {
+        grupoSeleccionado.setProveedor1(prov);
+        grupoSeleccionado.setMediosP(true);
+        grupoSeleccionado.setMediosEO(true);
+        if (prov.getNif().equals(VariablesSistema.NIF_empresa_principal)) {
+            grupoSeleccionado.setMediosC(false);
+        } else {
+            grupoSeleccionado.setMediosC(true);
+        }
+    }
+/**
+ * Función para guardar el grupo.
+ * 
+ * -La suma de las Horas de Tutoría de los Tutores del Grupo ha de coincidir con las Horas del Curso.
+ * -Debe de asociar una acción formativa al Grupo.
+ * -Debe de asociar responsable al Grupo.
+ * -Debe de asociar un Proveedor al Grupo que gestione la Acción Formativa seleccionada.
+ * -El grupo debe de iniciarse en un día de la semana seleccionado para el grupo.
+ * -Se necesita una fecha de inicio. y fin
+ * 
+ * @param event 
+ */
+    public void guarda(ActionEvent event) {
+        try {
+            boolean valido = true;
+            mostrarHorasFechaFin = false;
+            boolean esGrupoCero = (grupoSeleccionado.getGrupoPK() != null && grupoSeleccionado.getGrupoPK().getId() == 0);
+
+            Integer horasTotTutores = 0;
+            for (Tutor t : getGrupoSeleccionado().getTutorList()) {
+                horasTotTutores += t.getHorasTutoria();
+            }
+
+            if (!grupoSeleccionado.getPendienteDeGestionar() && !grupoSeleccionado.getTutorList().isEmpty() && horasTotTutores != getGrupoSeleccionado().getAccionFormativa1().getHoras()) {
+                UtilidadesVista.Mensaje("La suma de las Horas de Tutoría de los Tutores del Grupo no coincide con las Horas del Curso.", FacesMessage.SEVERITY_ERROR);
+                valido = false;
+            }
+
+            if (grupoSeleccionado.getAccionFormativa1() == null) {
+                UtilidadesVista.Mensaje("Debe de asociar una acción formativa al Grupo.", FacesMessage.SEVERITY_ERROR);
+                valido = false;
+            }
+
+            if (valido && !(grupoSeleccionado.getAccionFormativa1().getModalidad().getId().equals(new Short("7")) || grupoSeleccionado.getAccionFormativa1().getModalidad().getId().equals(new Short("9")))) {
+                seleccionaHorarioManiana = false;
+                seleccionaHorarioTarde = false;
+                grupoSeleccionado.setHoraFM(null);
+                grupoSeleccionado.setHoraFT(null);
+                grupoSeleccionado.setHoraIM(null);
+                grupoSeleccionado.setHoraIT(null);
+            }
+
+            if (grupoSeleccionado.getPersonaTelefono() == null) {
+                UtilidadesVista.Mensaje("Debe de asociar responsable al Grupo.", FacesMessage.SEVERITY_ERROR);
+                valido = false;
+            }
+
+            if (!(grupoSeleccionado.getProveedor1() == null || grupoSeleccionado.getProveedor1().getNif() == null || grupoSeleccionado.getProveedor1().getNif().equals(""))
+                    && !grupoSeleccionado.getAccionFormativa1().getProveedorList().contains(grupoSeleccionado.getProveedor1())) {
+                UtilidadesVista.Mensaje("Debe de asociar un Proveedor al Grupo que gestione la Acción Formativa seleccionada.", FacesMessage.SEVERITY_ERROR);
+                valido = false;
+            }
+
+            if (grupoSeleccionado.getAccionFormativa1() == null) {
+                UtilidadesVista.Mensaje("Debe tener una acción formativa asociada.", FacesMessage.SEVERITY_ERROR);
+                valido = false;
+            }
+
+            if (!grupoSeleccionado.getPendienteDeGestionar() && grupoSeleccionado.getMediosC() == false && grupoSeleccionado.getMediosEO() == false && grupoSeleccionado.getMediosP() == false) {
+                UtilidadesVista.Mensaje("Se debe seleccionar algún tipo de medios.", FacesMessage.SEVERITY_ERROR);
+                valido = false;
+            }
+
+            if (grupoSeleccionado.getFInicio() == null) {
+                UtilidadesVista.Mensaje("Se necesita una fecha de inicio.", FacesMessage.SEVERITY_ERROR);
+                valido = false;
+            } else if (!contieneGrupo(Fecha.getDiaSemana(grupoSeleccionado.getFInicio())) && !grupoSeleccionado.getPendienteDeGestionar()) {
+                UtilidadesVista.Mensaje("El grupo debe de iniciarse en un día de la semana seleccionado para el grupo.", FacesMessage.SEVERITY_ERROR);
+                valido = false;
+            }
+
+            if (grupoSeleccionado.getFFin() == null) {
+                UtilidadesVista.Mensaje("Se necesita una fecha de fin.", FacesMessage.SEVERITY_ERROR);
+                valido = false;
+            }
+            boolean controlH = false;
+            if (valido) {
+                controlH = (grupoSeleccionado.getAccionFormativa1().getModalidad().getId().equals(new Short("7")) || grupoSeleccionado.getAccionFormativa1().getModalidad().getId().equals(new Short("9")) && !esGrupoCero);
+
+            }
+            if ((!seleccionaHorarioManiana) && !seleccionaHorarioTarde
+                    && controlH) {
+                UtilidadesVista.Mensaje("Se necesita un horario de mañana o un horario de tarde, o ambos.", FacesMessage.SEVERITY_ERROR);
+                valido = false;
+            }
+            if (seleccionaHorarioManiana && (grupoSeleccionado.getHoraIM() == null || grupoSeleccionado.getHoraFM() == null)) {
+                UtilidadesVista.Mensaje("Si selecciona Horario de Mañana, debe rellenar hora de incio y hora de fin.", FacesMessage.SEVERITY_ERROR);
+                valido = false;
+            }
+            if (seleccionaHorarioTarde && (grupoSeleccionado.getHoraIT() == null || grupoSeleccionado.getHoraFT() == null)) {
+                UtilidadesVista.Mensaje("Si selecciona Horario de Tarde, debe rellenar hora de incio y hora de fin.", FacesMessage.SEVERITY_ERROR);
+                valido = false;
+            }
+            if (valido && ((grupoSeleccionado.getAccionFormativa1().getModalidad().getId().equals(new Short("7"))
+                    || grupoSeleccionado.getAccionFormativa1().getModalidad().getId().equals(new Short("9"))) && !esGrupoCero)
+                    && (grupoSeleccionado.getDireccionList().isEmpty() || grupoSeleccionado.getDireccionList().get(0).getVia() == null || grupoSeleccionado.getDireccionList().get(0).getVia().equals(""))) {
+                UtilidadesVista.Mensaje("Debe de incuir una dirección de impartición para esta modalidad de Acción Formativa.", FacesMessage.SEVERITY_ERROR);
+                valido = false;
+            }
+
+            //Dias docentes:
+            grupoSeleccionado.setDiaSemanaList(new ArrayList<DiaSemana>());
+            for (ParStringBoolean p : parDiaSemana) {
+                for (DiaSemana d : dias) {
+                    if (d.getId().equals(p.getS())) {
+                        if (p.isB()) {
+                            grupoSeleccionado.getDiaSemanaList().add(d);
+                            d.getGrupoList().add(grupoSeleccionado);
+                        } else {
+                            grupoSeleccionado.getDiaSemanaList().remove(d);
+                            d.getGrupoList().remove(grupoSeleccionado);
+                        }
+                    }
+                }
+            }
+
+
+            if (valido) {
+                Grupo gsAnt;
+                //Añadimos comentarios de los días sin tutorías:
+                String coment_tutor = "";
+                Date f = new Date(grupoSeleccionado.getFInicio().getTime());
+                Date tutoria_ant = null;
+                Date tutoria_post = null;
+                while (f.before(grupoSeleccionado.getFFin())) {
+                    boolean dia_sin_tutorias = esAusencia(f);
+                    if (dia_sin_tutorias) {
+                        if (tutoria_ant == null) {
+                            tutoria_ant = tutoria_post = f;
+                        } else {
+                            tutoria_post = f;
+                        }
+                    } else {
+                        if (tutoria_ant != null && tutoria_post != null) {
+                            if (tutoria_ant.equals(tutoria_post)) {
+                                coment_tutor += "<br/>-Día " + Fecha.getFechaDiaMesAnio(tutoria_ant) + " sin tutoría.";
+                            } else {
+                                coment_tutor += "<br/>-Desde " + Fecha.getFechaDiaMesAnio(tutoria_ant) + " hasta " + Fecha.getFechaDiaMesAnio(tutoria_post) + " sin tutoría.";
+                            }
+                            tutoria_ant = null;
+                            tutoria_post = null;
+                        }
+                    }
+                    f = Fecha.getFechaSetDias(f, 1);
+                }
+                if (tutoria_ant != null && tutoria_post != null) {
+                    if (tutoria_ant.equals(tutoria_post)) {
+                        coment_tutor += "<br/>-Día " + Fecha.getFechaDiaMesAnio(tutoria_ant) + " sin tutoría.";
+                    } else {
+                        coment_tutor += "<br/>-Desde " + Fecha.getFechaDiaMesAnio(tutoria_ant) + " hasta " + Fecha.getFechaDiaMesAnio(tutoria_post) + " sin tutoría.";
+                    }
+                    tutoria_ant = null;
+                    tutoria_post = null;
+                }
+                if (!grupoSeleccionado.getObservaciones().replaceAll("<br/>", "").contains(coment_tutor.replaceAll("<br/>", ""))) {
+                    
+                    grupoSeleccionado.setObservaciones(grupoSeleccionado.getObservaciones() + coment_tutor);
+                }
+
+                if (!grupoSeleccionado.getDireccionList().isEmpty() && (grupoSeleccionado.getDireccionList().get(0).getVia() == null || grupoSeleccionado.getDireccionList().get(0).getVia().equals(""))) {
+                    grupoSeleccionado.getDireccionList().remove(0);
+                }
+                if (modoAlta) {
+                    if (grupoSeleccionado.getGrupoPK() == null) {
+                        int id = grupoFacade.findLastCodGrupoAccionFormativa(grupoSeleccionado.getAccionFormativa1().getId()) + 1;
+                        grupoSeleccionado.setGrupoPK(new GrupoPK(grupoSeleccionado.getAccionFormativa1().getId(), id));
+                        if (grupoSeleccionado.getNombre() == null || grupoSeleccionado.getNombre().equals("")) {
+                            grupoSeleccionado.setNombre(grupoSeleccionado.getAccionFormativa1().getId() + "-" + id);
+                        }
+                    }
+                    if (grupoSeleccionado.getProveedor1() == null || grupoSeleccionado.getProveedor1().getNif() == null || grupoSeleccionado.getProveedor1().getNif().equals("")) {
+                        grupoSeleccionado.setProveedor1(grupoSeleccionado.getAccionFormativa1().getProveedor().get(0));
+                    }
+                    grupoSeleccionado.getAccionFormativa1().getProveedor().get(0).getGrupoList().add(grupoSeleccionado);
+
+                    HashMap<String, List<horarioAuxiliarTutor>> horariosTutor = new HashMap<String, List<horarioAuxiliarTutor>>();
+                    for (Tutor t : grupoSeleccionado.getTutorList()) {
+                        horariosTutor.put(t.getNif(), t.getHorarioGeneracionGrupo());
+                    }
+                    gsAnt = grupoSeleccionado;
+                    grupoSeleccionado = grupoFacade.create(grupoSeleccionado);
+                    modoAlta = false;
+
+                    for (String nif : horariosTutor.keySet()) {
+                        for (Tutor t : grupoSeleccionado.getTutorList()) {
+                            if (t.getNif().equals(nif)) {
+                                tutorSeleccionado = t;
+                                for (horarioAuxiliarTutor hoa : horariosTutor.get(nif)) {
+                                    if (hoa.isSeleccionado()) {
+                                        this.setAniadeHorario(hoa.getHor());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    gsAnt = grupoSeleccionado;
+                    grupoSeleccionado = grupoFacade.edit(grupoSeleccionado);
+                    if (direccionBorrar != null) {
+                        direccionFacade.edit(direccionBorrar);
+                    }
+                }
+
+                if (!grupoSeleccionado.getDireccionList().isEmpty()) {
+                    boolean aniadir = true;
+                    boolean excepcion = false;
+                    try {
+
+                        for (Grupo g : grupoSeleccionado.getDireccionList().get(0).getGrupoList()) {
+                            if (g.getGrupoPK().getId() == grupoSeleccionado.getGrupoPK().getId() && g.getGrupoPK().getAccionFormativa() == grupoSeleccionado.getGrupoPK().getAccionFormativa()) {
+                                aniadir = false;
+                            }
+                        }
+                    } catch (Exception e) {
+                        aniadir = false;
+                        excepcion = true;
+                    }
+                    if (aniadir) {
+                        grupoSeleccionado.getDireccionList().get(0).getGrupoList().add(grupoSeleccionado);
+                    }
+                    if (!excepcion) {
+                        direccionFacade.edit(grupoSeleccionado.getDireccionList().get(0));
+                    }
+                }
+
+
+
+                for (Tutor t : gsAnt.getTutorList()) {
+                    TutoriaHorario nueva = null;
+                    for (TutoriaHorario th : t.getTutoriaHorarioList()) {
+                        if (th.getHorario1().getId() == -1
+                                && th.getGrupo1().getGrupoPK().getId() == grupoSeleccionado.getGrupoPK().getId()
+                                && th.getGrupo1().getGrupoPK().getAccionFormativa() == grupoSeleccionado.getGrupoPK().getAccionFormativa()) {
+                            nueva = th;
+                        }
+                    }
+                    if (nueva == null) {
+                        nueva = new TutoriaHorario(new TutoriaHorarioPK(
+                                getGrupoSeleccionado().getAccionFormativa1().getId(),
+                                getGrupoSeleccionado().getGrupoPK().getId(),
+                                t.getNif(),
+                                (int) -1));
+                        nueva.setHoras(t.getHorasTutoria());
+                        tutoriaHFacade.create(nueva);
+                        t.getTutoriaHorarioList().add(tutoriaHFacade.find(nueva.getTutoriaHorarioPK()));
+                    } else {
+                        nueva.setHoras(t.getHorasTutoria());
+                        tutoriaHFacade.edit(nueva);
+                    }
+                }
+
+                /*for (DiaSemana d : dias) {
+                 diasFacade.edit(d);
+                 }*/
+                dias = diasFacade.findAll();
+
+                UtilidadesVista.Mensaje("El grupo se ha guardado.", FacesMessage.SEVERITY_INFO);
+
+                if (vieneDesdeMatricula) {
+                    try {
+                        getMatricula().setGrupo(grupoSeleccionado);
+                        if (getMatricula().getPrecio() == null) {
+                            getMatricula().setPrecio(grupoSeleccionado.getAccionFormativa1().getPrecio());
+                        }
+                        for (Evento ev : getMatricula().getEventoList()) {
+                            if (ev.getEstado().equals("G")) {
+                                if (ev.getTipoDescripcionEvento() == descripcionEventos.SEGUIMIENTO_TUTORIAL) {
+                                    ev.setFechaCreacion(grupoSeleccionado.getFInicio());
+                                    descripcionEventos.configurarEvento(ev, descripcionEventos.SEGUIMIENTO_TUTORIAL);
+                                    evfac.edit(ev);
+                                }
+                            }
+                        }
+                        Evento ev = getMatricula().getUltimoEventoPago();
+                        if (ev != null) {
+                            descripcionEventos.configurarEvento(ev, ev.getTipoDescripcionEvento());
+                            evfac.edit(ev);
+                        }
+                        try {
+                            matfac.edit(getMatricula(), getSesionActual().getUsuario_conectado().getPersona());
+                        } catch (Exception e) {
+                        }
+
+                        UtilidadesVista.Mensaje("El grupo se ha añadido a la matrícula.", FacesMessage.SEVERITY_INFO);
+                    } catch (Exception e) {
+                        UtilidadesVista.Mensaje("El grupo NO se ha añadido a la matrícula.", FacesMessage.SEVERITY_ERROR);
+
+                    }
+
+                }
+            }
+        } catch (Exception e) {
+            String c = "";
+            for (StackTraceElement t : e.getStackTrace()) {
+                if (t.getMethodName().contains("guarda")) {
+                    c += t;
+                }
+            }
+            UtilidadesVista.Mensaje(e.getMessage() + ": " + e.getCause() + " - " + c, FacesMessage.SEVERITY_FATAL);
+        }
+    }
+
+    public ArrayList<ParStringBoolean> getParDiaSemana() {
+        if (parDiaSemana == null) {
+            getGrupoSeleccionado();
+        }
+        return parDiaSemana;
+    }
+
+    public void setParDiaSemana(ArrayList<ParStringBoolean> parDiaSemana) {
+        this.parDiaSemana = parDiaSemana;
+    }
+
+    public boolean isSeleccionaHorarioManiana() {
+        return seleccionaHorarioManiana;
+    }
+
+    public void setSeleccionaHorarioManiana(boolean seleccionaHorarioManiana) {
+        if (!seleccionaHorarioTarde) {
+            grupoSeleccionado.setHoraIM(null);
+            grupoSeleccionado.setHoraFM(null);
+        }
+        this.seleccionaHorarioManiana = seleccionaHorarioManiana;
+    }
+
+    public boolean isSeleccionaHorarioTarde() {
+        return seleccionaHorarioTarde;
+    }
+
+    public void setSeleccionaHorarioTarde(boolean seleccionaHorarioTarde) {
+        if (!seleccionaHorarioTarde) {
+            grupoSeleccionado.setHoraIT(null);
+            grupoSeleccionado.setHoraFT(null);
+        }
+        this.seleccionaHorarioTarde = seleccionaHorarioTarde;
+    }
+
+    public boolean contieneHorario(Horario hor, Tutor t) {
+        return getGrupoSeleccionado().contieneHorario(hor, t);
+    }
+
+    public Horario getBorraHorario() {
+        return null;
+    }
+
+    ;
+    public Horario getAniadeHorario() {
+        return null;
+    }
+
+    ;
+    
+    public void setBorraHorario(Horario h) {
+        if (tutorSeleccionado != null) {
+            TutoriaHorario tsel = null;
+            for (TutoriaHorario th : tutorSeleccionado.getTutoriaHorarioList()) {
+                if (th.getGrupo1().equals(this.getGrupoSeleccionado())
+                        && th.getHorario1().equals(h)) {
+                    tsel = th;
+                    break;
+                }
+            }
+            if (tsel != null) {
+                tutorSeleccionado.getTutoriaHorarioList().remove(tsel);
+                tutoriaHFacade.remove(tsel);
+
+            }
+        }
+    }
+/**
+ * Controla las franjas horarias
+ * @param h 
+ */
+    public void setAniadeHorario(Horario h) {
+        if (tutorSeleccionado != null) {
+            if (tutorSeleccionado.getNumCursosHorario(h) >= 80 && h.getId() != -1) {
+                UtilidadesVista.Mensaje("No se puede añadir la franja seleccionada porque el tutor seleccionado actualmente ya está gestionando 80 cursos en dicha franja.", FacesMessage.SEVERITY_FATAL);
+            } else {
+                TutoriaHorario nueva = new TutoriaHorario(new TutoriaHorarioPK(
+                        getGrupoSeleccionado().getAccionFormativa1().getId(),
+                        getGrupoSeleccionado().getGrupoPK().getId(),
+                        tutorSeleccionado.getNif(),
+                        (int) h.getId()));
+                tutoriaHFacade.create(nueva);
+                tutorSeleccionado.getTutoriaHorarioList().add(tutoriaHFacade.find(nueva.getTutoriaHorarioPK()));
+            }
+        }
+    }
+
+    public boolean isBorrado() {
+        return borrado;
+    }
+
+    public void setBorrado(boolean borrado) {
+        this.borrado = borrado;
+    }
+
+    public void elimina(ActionEvent event) throws IOException {
+        grupoFacade.remove(grupoFacade.find(grupoSeleccionado.getGrupoPK()));
+        System.out.println("[BORRAR][" + Fecha.getFechaAnioMesDiaHoraMinutoSegundo(new Date()) + "]Se ha Borrado el Grupo " + this.getGrupoSeleccionado().getAccionFormativa1().getId() + "-" + this.getGrupoSeleccionado().getGrupoPK().getId());
+        borrado = true;
+        UtilidadesVista.Mensaje("El grupo se ha eliminado", FacesMessage.SEVERITY_INFO);
+    }
+
+    public void borrarDireccion(ActionEvent actionEvent) {
+        Direccion d = getGrupoSeleccionado().getDireccionList().get(0);
+        d.getGrupoList().remove(grupoSeleccionado);
+        getGrupoSeleccionado().getDireccionList().remove(0);
+        direccionBorrar = d;
+    }
+
+    public void borrarTutor(ActionEvent actionEvent) {
+        for (TutoriaHorario th : tutorSeleccionado.getTutoriaHorarioList()) {
+            try {
+
+                if (th.getGrupo1().getGrupoPK().getId() == grupoSeleccionado.getGrupoPK().getId()
+                        && th.getGrupo1().getGrupoPK().getAccionFormativa() == grupoSeleccionado.getGrupoPK().getAccionFormativa()) {
+                    tutoriaHFacade.remove(th);
+                }
+            } catch (Exception e) {
+            }
+        }
+        getGrupoSeleccionado().getTutorList().remove(tutorSeleccionado);
+    }
+
+    private boolean ceroDiasDocentes() {
+        boolean cerodias = true;
+        for (ParStringBoolean p : parDiaSemana) {
+            if (p.isB()) {
+                cerodias = false;
+            }
+        }
+        return cerodias;
+    }
+
+    public boolean isMostrarHorasFechaFin() {
+        return mostrarHorasFechaFin;
+    }
+
+    public void setMostrarHorasFechaFin(boolean mostrarHorasFechaFin) {
+        this.mostrarHorasFechaFin = mostrarHorasFechaFin;
+    }
+/**
+ * Recalcula a Fecha de Fin en base a las horas de tutoria y las horas del curos
+ * 
+ * @param actionEvent 
+ */
+    public void recalcularFechaFin(ActionEvent actionEvent) {
+        ArrayList<Integer> idHorasTutores = new ArrayList<Integer>();
+        if (!modoAlta) {
+            for (Tutor t : getGrupoSeleccionado().getTutorList()) {
+                for (TutoriaHorario h : t.getTutoriaHorarioList()) {
+                    if (!idHorasTutores.contains(h.getHorario1().getId()) && h.getGrupo1().equals(grupoSeleccionado)) {
+                        idHorasTutores.add(h.getHorario1().getId());
+                    }
+                }
+            }
+        } else {
+            for (Tutor t : getGrupoSeleccionado().getTutorList()) {
+                for (horarioAuxiliarTutor hoa : t.getHorarioGeneracionGrupo()) {
+                    if (hoa.isSeleccionado()) {
+                        idHorasTutores.add(hoa.getHor().getId());
+                    }
+                }
+            }
+        }
+        double horasT = 0;
+        if (horasFechaFin > 0) {
+            horasT = horasFechaFin;
+            horasFechaFin = 0;
+        } else {
+
+            for (Integer integer : idHorasTutores) {
+                if (integer > 0) {
+                    horasT += 0.5; //sabemos que las tutorias van de media hora en media hora.
+                }
+            }
+        }
+        boolean valido = true;
+
+        if (ceroDiasDocentes()) {
+            UtilidadesVista.Mensaje("No se puede calcular una fecha de fin si no existen días docentes asociados.", FacesMessage.SEVERITY_ERROR);
+            valido = false;
+        }
+        if (grupoSeleccionado.getAccionFormativa1() == null) {
+            UtilidadesVista.Mensaje("No se puede calcular una fecha de fin si no existe acción formativa asociada.", FacesMessage.SEVERITY_ERROR);
+            valido = false;
+        }
+        if (grupoSeleccionado.getFInicio() == null) {
+            UtilidadesVista.Mensaje("No se puede calcular una fecha de fin si no existe fecha de inicio asociada.", FacesMessage.SEVERITY_ERROR);
+            valido = false;
+        }
+        if (horasT < 1 && valido) {
+            setMostrarHorasFechaFin(true);
+            //UtilidadesVista.Mensaje("No se puede calcular una fecha de fin si no existen horarios de tutorías asociados.", FacesMessage.SEVERITY_ERROR);
+            valido = false;
+        } else {
+            setMostrarHorasFechaFin(false);
+        }
+        if (!valido) {
+            return;
+        }
+        Date ffin = grupoSeleccionado.getFInicio();
+        double horas = grupoSeleccionado.getAccionFormativa1().getHoras();
+        horas -= horasT;
+        while (horas > 0) {
+            horas -= horasT;
+            ffin = Fecha.getFechaSetDias(ffin, 1);
+            char diaSemana = Fecha.getDiaSemana(ffin);
+            while (!contieneGrupo(diaSemana) || esAusencia(ffin)) {
+                ffin = Fecha.getFechaSetDias(ffin, 1);
+                diaSemana = Fecha.getDiaSemana(ffin);
+            }
+        }
+        if (!mostrarHorasFechaFin) {
+            grupoSeleccionado.setFFin(ffin);
+        }
+
+    }
+
+    private boolean contieneGrupo(char diaSemana) {
+        for (ParStringBoolean p : parDiaSemana) {
+            if (p.getS().equals("" + diaSemana)) {
+                return p.isB();
+            }
+        }
+        return false;
+    }
+
+    public SesionActual getSesionActual() {
+        return sesionActual;
+    }
+
+    public void setSesionActual(SesionActual sesionActual) {
+        this.sesionActual = sesionActual;
+    }
+/**
+ * Devuelve si una fecha seleccionada es o no esdía de ausencia para el grupo
+ * 
+ * @param f
+ * @return 
+ */
+    private boolean esAusencia(Date f) {
+        boolean dia_sin_tutorias = true;
+        if (grupoSeleccionado.getTutorList() == null || grupoSeleccionado.getTutorList().isEmpty()) {
+            return false;
+        }
+        for (Tutor t : grupoSeleccionado.getTutorList()) {
+            if (dia_sin_tutorias) {
+                boolean ausencia_hoy = false;
+                for (Evento e : t.getEventoList()) {
+                    if (Fecha.getFechaDiaMesAnio(e.getFechaCreacion()).equals(Fecha.getFechaDiaMesAnio(f))) {
+                        ausencia_hoy = true;
+                    }
+                }
+                if (!ausencia_hoy) {
+                    dia_sin_tutorias = false;
+                }
+            }
+        }
+        return dia_sin_tutorias;
+    }
+/**
+ * Genera los horarios auxiliares para la creaciñon de horarios en base de datos
+ * @return 
+ * 
+ */
+    private List<horarioAuxiliarTutor> getHorarioDefecto() {
+        List<horarioAuxiliarTutor> horas = new ArrayList<horarioAuxiliarTutor>();
+
+        for (Horario h : getHorarios()) {
+            horas.add(new horarioAuxiliarTutor(false, h.getHorarioInicioString() + " - " + h.getHorarioFinString(), h));
+        }
+
+        return horas;
+    }
+}

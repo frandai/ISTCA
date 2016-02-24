@@ -1,0 +1,44 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package datosVista;
+
+import java.io.Serializable;
+import java.math.BigInteger;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+import javax.xml.bind.annotation.XmlRootElement;
+
+/**
+ *
+ * @author fran
+ */
+@Entity
+@Table(name = "next_empresa", schema = "public")
+@XmlRootElement
+@NamedQueries({
+    @NamedQuery(name = "NextEmpresa.findAll", query = "SELECT n FROM NextEmpresa n"),
+    @NamedQuery(name = "NextEmpresa.findByNextEmpresa", query = "SELECT n FROM NextEmpresa n WHERE n.nextEmpresa = :nextEmpresa")})
+public class NextEmpresa implements Serializable {
+    private static final long serialVersionUID = 1L;
+    @Id
+    @Column(name = "next_empresa")
+    private Integer nextEmpresa;
+
+    public NextEmpresa() {
+    }
+
+    public Integer getNextEmpresa() {
+        return nextEmpresa;
+    }
+
+    public void setNextEmpresa(Integer nextEmpresa) {
+        this.nextEmpresa = nextEmpresa;
+    }
+    
+}

@@ -1,0 +1,87 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package bean;
+
+import datos.Evento;
+import datos.Evento_;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import javax.ejb.Stateless;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+
+/**
+ *
+ * @author sergio
+ */
+@Stateless
+public class EventoFacade extends AbstractFacade<Evento> {
+
+    @PersistenceContext(unitName = "GC_DAIPU")
+    private EntityManager em;
+
+    @Override
+    protected EntityManager getEntityManager() {
+        return em;
+    }
+
+    public EventoFacade() {
+        super(Evento.class);
+    }
+/**
+ * Filtra eventos dadas unas determinadas fechas
+ * 
+ * @param start fecha de inicio de filtrado
+ * @param end fecha de fin de filtrado
+ * @param estado_pendiente TRUE si quiere que se muestren eventos pendientes
+ * @param estado_realizado TRUE si quiere que se muestren eventos realizados
+ * @param estado_vencido TRUE si quiere que se muestren eventos vencidos
+ * @param eventos_fecha valor que identifica que fechas estamos filtrando:
+ *  1: fecha de creación
+ *  2: fecha de realización
+ *  3: fecha de vencimiento
+ * @return los eventos que corresponden con el filtro.
+ */
+    public List<Evento> findFechas(Date start, Date end, boolean estado_pendiente, boolean estado_realizado, boolean estado_vencido, int eventos_fecha) {
+        CriteriaBuilder cb = getEntityManager().getCriteriaBuilder();
+        CriteriaQuery<Evento> cq = cb.createQuery(Evento.class);
+        Root<Evento> evento = cq.from(Evento.class);
+        cq.select(evento);
+        ArrayList<Predicate> predicatesList =
+                new ArrayList<Predicate>();
+        switch (eventos_fecha) {
+            case 1:
+                predicatesList.add(cb.between(evento.get(Evento_.fechaCreacion), start, end));
+                break;
+            case 2:
+                predicatesList.add(cb.between(evento.get(Evento_.fechaRealizacion), start, end));
+                break;
+            case 3:
+                predicatesList.add(cb.between(evento.get(Evento_.fechaVencimiento), start, end));
+                break;
+        }
+        if (!estado_pendiente && !estado_vencido) {
+            predicatesList.add(cb.isNotNull(evento.get(Evento_.fechaRealizacion)));
+        }
+        if (!estado_realizado && !estado_vencido) {
+            predicatesList.add(cb.isNull(evento.get(Evento_.fechaRealizacion)));
+        }
+        if (estado_vencido && !estado_pendiente && !estado_realizado) {
+            predicatesList.add(cb.isNotNull(evento.get(Evento_.fechaVencimiento)));
+            predicatesList.add(cb.isNull(evento.get(Evento_.fechaRealizacion)));
+        }
+        predicatesList.add(cb.isNull(evento.get(Evento_.empresa)));
+
+        cq.where(predicatesList.<Predicate>toArray(
+                new Predicate[predicatesList.size()]));
+
+        return getEntityManager().createQuery(cq).getResultList();
+    }
+}

@@ -1,0 +1,832 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:c="http://java.sun.com/jsp/jstl/core">
+
+    <ui:composition template="/template.xhtml">
+        <ui:define name="title">
+            <h:outputText value="#{empresaGestion.modoAlta? 'Nueva' : 'Gestión'} empresa"></h:outputText>
+        </ui:define>
+        <ui:define name="body">
+            <p:fieldset collapsed="#{empresaGestion.borrado}" legend="Datos de la Empresa" styleClass="campoRellena" id="datosEmpresa">
+                <div style="float: right; min-width: 440px;">
+                    <div>
+                        <h:outputLabel value="Estado: "/>
+                        <p:outputLabel rendered="#{not sesionActual.tienePermiso(1)}" styleClass="valor" value="#{empresaGestion.empresaSeleccionada.estado.nombre}"/>
+                        <p:selectOneMenu rendered="#{sesionActual.tienePermiso(1)}" value="#{empresaGestion.empresaSeleccionada.estado}" id="empresaEstadoSeleccionar" >
+                            <f:selectItems value="#{empresaGestion.estadosEmpresa}" var="e" itemValue="#{e}" itemLabel="#{e.nombre}" />
+                            <f:ajax />
+                        </p:selectOneMenu>
+                        <p:commandButton rendered="#{sesionActual.tienePermiso(21)}" icon="ui-icon-plus" title="Nuevo Estado" type="button" onclick="dlgNuevoEstado.show()" style="top: -7px;left: 6px;" />
+                        <p:selectBooleanButton 
+                            rendered="#{empty empresaGestion.empresaSeleccionada.proveedor.accionFormativaList and sesionActual.tienePermiso(1)}"
+                            style="float: right" onLabel="Es Proveedor" offLabel="No es Proveedor" value="#{empresaGestion.esProveedor}">
+                            <f:ajax event="change" render="formulario_principal"/> 
+                        </p:selectBooleanButton>
+                        <p:selectBooleanButton 
+                            rendered="#{((empresaGestion.empresaSeleccionada.empresaMatricula eq null) or (empresaGestion.empresaSeleccionada.empresaMatricula.muestraCambiaMat)) and sesionActual.tienePermiso(1)}"
+                            style="float: right; margin: 0px 5px;" onLabel="Matriculable" offLabel="No Matriculable" value="#{empresaGestion.esMatriculable}">
+                            <f:ajax event="change" render="formulario_principal"/> 
+                        </p:selectBooleanButton>
+                    </div>
+                    <p>
+                        <h:outputLabel value="Actividad:"/>
+                        <h:outputLabel styleClass="valor" id="texto_actividad" value="#{empresaGestion.empresaSeleccionada.actividad.nombre}"/>
+                        <p:commandButton icon="ui-icon-search" rendered="#{sesionActual.tienePermiso(1)}" title="Asociar Actividad" type="button" onclick="dlgActividad.show()" styleClass="separador" />
+                    </p>
+                    <p>
+                        <h:outputLabel value="Dirección:"/>
+                        <h:outputLabel styleClass="valor" id="texto_direccion" value="
+                                       #{empresaGestion.empresaSeleccionada.direccion.tipoVia.abreviatura} 
+                                       #{empresaGestion.empresaSeleccionada.direccion.via} #{empresaGestion.empresaSeleccionada.direccion.numero} #{empresaGestion.empresaSeleccionada.direccion.extra}, #{empresaGestion.empresaSeleccionada.direccion.cpLocalidad.cpLocalidadPK.cp} 
+                                       #{empresaGestion.empresaSeleccionada.direccion.cpLocalidad.localidad1.nombre} (#{empresaGestion.empresaSeleccionada.direccion.cpLocalidad.localidad1.provincia.nombre})"/>
+                        <p:commandButton rendered="#{sesionActual.tienePermiso(1)}" icon="ui-icon-search" title="Cambiar Dirección" type="button" onclick="dlgDireccion.show()" styleClass="separador" />
+                    </p>
+                </div>
+                <div>
+                    <h:outputLabel value="NIF:"/>
+                    <p:inputText rendered="#{sesionActual.tienePermiso(1)}" validator="#{validarVista.validaNIF}" id="nif_empresa" styleClass="valor" value="#{empresaGestion.empresaSeleccionada.nif}" >
+                        <f:ajax event="blur" render="nif_empresa nif1 nif2"/> 
+                    </p:inputText>
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(1)}" styleClass="valor" value="#{empresaGestion.empresaSeleccionada.nif}"/>
+                    <h:outputLabel id="nif1" value="(#{empresaGestion.empresaSeleccionada.tipoNif})" style="width: auto; text-align: left; margin: 10px;"/>
+                    <!-- #-{empresaGestion.empresaSeleccionada.tipoNif eq '-'?'':'display:none;'} -->
+                    <p:selectBooleanButton id="nif2" style="display:none;" value="#{empresaGestion.nifGenerado}" onLabel="Generado automáticamente" offLabel="Generar" > 
+                        <p:ajax update="nif_empresa" listener="#{empresaGestion.cambiaNif}"/>  
+                    </p:selectBooleanButton>
+                </div>
+                <div>
+                    <h:outputLabel value="Razón Social:"/>
+                    <p:inputText rendered="#{sesionActual.tienePermiso(1)}" size="85" required="true" label="Razón Social" id="rs_empresa" styleClass="valor" value="#{empresaGestion.empresaSeleccionada.razonSocial}" >
+                        <f:ajax event="change" render="rs_empresa"/> 
+                    </p:inputText>
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(1)}" styleClass="valor" value="#{empresaGestion.empresaSeleccionada.razonSocial}"/>
+                </div>
+                <div>
+                    <h:outputLabel value="Repres. Legal:"/>
+
+                    <a href="../persona/persona.xhtml?persona=#{empresaGestion.empresaSeleccionada.represLegal.nif}" target="_blank"><h:outputLabel id="valorPersona" styleClass="valor" value="#{empresaGestion.empresaSeleccionada.represLegal.nombre} #{empresaGestion.empresaSeleccionada.represLegal.apellido1} #{empresaGestion.empresaSeleccionada.represLegal.apellido2} (#{empresaGestion.empresaSeleccionada.represLegal.nif})"/></a>
+                    <p:commandButton rendered="#{sesionActual.tienePermiso(1)}" icon="ui-icon-search" title="Asociar Persona" type="button" onclick="dlgRepresLegal.show()" styleClass="separador" />
+                </div>
+                <div>
+                    <h:outputLabel value="Email:"/>
+                    <p:inputText rendered="#{sesionActual.tienePermiso(1)}" size="90" validator="#{validarVista.validaEmail}" label="Email" id="email_empresa" styleClass="valor" value="#{empresaGestion.empresaSeleccionada.email}" >
+                        <f:ajax event="change" render="email_empresa"/> 
+                    </p:inputText>
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(1)}" styleClass="valor" value="#{empresaGestion.empresaSeleccionada.email}"/>
+                </div>
+                <div>
+                    <h:outputLabel value="Web:"/>
+                    <p:inputText rendered="#{sesionActual.tienePermiso(1)}" size="90" label="Web" id="web_empresa" styleClass="valor" value="#{empresaGestion.empresaSeleccionada.pagWeb}" >
+                        <f:ajax event="change" render="web_empresa"/> 
+                    </p:inputText>
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(1)}" styleClass="valor" value="#{empresaGestion.empresaSeleccionada.pagWeb}"/>
+                </div>
+            </p:fieldset>
+            <p:fieldset collapsed="#{empresaGestion.borrado}" legend="Datos de Contacto" styleClass="campoRellena" id="datosContacto">
+                <p:dataTable  filterEvent="change" editable="true" var="t" value="#{empresaGestion.empresaSeleccionada.empresaTelefonoList}" style="width: 250px; margin: auto;"
+                              emptyMessage="La empresa no tiene Teléfonos asociados"
+                              >
+                    <f:facet name="header">  
+                        Teléfonos de la Empresa
+                        <p:commandButton icon="ui-icon-plus" rendered="#{sesionActual.tienePermiso(1)}" style="width:16px; height: 16px;" update=":formulario_principal:datosContacto" immediate="true" actionListener="#{empresaGestion.aniadirTelefono}" />
+                    </f:facet>  
+                    <p:column headerText="Teléfono">  
+                        <p:cellEditor>  
+                            <f:facet name="output">  
+                                <h:outputText value="#{t.empresaTelefonoPK.numero}" />  
+                            </f:facet>  
+                            <f:facet name="input">  
+                                <p:inputText value="#{t.empresaTelefonoPK.numero}" validator="#{validarVista.validaTelefono}" onfocus="borraCeros($(this));" >
+                                    <f:ajax event="change" render=":formulario_principal:messages :formulario_principal:growl"/> 
+                                </p:inputText>  
+                            </f:facet>  
+                        </p:cellEditor>  
+                    </p:column>
+                    <p:column headerText="Tipo" style="width:125px">  
+                        <p:cellEditor>  
+                            <f:facet name="output">  
+                                <h:outputText value="#{t.tipo.nombre}" />  
+                            </f:facet>  
+                            <f:facet name="input">  
+                                <p:selectOneMenu style="width:100px;" value="#{t.tipo}" >  
+                                    <f:selectItems value="#{desplegableVista.tiposTelefono}"  
+                                                   var="ti"   
+                                                   itemLabel="#{ti.nombre}"  
+                                                   itemValue="#{ti}" />  
+                                </p:selectOneMenu>  
+                            </f:facet>  
+                        </p:cellEditor> 
+                    </p:column>
+                    <p:column style="width:70px" rendered="#{sesionActual.tienePermiso(1)}">  
+                        <p style="width:70px; padding: 0px; margin: 0px;">
+                            <p:rowEditor  /> 
+                            <p:commandButton icon="ui-icon-trash" style="width:17px; height: 17px;" onclick="dlgEliminarTelefono.show();"  immediate="true" >
+                                <f:setPropertyActionListener value="#{t}"  
+                                                             target="#{empresaGestion.telefonoSeleccionado}" /> 
+                            </p:commandButton>
+                        </p>
+                    </p:column> 
+                </p:dataTable>
+
+                <p:dataTable  filterEvent="change" var="p" value="#{empresaGestion.empresaSeleccionada.personaList}" style="width: 600px; margin: 10px auto;"
+                              emptyMessage="La empresa no tiene Personal asociados"
+                              id="tabla_personal_asociado"
+                              paginator="true" rows="5"    
+                              paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                              currentPageReportTemplate="{totalRecords} Filas (página {currentPage} de {totalPages})"
+                              rowsPerPageTemplate="5,10,15,25,50,100, 300"
+                              >
+                    <f:facet name="header">  
+                        Personal de la Empresa
+                        <p:commandButton icon="ui-icon-plus" style="width:16px; height: 16px;" onclick="dlgAniadirPersona.show();" rendered="#{sesionActual.tienePermiso(1)}" />
+                    </f:facet>  
+                    <p:column style="width:2%" >  
+                        <p:rowToggler rendered="#{p.alumno ne null}"/>  
+                    </p:column>  
+                    <p:column headerText="Tipo" 
+                              sortBy="#{p.alumno ne null ? 'Alumno' : (p.tutor ne null? 'Tutor' : 'Contacto')}" filterBy="#{p.alumno ne null ? 'Alumno' : (p.tutor ne null? 'Tutor' : 'Contacto')}"
+                              filterOptions="#{desplegableVista.tipoPersonaOptions}"  
+                              filterMatchMode="exact"
+                              >
+                        <h:outputText value="#{p.alumno ne null ? 'Alumno' : (p.tutor ne null? 'Tutor' : 'Contacto')}"/>
+                    </p:column>
+                    <p:column headerText="Persona"  filterMatchMode="contains"
+                              sortBy="#{p.nombre} #{p.apellido1} #{p.apellido2} (#{p.nif})" filterBy="#{p.nombre} #{p.apellido1} #{p.apellido2} (#{p.nif})">
+                        <h:outputText value="#{p.nombre} #{p.apellido1} #{p.apellido2} (#{p.nif})"/>
+                    </p:column>  
+                    <p:column headerText="Email"  filterMatchMode="contains"
+                              sortBy="#{p.email}" filterBy="#{p.email}">
+                        <h:outputText value="#{p.email}"/>
+                    </p:column>
+                    <p:column headerText="Tlf. Contacto"  filterMatchMode="contains"
+                              sortBy="#{p.telefonos}" filterBy="#{p.telefonos}">
+                        <p:dataList var="tel" value="#{p.personaTelefonoList}" styleClass="listaTabla">
+                            #{tel.personaTelefonoPK.numero} (#{tel.tipo.nombre})
+                        </p:dataList>
+                    </p:column>  
+
+                    <p:column style="width:80px;">  
+                        <p:button icon="ui-icon-search" href="../persona/persona.xhtml?persona=#{p.nif}" />
+                        <p:commandButton icon="ui-icon-trash" onclick="dlgEliminarPersona.show();" immediate="true" rendered="#{sesionActual.tienePermiso(1)}" >
+                            <f:setPropertyActionListener value="#{p}"  
+                                                         target="#{empresaGestion.personaSeleccionada}" /> 
+                        </p:commandButton>
+                    </p:column> 
+                    <p:rowExpansion>
+                        <p:dataTable  filterEvent="change" var="matricula" value="#{p.alumno.matriculaList}" style="width: 500px; float:right; margin-bottom: 10px;"
+                                      emptyMessage="El alumno no tiene Matrículas asociadas"
+                                      id="tabla_matriculas_asociadas"
+                                      >
+                            <f:facet name="header">  
+                                Matrículas asociadas a Alumno
+                            </f:facet>  
+                            <p:column headerText="Identificador" >  
+                                <h:outputText value="#{matricula.id}" /> 
+                            </p:column>
+                            <p:column headerText="Acción Formativa" >  
+                                <h:outputText value="#{matricula.grupo.accionFormativa1.id} #{matricula.grupo.accionFormativa1.nombre}" /> 
+                            </p:column>
+                            <p:column headerText="Grupo" >  
+                                <h:outputText value="#{matricula.grupo.nombre}" /> 
+                            </p:column>
+                            <p:column headerText="F. Inicio" >  
+                                <h:outputText value="#{Fecha.getFechaDiaMesAnio(matricula.grupo.FInicio)}" /> 
+                            </p:column>
+                            <p:column headerText="F. Fin" >  
+                                <h:outputText value="#{Fecha.getFechaDiaMesAnio(matricula.grupo.FFin)}" /> 
+                            </p:column>
+                            <p:column>  
+                                <p:button icon="ui-icon-search" href="../matricula/matricula.xhtml?matricula=#{matricula.id}" />
+
+                            </p:column> 
+                        </p:dataTable>
+
+                    </p:rowExpansion>
+                </p:dataTable>
+
+            </p:fieldset>
+            <p:fieldset legend="Datos para Matricular" styleClass="campoRellena" id="datosMatricular" rendered="#{empresaGestion.esMatriculable and not empresaGestion.borrado}" toggleable="true">
+
+
+                <span>
+                    <h:outputLabel value="Convenio Colectivo: " style="width: auto; margin-right: 5px;"/>
+                    <p:selectOneMenu rendered="#{sesionActual.tienePermiso(1)}" id="convenioColectivoEmpresa" value="#{empresaGestion.empresaSeleccionada.empresaMatricula.CColectivo}">
+                        <f:selectItems value="#{empresaGestion.ccolectivo}" var="c" itemValue="#{c}" itemLabel="#{c.nombre}" />
+                        <f:ajax />
+                    </p:selectOneMenu>
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(1)}" styleClass="valor" value="#{empresaGestion.empresaSeleccionada.empresaMatricula.CColectivo.nombre}"/>
+
+                    <p:commandButton rendered="#{sesionActual.tienePermiso(21)}" icon="ui-icon-plus" title="Nuevo Convenio Colectivo" type="button" onclick="dlgNuevoCC.show()" style="top: -7px;left: 6px;" />
+                </span>
+                <span style="margin-left: 30px;">
+                    <h:outputLabel value="Fecha de Creación: "/>
+                    <p:calendar rendered="#{sesionActual.tienePermiso(1)}" lang="es" navigator="true" value="#{empresaGestion.empresaSeleccionada.empresaMatricula.fechaCreacion}" id="fc_empresa" showOn="button" >
+                        <f:ajax />
+                    </p:calendar>  
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(1)}" styleClass="valor" value="#{Fecha.getFechaDiaMesAnio(empresaGestion.empresaSeleccionada.empresaMatricula.fechaCreacion)}"/>
+                </span>
+                <br/>
+                <span style="margin-left: 30px;">
+                    <h:outputLabel value="Cuenta Cotización S.S.: "/>
+                    <p:inputText rendered="#{sesionActual.tienePermiso(1)}" required="true" label="Cuenta Cotización S.S." validator="#{validarVista.validaNSSEmpresa}" id="ctacot_empresa" styleClass="valor valorTextoNSS" value="#{empresaGestion.empresaSeleccionada.empresaMatricula.cotSs}">
+                        <f:ajax />
+                    </p:inputText>    
+                    <p:commandButton rendered="#{sesionActual.tienePermiso(1)}" onclick="$('.valorTextoNSS').val(aniadeNSS(prompt('Introduzca el NSS a ser rellenado:', ''), $('.valorTextoNSS').val()));$('.valorTextoNSS').change();
+                                return false;" type="button"  ajax="true" icon="ui-icon-arrowrefresh-1-s" styleClass="separador" title="Calcular dígito control NSS"  />
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(1)}" styleClass="valor" value="#{empresaGestion.empresaSeleccionada.empresaMatricula.cotSs}"/>
+                </span>
+                <span style="margin-left: 30px;">
+                    <h:outputLabel value="Agrupación: " style="width: auto; margin-right: 5px;"/>
+                    <p:selectOneMenu  rendered="#{sesionActual.tienePermiso(1)}" id="agrupacionEmpresa" value="#{empresaGestion.empresaSeleccionada.empresaMatricula.agrupacion}">
+                        <f:selectItems value="#{empresaGestion.agrupacion}" var="a" itemValue="#{a}" itemLabel="#{a.nombre}" />
+                        <f:ajax />
+                    </p:selectOneMenu>
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(1)}" styleClass="valor" value="#{empresaGestion.empresaSeleccionada.empresaMatricula.agrupacion.nombre}"/>
+                    <p:commandButton icon="ui-icon-plus" title="Nueva Agrupación" rendered="#{sesionActual.tienePermiso(21)}" type="button" onclick="dlgNuevaAgrup.show()" style="top: -7px;left: 6px;" />
+                </span>
+                <span style="margin-left: 30px;">
+                    <h:outputLabel value="RLT: " style="width: auto; margin-right: 5px;"/>
+                    <p:selectBooleanCheckbox rendered="#{sesionActual.tienePermiso(1)}" value="#{empresaGestion.empresaSeleccionada.empresaMatricula.representacionLegal}">
+                        <f:ajax />
+                    </p:selectBooleanCheckbox>
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(1)}" styleClass="valor" value="#{empresaGestion.empresaSeleccionada.empresaMatricula.representacionLegal?'Sí':'No'}"/>
+                </span>
+                <br/>
+                <div style="text-align: center;">
+                    <p:dataTable  filterEvent="change" editable="true" var="ccc" value="#{empresaGestion.empresaSeleccionada.empresaMatricula.empresaMatriculaCccList}" 
+                                  emptyMessage="La empresa no tiene Datos Bancarios asociados"
+                                  style="width:500px; margin: 5px auto;"
+                                  id="tabla_ccc"
+                                  >
+                        <f:facet name="header">  
+                            Datos Bancarios
+                            <p:commandButton rendered="#{sesionActual.tienePermiso(1)}" icon="ui-icon-plus" style="width:16px; height: 16px;" update=":formulario_principal:tabla_ccc" immediate="true" actionListener="#{empresaGestion.aniadirDatosBancarios}" />
+                        </f:facet>  
+                        <p:column headerText="CCC">
+                            <p:cellEditor>  
+                                <f:facet name="output">  
+                                    <h:outputText value="#{ccc.empresaMatriculaCccPK.ccc}" rendered="#{ccc.esNuevo or ccc.empresaMatriculaCccPK.ccc ne ''}" /> 
+                                    <h:outputText value="[Por Defecto]" rendered="#{!ccc.esNuevo and ccc.empresaMatriculaCccPK.ccc eq ''}" /> 
+                                </f:facet>  
+                                <f:facet name="input">  
+                                    <p:inputText rendered="#{!empresaGestion.tieneCCCAsociadosAMatriculas or (empty ccc.matriculaList)}" validator="#{validarVista.validaCCC}" value="#{ccc.empresaMatriculaCccPK.ccc}">
+                                        <f:ajax event="change" render=":formulario_principal:messages :formulario_principal:growl"/> 
+                                    </p:inputText>  
+                                    <h:outputText  rendered="#{empresaGestion.tieneCCCAsociadosAMatriculas}" value="#{ccc.empresaMatriculaCccPK.ccc}" />  
+                                </f:facet>  
+                            </p:cellEditor>
+                        </p:column> 
+                        <p:column headerText="IBAN">
+                            <p:cellEditor>  
+                                <f:facet name="output">  
+                                    <h:outputText value="#{ccc.iban}" />  
+                                </f:facet>  
+                                <f:facet name="input">  
+                                    <p:inputText validator="#{validarVista.validaIBAN}" value="#{ccc.iban}">
+                                        <f:ajax event="change" render=":formulario_principal:messages :formulario_principal:growl"/> 
+                                    </p:inputText>    
+                                </f:facet>  
+                            </p:cellEditor>
+                        </p:column>  
+                        <p:column style="width:70px" rendered="#{sesionActual.tienePermiso(1)}">  
+                            <p style="width:70px; padding: 0px; margin: 0px;">
+                                <p:rowEditor rendered="#{ccc.esNuevo or ccc.empresaMatriculaCccPK.ccc ne ''}"/> 
+                                <p:commandButton icon="ui-icon-trash"  immediate="true" style="width:17px; height: 17px;" onclick="dlgEliminarCCC.show();" rendered="#{empty ccc.matriculaList and (ccc.esNuevo or ccc.empresaMatriculaCccPK.ccc ne '')}" >
+                                    <f:setPropertyActionListener value="#{ccc}"  
+                                                                 target="#{empresaGestion.emCCCSeleccionado}" /> 
+                                </p:commandButton>
+                            </p>
+                        </p:column>
+                    </p:dataTable>
+                    <p:dataTable  filterEvent="change" style="width:700px; margin: 5px auto;" editable="true" var="da" value="#{empresaGestion.empresaSeleccionada.empresaMatricula.empresaMatriculaAnioList}"
+                                  emptyMessage="La empresa no tiene Datos por Año asociados"
+                                  sortBy="#{da.empresaMatriculaAnioPK.anio}" sortOrder="descending"
+                                  id="tabla_da"
+                                  >
+                        <f:facet name="header">  
+                            Datos por Año
+                            <p:commandButton rendered="#{sesionActual.tienePermiso(1)}" icon="ui-icon-plus" style="width:16px; height: 16px;" update="tabla_da" immediate="true" actionListener="#{empresaGestion.aniadirDatosPorAnio}" />
+                        </f:facet>  
+                        <p:column style="width:2%">  
+                            <p:rowToggler />  
+                        </p:column>
+                        <p:column headerText="Año" sortBy="#{da.empresaMatriculaAnioPK.anio}">
+                            <p:cellEditor>  
+                                <f:facet name="output">  
+                                    <h:outputText value="#{da.empresaMatriculaAnioPK.anio}" />  
+                                </f:facet>  
+                                <f:facet name="input">  
+                                    <p:spinner min="0" value="#{da.empresaMatriculaAnioPK.anio}"/>  
+                                </f:facet>  
+                            </p:cellEditor> 
+                        </p:column>
+                        <p:column headerText="Plantilla Media">
+                            <p:cellEditor>  
+                                <f:facet name="output">  
+                                    <h:outputText value="#{da.plantilla}" />  
+                                </f:facet>  
+                                <f:facet name="input">  
+                                    <p:spinner min="0" value="#{da.plantilla}"/>  
+                                </f:facet>  
+                            </p:cellEditor> 
+                        </p:column>  
+                        <p:column headerText="Crédito Asignado">
+                            <p:cellEditor>  
+                                <f:facet name="output">  
+                                    <h:outputText value="#{da.creditoAsignado}#{da.creditoAsignado eq null? '' : ' €'}" />  
+                                </f:facet>  
+                                <f:facet name="input">  
+                                    <p:spinner min="0" value="#{da.creditoAsignado}"/>  
+                                </f:facet>  
+                            </p:cellEditor> 
+                        </p:column> 
+                        <p:column headerText="Crédito Disponible"> 
+                            <h:outputText value="#{da.creditoDisponible}#{da.creditoDisponible eq null? '' : ' €'}" />  
+                        </p:column> 
+                        <p:column headerText="Ha creado Centro">
+                            <p:cellEditor>  
+                                <f:facet name="output">  
+                                    <h:outputText value="#{da.creadoCentro?'Sí':'No'}" />  
+                                </f:facet>  
+                                <f:facet name="input">  
+                                    <p:selectBooleanCheckbox value="#{da.creadoCentro}"/>  
+                                </f:facet>  
+                            </p:cellEditor>
+                        </p:column>
+                        <p:column headerText="Recibe Formación">
+                            <p:cellEditor>  
+                                <f:facet name="output">  
+                                    <h:outputText value="#{da.recibeFormacion?'Sí':'No'}" />  
+                                </f:facet>  
+                                <f:facet name="input">  
+                                    <p:selectBooleanCheckbox value="#{da.recibeFormacion}"/>  
+                                </f:facet>  
+                            </p:cellEditor>
+                        </p:column>  
+                        <p:column style="width:70px" rendered="#{sesionActual.tienePermiso(1)}">  
+                            <p style="width:70px; padding: 0px; margin: 0px;">
+                                <p:rowEditor /> 
+                                <p:commandButton icon="ui-icon-trash" style="width:17px; height: 17px;" onclick="dlgEliminarDA.show();"  immediate="true" >
+                                    <f:setPropertyActionListener value="#{da}"  
+                                                                 target="#{empresaGestion.emAnioSeleccionado}" /> 
+                                </p:commandButton>
+                            </p>
+                        </p:column> 
+                        <p:rowExpansion>
+                            <p:dataTable  style="margin: 0px 50px;" var="credito" value="#{da.cargaCreditoAnio}"
+                                          emptyMessage="La empresa no tiene Histórico de Crédito Disponible para éste año."
+                                          >
+                                <p:column headerText="Fecha" sortBy="#{Fecha.getFechaAnioMesDiaHoraMinutoSegundo(credito.empresaMatriculaCreditoPK.fecha)}">
+                                    <h:outputLabel value="#{Fecha.getFechaDiaMesAnio(credito.empresaMatriculaCreditoPK.fecha)} #{Fecha.getFechaHoraMinuto(credito.empresaMatriculaCreditoPK.fecha)}"/>
+                                </p:column>
+                                <p:column headerText="Crédito Disponible">
+                                    <h:outputLabel value="#{credito.creditoDisponible} €"/>
+                                </p:column>
+                            </p:dataTable>
+                        </p:rowExpansion>
+                    </p:dataTable>
+
+                </div>
+            </p:fieldset>
+            <p:fieldset collapsed="#{empresaGestion.borrado}" legend="Datos de Proveedor" styleClass="campoRellena" id="datosProveedor" rendered="#{empresaGestion.esProveedor}" toggleable="true">
+                <div style="text-align: center;">
+                    <p:selectBooleanButton rendered="#{sesionActual.tienePermiso(1)}" onLabel="Existe Seguimiento Tutorial" offLabel="No Existe Seguimiento Tutorial" value="#{empresaGestion.empresaSeleccionada.proveedor.generaSeguimientoTutorial}"/>
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(1)}" styleClass="valor" value="#{empresaGestion.empresaSeleccionada.proveedor.generaSeguimientoTutorial?'Existe Seguimiento Tutorial':'No Existe Seguimiento Tutorial'}"/>
+                    <p:commandButton rendered="#{sesionActual.tienePermiso(1)}" value="Generar Ausencias para Tutores" onclick="dlgDetalleNuevoEventoBoton.show();" update="">
+                    </p:commandButton>
+                </div>
+                <p:dataTable  filterEvent="change" var="accionesform" value="#{empresaGestion.empresaSeleccionada.proveedor.accionFormativaList}" 
+                              emptyMessage="La empresa no tiene Acciones Formativas asociadas"
+                              style="width:500px; margin: 5px auto;"
+
+                              paginator="true" rows="5"    
+                              paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                              currentPageReportTemplate="{totalRecords} Filas (página {currentPage} de {totalPages})"
+                              rowsPerPageTemplate="5,10,15,25,50,100, 300"
+                              >
+                    <f:facet name="header">  
+                        Acciones Formativas
+                    </f:facet> 
+                    <p:column headerText="ID"  filterMatchMode="contains"
+                              sortBy="#{accionesform.id}" filterBy="#{accionesform.id}">
+                        <h:outputText value="#{accionesform.id}"/>
+                    </p:column>
+                    <p:column headerText="Nombre"  filterMatchMode="contains"
+                              sortBy="#{accionesform.nombre}" filterBy="#{accionesform.nombre}">
+                        <h:outputText value="#{accionesform.nombre}"/>
+                    </p:column>
+                    <p:column headerText="Modalidad"  filterMatchMode="contains"
+                              sortBy="#{accionesform.modalidad.nombre}" filterBy="#{accionesform.modalidad.nombre}">
+                        <h:outputText value="#{accionesform.modalidad.nombre}"/>
+                    </p:column>
+                    <p:column style="width:20px;">  
+                        <p:button title="Ver" icon="ui-icon-search" href="../accionFormativa/accionFormativa.xhtml?accionFormativa=#{accionesform.id}"/>  
+                    </p:column>
+                </p:dataTable>
+            </p:fieldset>
+
+            <p:fieldset collapsed="#{empresaGestion.borrado}" legend="Notas de Empresa" styleClass="campoRellena" id="notasEmpresa" toggleable="true">
+                <p:commandButton value="Nueva Nota" rendered="#{sesionActual.tienePermiso(1)}"  onclick="dlgDetalleNuevoEventoBotonEmpresa.show();" update=":aniadir_evento_boton_e">
+
+                </p:commandButton>
+                <br/><br/>
+                <p:dataTable  filterEvent="change" value="#{empresaGestion.empresaSeleccionada.eventoList}" var="evento" id="tabla_eventos"
+                              sortBy="#{evento.fechaCreacion}" sortOrder="descending"
+                              emptyMessage="No existen eventos asociados a la empresa"
+                              >
+                    <p:column headerText="Descripción">
+                        <p:outputLabel value="#{evento.descripcion}"/>
+                        <p:outputLabel value="#{evento.documentacionEvento}"/>
+                    </p:column>
+                    <p:column headerText="Fecha">
+                        <p:outputLabel value="#{Fecha.getFechaDiaMesAnio(evento.fechaCreacion)}"/>
+                    </p:column>
+                    <p:column headerText="Observaciones"
+                              >  
+                        <h:outputText value="#{evento.observaciones.length() gt 10? evento.observaciones.substring(0,10) : evento.observaciones}#{evento.observaciones.length() gt 10?'[...]':''}" title="#{evento.observaciones}" style="cursor: pointer;" />  
+                    </p:column>
+                    <p:column style="width:80px; text-align: center;"> 
+                        <p:commandButton id="selectButtonVer" process="@this tabla_eventos" update=":detalles_de_evento" title="Ver" icon="ui-icon-search" oncomplete="dlgDetalleEvento.show();" styleClass="#{(evento.observaciones eq null or evento.observaciones eq '') ? '' : 'greenyellow'}" >
+                            <f:setPropertyActionListener target="#{controlCalendario.eventId}" value="#{evento.id}"/>
+                        </p:commandButton>   
+                    </p:column>
+                </p:dataTable>
+            </p:fieldset>
+
+            <p:fieldset rendered="#{empresaGestion.empresaSeleccionada.comercial ne null}" collapsed="#{empresaGestion.borrado}" legend="Estructura Comercial" styleClass="campoRellena" id="estructuraComercial" toggleable="true">
+                <p style="text-align: center; font-weight: bolder;">#{empresaGestion.empresaSeleccionada.comercial.comercialTipo.nombre} - #{empresaGestion.empresaSeleccionada.comercial.comercialSuperior.comercialTipo.nombre}: #{empresaGestion.empresaSeleccionada.comercial.nombreSuperior}</p>
+                <p:commandButton rendered="#{sesionActual.tienePermiso(1)}" styleClass="botonAplicar" value="Asociar Estructura Comercial" onclick="dlgNuevoComercial.show()" type="button" /> 
+            </p:fieldset>
+
+            <p style="text-align: center;">
+                <p:commandButton  value="Asociar Estructura Comercial" rendered="#{empresaGestion.empresaSeleccionada.comercial eq null and sesionActual.tienePermiso(1)}" onclick="dlgNuevoComercial.show()" type="button" /> 
+            </p>
+
+            <p:commandButton 
+                rendered="#{sesionActual.tienePermiso(1)}"
+                disabled="#{personaGestion.borrado}" actionListener="#{empresaGestion.guarda}" value="Guardar" icon="ui-icon-check" id="botonGuarda" update="messages growl formulario_principal" styleClass="botonAplicar"/> 
+
+
+            <p:commandButton value="#{empresaGestion.vieneDesdeMatricula?'Volver a Matrícula':'Salir'}" icon="#{empresaGestion.vieneDesdeMatricula?'ui-icon ui-icon-arrowreturnthick-1-w':'ui-icon ui-icon-arrowreturn-1-w'}"
+                             immediate="#{empresaGestion.vieneDesdeMatricula}"
+                             onclick="#{empresaGestion.vieneDesdeMatricula?validarVista.volverMatricula(empresaGestion.matID):'confirmation.show()'}" styleClass="botonAplicar"/>
+            <p:commandButton 
+                rendered="#{sesionActual.tienePermiso(3)}"
+                id="botonBorrado" disabled="#{empresaGestion.borrado or empresaGestion.modoAlta}" style="float: left; " value="Eliminar"  icon="ui-icon-trash" onclick="confirmationEliminar.show()" styleClass="botonAplicar bg-red"/>  
+            <p:commandButton 
+                rendered="#{sesionActual.tienePermiso(3)}"
+                actionListener="#{empresaGestion.elimina}" update="messages growl botonGuarda botonBorrado formulario_principal" styleClass="boton_borrar_objeto"/> 
+
+        </ui:define>
+
+        <ui:define name="dialogos">
+            <p:confirmDialog header="Generar Ausencias para Tutores" rendered="#{sesionActual.tienePermiso(1)}" widgetVar="dlgDetalleNuevoEventoBoton" message="Introduzca las fechas:" >
+                <h:form id="aniadir_evento_boton">
+                    <p>
+                        <p:calendar id="calNuevoEventoboton" styleClass="botonAplicar" navigator="true" value="#{empresaGestion.fechaNuevoEvento}" >
+                            <f:ajax event="dateSelect" render="calNuevoEventoboton calNuevoEventobotonHasta"/> 
+                        </p:calendar>
+                        <p:outputLabel value="Ausencia Desde:&nbsp;" style="float:right;"/>
+                        <br/><br/>
+                        <p:calendar id="calNuevoEventobotonHasta" styleClass="botonAplicar" navigator="true" value="#{empresaGestion.fechaNuevoEventoHasta}" mindate="#{personaGestion.fechaNuevoEvento}" >
+                            <f:ajax event="dateSelect" render="calNuevoEventoboton calNuevoEventobotonHasta"/> 
+                        </p:calendar>
+                        <p:outputLabel value="Ausencia Hasta:&nbsp;" style="float:right;"/>
+                    </p><br/><br/>
+                    <p:commandButton actionListener="#{empresaGestion.nuevoEvento}" styleClass="botonAplicar" value="Guardar" style="margin: 0px 10px;" ajax="false" update="calNuevoEventoboton calNuevoEventobotonHasta"/>
+
+                </h:form>
+            </p:confirmDialog>
+
+            <p:confirmDialog header="Generar Nota para Empresa" rendered="#{sesionActual.tienePermiso(1)}" widgetVar="dlgDetalleNuevoEventoBotonEmpresa" message="Introduzca las fechas:" >
+                <h:form id="aniadir_evento_boton_e">
+                    <p>
+                        <p:calendar id="calNuevoEventobotonEmpresa" styleClass="botonAplicar" navigator="true" value="#{empresaGestion.fechaNuevoEvento}" rendered="true" >
+                            <f:ajax event="dateSelect" render="calNuevoEventobotonEmpresa nnuevoEventobotonEmpresa"/> 
+                        </p:calendar>
+                        <p:outputLabel value="Fecha Nota:&nbsp;" style="float:right;"/>
+                        <br/><br/>
+                        <p:selectOneMenu id="nnuevoEventobotonEmpresa" value="#{empresaGestion.descripcionEvento}" editable="true" style="float:right; min-width: 200px;">  
+                            <f:selectItems value="#{desplegableVista.eventoEmpresaTipoOptions}" />  
+                        </p:selectOneMenu> 
+                        <p:outputLabel value="Descripción:&nbsp;" style="float:right;"/>
+                    </p><br/><br/>
+                    <p:commandButton actionListener="#{empresaGestion.nuevoEventoEmpresa}" styleClass="botonAplicar" value="Guardar" style="margin: 0px 10px;" ajax="false" update="calNuevoEventobotonEmpresa nnuevoEventobotonEmpresa growl messages"/>
+                    <p:commandButton icon="ui-icon-plus" rendered="#{sesionActual.tienePermiso(21)}" title="Nueva Descripción" type="button" onclick="dlgNuevoDescripcion.show()" style="top: -7px;left: 6px;" />
+
+                </h:form>
+            </p:confirmDialog>
+
+            <p:dialog header="Seleccionar Actividad" widgetVar="dlgActividad" rendered="#{sesionActual.tienePermiso(1)}" resizable="true">   
+                <h:form id="form_actividad">
+                    <p:dataTable  filterEvent="change" var="act" value="#{empresaGestion.actividades}" 
+                                  emptyMessage="No existen Actividades en el Sistema"
+                                  style="width:500px; margin: 5px auto;"
+                                  paginator="true"
+                                  rows="5" 
+                                  paginatorTemplate="{FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                                  rowsPerPageTemplate="5,10,15,30"
+                                  >
+                        <f:facet name="header">  
+                            Actividades
+                        </f:facet>
+                        <p:column headerText="Grupo" filterBy="#{act.actividadGrupo.nombre}" 
+                                  filterMatchMode="exact"
+                                  filterOptions="#{desplegableVista.gruposOptions}"  
+                                  sortBy="#{act.actividadGrupo.nombre}"
+                                  >
+                            <h:outputText value="#{act.actividadGrupo.nombre}"/>
+                        </p:column>
+                        <p:column headerText="Actividad" filterBy="#{act.nombre}" 
+                                  filterMatchMode="contains"
+                                  sortBy="#{act.nombre}"
+                                  >
+                            <h:outputText value="#{act.nombre}"/>
+                        </p:column>
+                        <p:column style="width:10px;">  
+                            <p:commandButton id="select_actividad" onclick="dlgActividad.close()" icon="ui-icon-check" title="Seleccionar" ajax="true" update=":formulario_principal:texto_actividad">  
+                                <f:setPropertyActionListener value="#{act}" target="#{empresaGestion.empresaSeleccionada.actividad}" />  
+                            </p:commandButton>  
+                        </p:column>
+                    </p:dataTable>
+                </h:form>
+            </p:dialog>
+            <p:dialog header="Seleccionar Dirección" widgetVar="dlgDireccion" resizable="true" rendered="#{sesionActual.tienePermiso(1)}">   
+                <h:form id="form_direccion">
+                    <div class="valor">
+                        <p:selectOneMenu styleClass="valor" value="#{empresaGestion.empresaSeleccionada.direccion.tipoVia}">
+                            <f:selectItems value="#{direccionVista.tiposVia}" var="tvia" itemValue="#{tvia}" itemLabel="#{tvia.nombre}" />
+                        </p:selectOneMenu>&nbsp;&nbsp;
+                        <p:inputText styleClass="valor" value="#{empresaGestion.empresaSeleccionada.direccion.via}"/>, Número: 
+                        <p:inputText styleClass="valor" value="#{empresaGestion.empresaSeleccionada.direccion.numero}"/>,&nbsp;
+                        <p:inputText styleClass="valor" value="#{empresaGestion.empresaSeleccionada.direccion.extra}"/>.
+                        <h:outputText id="cpl_loc" value="CP: #{empresaGestion.empresaSeleccionada.direccion.cpLocalidad.cpLocalidadPK.cp}, #{empresaGestion.empresaSeleccionada.direccion.cpLocalidad.localidad1.nombre} (#{empresaGestion.empresaSeleccionada.direccion.cpLocalidad.localidad1.provincia.nombre})."/>
+                    </div>
+                    <p:dataTable  filterEvent="change" var="cpl" value="#{direccionVista.cpLocalidades}" lazy="true"
+                                  emptyMessage="No existen CP en el Sistema con los criterios seleccionados."
+                                  style="width:500px; margin: 5px auto;"
+                                  paginator="true"
+                                  rows="5" 
+                                  paginatorTemplate="{PreviousPageLink} {NextPageLink} {RowsPerPageDropdown}"  
+                                  rowsPerPageTemplate="5,10,15,30"
+                                  paginatorPosition="top"
+                                  >
+                        <f:facet name="header">  
+                            Seleccionar CP
+                        </f:facet>
+                        <p:column headerText="CP" filterBy="#{cpl.cp}" 
+                                  filterMatchMode="contains"
+                                  sortBy="#{cpl.cp}"
+                                  >
+                            <h:outputText value="#{cpl.cp}"/>
+                        </p:column>
+                        <p:column headerText="Localidad" filterBy="#{cpl.localidadNombre}" 
+                                  filterMatchMode="contains"
+                                  sortBy="#{cpl.localidadNombre}"
+                                  >
+                            <h:outputText value="#{cpl.localidadNombre}"/>
+                        </p:column>
+                        <p:column headerText="Provincia" filterBy="#{cpl.provinciaNombre}" 
+                                  filterMatchMode="exact"
+                                  filterOptions="#{desplegableVista.provinciasOptions}"  
+                                  sortBy="#{cpl.provinciaNombre}"
+                                  >
+                            <h:outputText value="#{cpl.provinciaNombre}"/>
+                        </p:column>
+                        <p:column style="width:10px;">  
+                            <p:commandButton id="select_CP" icon="ui-icon-check" title="Seleccionar" ajax="true" update=":form_direccion">  
+                                <f:setPropertyActionListener value="#{cpl.cpLoc}" target="#{empresaGestion.empresaSeleccionada.direccion.cpLocalidad}" />  
+                            </p:commandButton>  
+                        </p:column>
+                    </p:dataTable>
+                    <p:commandButton id="select_direccion" styleClass="botonAplicar" onclick="dlgDireccion.close()" icon="ui-icon-check" value="Aplicar" ajax="true" update=":formulario_principal:texto_direccion">  
+                    </p:commandButton>  
+                    <br/><br/>
+                    <hr/>
+                </h:form>
+
+            </p:dialog>
+            <p:dialog header="Añadir Estado" widgetVar="dlgNuevoEstado" resizable="true" rendered="#{sesionActual.tienePermiso(21)}">
+                <h:form id="aniadir_estado_empresa">
+                    <p:outputLabel value="Nombre de Nuevo Estado: "/>
+                    <p:inputText value="#{empresaGestion.nombre_nuevo_estado}"/>
+                    <br/><br/>
+                    <p:commandButton actionListener="#{empresaGestion.guardaNuevoEstado}"  onclick="dlgNuevoEstado.close()"  value="Guardar" icon="ui-icon-check" update=":formulario_principal:messages :formulario_principal:growl :formulario_principal:empresaEstadoSeleccionar" styleClass="botonAplicar"/> 
+
+                </h:form>
+            </p:dialog>
+            <p:dialog header="Añadir Representante Legal" widgetVar="dlgRepresLegal" resizable="true" rendered="#{sesionActual.tienePermiso(1)}">
+
+                <h:form id="aniadir_repres_leg">
+                    <p:fieldset collapsed="#{empresaGestion.borrado}" styleClass="campoRellena" id="field_rep" >
+                        <div>
+                            <p:selectBooleanButton style="float: right; margin: 0px 5px;" onLabel="Masculino" offLabel="Femenino" value="#{empresaGestion.empresaSeleccionada.represLegal.masculino}">
+                            </p:selectBooleanButton>
+                            <p:outputLabel value="NIF: "/>
+                            <p:inputText id="nif_rep_leg" validator="#{validarVista.validaNIF}" styleClass="valor" value="#{empresaGestion.empresaSeleccionada.represLegal.nif}" >
+                                <p:ajax update="aniadir_repres_leg" listener="#{empresaGestion.buscaNIFRepLeg}"/>  
+                            </p:inputText>
+                            <br/><br/>
+                            <p:outputLabel value="Nombre: "/>
+                            <p:inputText label="Nombre" required="true" styleClass="valor" value="#{empresaGestion.empresaSeleccionada.represLegal.nombre}"/>
+                            <p:outputLabel  value="Apellido 1: "/>
+                            <p:inputText styleClass="valor" value="#{empresaGestion.empresaSeleccionada.represLegal.apellido1}"/>
+                            <p:outputLabel value="Apellido 2: "/>
+                            <p:inputText styleClass="valor" value="#{empresaGestion.empresaSeleccionada.represLegal.apellido2}"/>
+                            <br/><br/>
+                            <p:outputLabel value="Email: "/>
+                            <p:inputText validator="#{validarVista.validaEmail}" styleClass="valor" value="#{empresaGestion.empresaSeleccionada.represLegal.email}"/>
+                        </div>
+                    </p:fieldset>
+                    <p:commandButton id="select_rep_legal" styleClass="botonAplicar" onclick="dlgRepresLegal.close()" icon="ui-icon-check" value="Aplicar" ajax="true" update=":aniadir_repres_leg:field_rep :formulario_principal:valorPersona">  
+                    </p:commandButton>  
+                    <br/><br/>
+                    <hr/>
+                </h:form>
+                <h:form id="buscar_repres_leg">
+                    <p:dataTable  filterEvent="change" var="persona" value="#{personaVista.personas}" filteredValue="#{personaVista.personasFiltradas}" lazy="true"
+                                  emptyMessage="No existen Personas con los criterios seleccionados."
+                                  style="width:500px; margin: 5px auto;"
+                                  paginator="true"
+                                  rows="5" 
+                                  paginatorTemplate="{FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                                  rowsPerPageTemplate="5,10,15,30"
+                                  paginatorPosition="top"
+                                  >
+                        <p:column id="c_nif" filterBy="#{persona.nif}" sortBy="#{persona.nif}"
+                                  headerText="NIF"  
+                                  filterMatchMode="contains" >  
+                            <h:outputText value="#{persona.nif}" /> 
+                        </p:column>
+                        <p:column id="c_nombre" filterBy="#{persona.nombre}" sortBy="#{persona.nombre}"
+                                  headerText="Nombre"  
+                                  filterMatchMode="contains" >  
+                            <h:outputText value="#{persona.nombre}" /> 
+                        </p:column>
+                        <p:column style="width:10px;">  
+                            <p:commandButton id="select_repLeg" onclick="dlgRepresLegal.close()" icon="ui-icon-check" title="Seleccionar" ajax="true" update=":formulario_principal:valorPersona">  
+                                <f:setPropertyActionListener value="#{persona.persona}" target="#{empresaGestion.empresaSeleccionada.represLegal}" />  
+                            </p:commandButton>  
+                        </p:column>
+                    </p:dataTable>
+                </h:form>
+            </p:dialog>
+            <h:form id="borrar_tlf">
+                <p:confirmDialog id="confirmDialog" message="¿Seguro que desea eliminar el teléfono?"  
+                                 header="Eliminar Teléfono" severity="alert" widgetVar="dlgEliminarTelefono" rendered="#{sesionActual.tienePermiso(1)}">  
+
+                    <p:commandButton styleClass="botonAplicar" value="Sí" update=":formulario_principal" oncomplete="dlgEliminarTelefono.hide()"  
+                                     actionListener="#{empresaGestion.borrarTelefono}" />  
+                    <p:commandButton styleClass="botonAplicar" value="No" onclick="dlgEliminarTelefono.hide()" type="button" />   
+
+                </p:confirmDialog> 
+            </h:form>
+            <h:form id="borrar_asociacion_persona">
+                <p:confirmDialog id="confirmDialog" message="¿Seguro que desea eliminar la asociación con la Persona?"  
+                                 header="Borrar Asociación Persona" severity="alert" widgetVar="dlgEliminarPersona" rendered="#{sesionActual.tienePermiso(1)}">  
+
+                    <p:commandButton styleClass="botonAplicar" value="Sí" update=":formulario_principal" oncomplete="dlgEliminarPersona.hide()"  
+                                     actionListener="#{empresaGestion.borrarPersona}" />  
+                    <p:commandButton styleClass="botonAplicar" value="No" onclick="dlgEliminarPersona.hide()" type="button" />   
+
+                </p:confirmDialog> 
+            </h:form>
+            <h:form id="borrar_ccc">
+                <p:confirmDialog id="confirmDialog_ccc" message="¿Seguro que desea eliminar el Dato Bancario?"   rendered="#{sesionActual.tienePermiso(1)}"
+                                 header="Eliminar Teléfono" severity="alert" widgetVar="dlgEliminarCCC">  
+
+                    <p:commandButton styleClass="botonAplicar" value="Sí" update=":formulario_principal" oncomplete="dlgEliminarCCC.hide()"  
+                                     actionListener="#{empresaGestion.borrarDatosBancarios}" />  
+                    <p:commandButton styleClass="botonAplicar" value="No" onclick="dlgEliminarCCC.hide()" type="button" />   
+
+                </p:confirmDialog> 
+            </h:form>
+            <h:form id="borrar_da">
+                <p:confirmDialog id="confirmDialog_da" message="¿Seguro que desea eliminar el Dato de Año?"  rendered="#{sesionActual.tienePermiso(1)}"
+                                 header="Eliminar Dato de Año" severity="alert" widgetVar="dlgEliminarDA">  
+
+                    <p:commandButton styleClass="botonAplicar" value="Sí" update=":formulario_principal" oncomplete="dlgEliminarDA.hide()"  
+                                     actionListener="#{empresaGestion.borrarDatosPorAnio}" />  
+                    <p:commandButton styleClass="botonAplicar" value="No" onclick="dlgEliminarDA.hide()" type="button" />   
+
+                </p:confirmDialog> 
+            </h:form>
+            <p:dialog header="Añadir Convenio Colectivo" widgetVar="dlgNuevoCC" resizable="true" rendered="#{sesionActual.tienePermiso(21)}">
+                <h:form id="aniadir_convenio_empresa">
+                    <p:outputLabel value="Nombre de Nuevo Convenio Colectivo: "/>
+                    <p:inputText value="#{empresaGestion.nombre_nuevo_convenio}"/>
+                    <br/><br/>
+                    <p:commandButton actionListener="#{empresaGestion.guardaNuevoConvenio}"  onclick="dlgNuevoCC.close()"  value="Guardar" icon="ui-icon-check" update=":formulario_principal:messages :formulario_principal:growl :formulario_principal:convenioColectivoEmpresa" styleClass="botonAplicar"/> 
+
+                </h:form>
+            </p:dialog>
+            <p:dialog header="Añadir Agrupación" widgetVar="dlgNuevaAgrup" resizable="true" rendered="#{sesionActual.tienePermiso(21)}">
+                <h:form id="aniadir_agrupacion_empresa">
+                    <p:outputLabel value="Nombre de Nueva Agrupación: "/>
+                    <p:inputText value="#{empresaGestion.nombre_nueva_agrupacion}"/>
+                    <br/><br/>
+                    <p:commandButton actionListener="#{empresaGestion.guardaNuevaAgrupacion}"  onclick="dlgNuevaAgrup.close()"  value="Guardar" icon="ui-icon-check" update=":formulario_principal:messages :formulario_principal:growl :formulario_principal:agrupacionEmpresa" styleClass="botonAplicar"/> 
+
+                </h:form>
+            </p:dialog>
+            <p:dialog header="Añadir Persona" widgetVar="dlgAniadirPersona" resizable="true" rendered="#{sesionActual.tienePermiso(1)}">
+                <h:form id="aniadir_persona_empresa">
+                    <p:dataTable  filterEvent="change" var="persona" value="#{personaVista.personas}" filteredValue="#{personaVista.personasFiltradas}"
+                                  lazy="true"
+                                  emptyMessage="No existen Personas con los criterios seleccionados."
+                                  style="width:500px; margin: 5px auto;"
+                                  paginator="true"
+                                  rows="5" 
+                                  paginatorTemplate="{FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                                  rowsPerPageTemplate="5,10,15,30"
+                                  paginatorPosition="top"
+                                  >
+                        <p:column headerText="Tipo">
+                            <h:outputText value="#{persona.tipo}"/>
+                        </p:column>
+                        <p:column id="c_nif" filterBy="#{persona.nif}" sortBy="#{persona.nif}"
+                                  headerText="NIF"  
+                                  filterMatchMode="contains" >  
+                            <h:outputText value="#{persona.nif}" /> 
+                        </p:column>
+                        <p:column id="c_nombre" filterBy="#{persona.nombre}" sortBy="#{persona.nombre}"
+                                  headerText="Nombre"  
+                                  filterMatchMode="contains" >  
+                            <h:outputText value="#{persona.nombre}" /> 
+                        </p:column>
+                        <p:column style="width:10px;">  
+                            <p:commandButton id="select_persona" onclick="dlgAniadirPersona.close()" icon="ui-icon-check" title="Seleccionar" ajax="true" update=":formulario_principal:tabla_personal_asociado :formulario_principal">  
+                                <f:setPropertyActionListener value="#{persona.persona}" target="#{empresaGestion.aniadirPersona}" />  
+                            </p:commandButton>  
+                        </p:column>
+                    </p:dataTable>
+                </h:form>
+            </p:dialog>
+            <!--COMIENZA ASOCIACION ESTRUCTURA COMERCIAL-->
+            <p:dialog modal="true" header="Asociar Estructura Comercial" widgetVar="dlgNuevoComercial"  resizable="true" visible="#{empresaGestion.abrirASEC}" rendered="#{sesionActual.tienePermiso(1)}">
+                <h:form id="estructuracomercialdialog1">
+                    <p >Nivel Superior: #{empresaGestion.comerc.nombreSuperior} <p:commandButton icon="ui-icon-search" title="Asociar Nivel Superior" type="button" onclick="dlgAsociaComercialSuperior.show()" styleClass="separador" /></p>
+
+                    <h:outputLabel value="Tipo Nivel: " ><p:selectOneMenu value="#{empresaGestion.comerc.comercialTipo}" id="comercialTipoSeleccionar" >
+                            <f:selectItems value="#{empresaGestion.ctip}" var="c" itemValue="#{c}" itemLabel="#{c.nombre}" />
+                        </p:selectOneMenu>
+                        <p:commandButton icon="ui-icon-plus" rendered="#{sesionActual.tienePermiso(21)}" title="Nuevo Tipo" type="button" onclick="dlgNuevoTipoComercial.show()" style="top: -7px;left: 6px;" />
+
+                    </h:outputLabel>
+                    <br/>
+                    <p:commandButton value="Guardar" styleClass="botonAplicar" actionListener="#{empresaGestion.asociaEC}" oncomplete="dlgNuevoComercial.hide();" update=":formulario_principal estructuracomercialdialog1"/>
+                </h:form>
+            </p:dialog> 
+            <p:dialog header="Añadir Descripción:" widgetVar="dlgNuevoDescripcion" resizable="true" rendered="#{sesionActual.tienePermiso(21)}">
+                <h:form id="descripciondialog2">
+                    <p:outputLabel value="Nombre de Nueva Descripción: "/>
+                    <p:inputText value="#{desplegableVista.nombreNuevaDescripcion}"/>
+                    <br/><br/>
+                    <p:commandButton actionListener="#{desplegableVista.guardaNuevaDescripcion}"  onclick="dlgNuevoDescripcion.close();"  value="Guardar" icon="ui-icon-check" update=":formulario_principal:messages :formulario_principal:growl :aniadir_evento_boton_e" styleClass="botonAplicar"/> 
+
+                </h:form>
+            </p:dialog>
+            <p:dialog header="Añadir Tipo Nivel:" widgetVar="dlgNuevoTipoComercial" resizable="true" rendered="#{sesionActual.tienePermiso(21)}">
+                <h:form id="estructuracomercialdialog2">
+                    <p:outputLabel value="Nombre de Nuevo Tipo Nivel: "/>
+                    <p:inputText value="#{empresaGestion.nombreNuevoTipoComercial}"/>
+                    <br/><br/>
+                    <p:commandButton actionListener="#{empresaGestion.guardaNuevoTipoComercial}"  onclick="dlgNuevoTipoComercial.close();"  value="Guardar" icon="ui-icon-check" update=":formulario_principal:messages :formulario_principal:growl :estructuracomercialdialog1:comercialTipoSeleccionar" styleClass="botonAplicar"/> 
+
+                </h:form>
+            </p:dialog>
+            <p:dialog header="Asociar Nivel Superior" widgetVar="dlgAsociaComercialSuperior" resizable="true" rendered="#{sesionActual.tienePermiso(1)}">
+                <h:form id="estructuracomercialdialog3">
+                    <p:dataTable  filterEvent="change" value="#{personaGestion.comerciales}" var="com" filteredValue="#{personaGestion.comercialesFiltrados}"
+                                  emptyMessage="No existen Comerciales con los criterios seleccionados."
+                                  style="width:500px; margin: 5px auto;"
+                                  paginator="true"
+                                  rows="5" 
+                                  paginatorTemplate="{FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                                  rowsPerPageTemplate="5,10,15,30"
+                                  paginatorPosition="top">
+                        <p:column filterBy="#{com.nombre}" filterMatchMode="contains" headerText="Nombre">#{com.nombre}</p:column>
+                        <p:column filterBy="#{com.nombreSuperior}" filterMatchMode="contains" headerText="Superior">#{com.nombreSuperior}</p:column>
+                        <p:column filterBy="#{com.comercialTipo.nombre}" filterMatchMode="contains" headerText="Tipo">#{com.comercialTipo.nombre}</p:column>
+                        <p:column style="width:10px;">  
+                            <p:commandButton id="select_com" onclick="dlgAsociaComercialSuperior.close()" icon="ui-icon-check" title="Seleccionar" ajax="true" update=":estructuracomercialdialog1">  
+                                <f:setPropertyActionListener value="#{com}" target="#{empresaGestion.comerc.comercialSuperior}" /> 
+                                <f:setPropertyActionListener value="true" target="#{empresaGestion.abrirASEC}" />  
+                            </p:commandButton>  
+                        </p:column>
+                    </p:dataTable>
+                    <p:commandButton styleClass="botonAplicar" id="select_nocom" onclick="dlgAsociaComercialSuperior.close()" value="Sin nivel superior" title="Seleccionar" ajax="true" update=":estructuracomercialdialog1">  
+                        <f:setPropertyActionListener value="#{null}" target="#{empresaGestion.comerc.comercialSuperior}" /> 
+                        <f:setPropertyActionListener value="true" target="#{empresaGestion.abrirASEC}" />  
+                    </p:commandButton> 
+                </h:form>
+            </p:dialog>
+            <!--FINALIZA ASOCIACION EC-->
+        </ui:define>
+    </ui:composition>
+</html>

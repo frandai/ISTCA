@@ -1,0 +1,103 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package datos;
+
+import java.io.Serializable;
+import java.util.List;
+import javax.persistence.CascadeType;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
+
+/**
+ *
+ * @author sergio
+ */
+@Entity
+@Table(name = "CP_LOCALIDAD",  schema = "public")
+@XmlRootElement
+@NamedQueries({
+    @NamedQuery(name = "CpLocalidad.findAll", query = "SELECT c FROM CpLocalidad c"),
+    @NamedQuery(name = "CpLocalidad.findByCp", query = "SELECT c FROM CpLocalidad c WHERE c.cpLocalidadPK.cp = :cp"),
+    @NamedQuery(name = "CpLocalidad.findByLocalidad", query = "SELECT c FROM CpLocalidad c WHERE c.cpLocalidadPK.localidad = :localidad")})
+public class CpLocalidad implements Serializable {
+    private static final long serialVersionUID = 1L;
+    @EmbeddedId
+    protected CpLocalidadPK cpLocalidadPK;
+    @JoinColumn(name = "LOCALIDAD", referencedColumnName = "ID", nullable = false, insertable = false, updatable = false)
+    @ManyToOne(optional = false)
+    private Localidad localidad1;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "cpLocalidad")
+    private List<Direccion> direccionList;
+
+    public CpLocalidad() {
+    }
+
+    public CpLocalidad(CpLocalidadPK cpLocalidadPK) {
+        this.cpLocalidadPK = cpLocalidadPK;
+    }
+
+    public CpLocalidad(int cp, int localidad) {
+        this.cpLocalidadPK = new CpLocalidadPK(cp, localidad);
+    }
+
+    public CpLocalidadPK getCpLocalidadPK() {
+        return cpLocalidadPK;
+    }
+
+    public void setCpLocalidadPK(CpLocalidadPK cpLocalidadPK) {
+        this.cpLocalidadPK = cpLocalidadPK;
+    }
+
+    public Localidad getLocalidad1() {
+        return localidad1;
+    }
+
+    public void setLocalidad1(Localidad localidad1) {
+        this.localidad1 = localidad1;
+    }
+
+    @XmlTransient
+    public List<Direccion> getDireccionList() {
+        return direccionList;
+    }
+
+    public void setDireccionList(List<Direccion> direccionList) {
+        this.direccionList = direccionList;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (cpLocalidadPK != null ? cpLocalidadPK.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (!(object instanceof CpLocalidad)) {
+            return false;
+        }
+        CpLocalidad other = (CpLocalidad) object;
+        if ((this.cpLocalidadPK == null && other.cpLocalidadPK != null) || (this.cpLocalidadPK != null && !this.cpLocalidadPK.equals(other.cpLocalidadPK))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "datos.CpLocalidad[ cpLocalidadPK=" + cpLocalidadPK + " ]";
+    }
+    
+}

@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:c="http://java.sun.com/jsp/jstl/core">
+
+    <ui:composition template="/template.xhtml">
+        <ui:define name="title">
+            <h:outputText value="Empresas"></h:outputText>
+        </ui:define>
+        <ui:define name="body">
+            <p:button value="Nueva Empresa" href="empresa.xhtml" styleClass="separador" rendered="#{sesionActual.tienePermiso(1)}"/>
+            <p:commandButton type="button" value="Importar Datos de Fundación Tripartita" styleClass="separador" onclick="dialogoImpBonif.show();" rendered="#{sesionActual.tienePermiso(1)}"
+                             title="Importar Datos de Fundación Tripartita"
+                             />
+            <h:panelGrid columns="2" style="float: right;">  
+                <p:panel id="generar_excel">  
+                    <h:commandLink
+                        
+                        >  
+                        <p:graphicImage value="/img/excel.png" style="height: 30px;"  />  
+                        <p:dataExporter type="xls" target="dataTable" fileName="empresas" pageOnly="true" postProcessor="#{utilidadesVista.postProcessXLS}" />  
+                    </h:commandLink>  
+                   
+                    <p:tooltip for="generar_excel" value="Generar Excel para esta página" />
+
+                </p:panel> 
+            </h:panelGrid> 
+            <p:fieldset legend="Columnas a Mostrar" collapsed="true" toggleable="true" styleClass="separador"> 
+                <span><h:outputText value="NIF " />
+                    <p:selectBooleanCheckbox value="#{empresaVista.muestraNIF}"  />  </span> 
+                <span><h:outputText value="Razón Social " />
+                    <p:selectBooleanCheckbox value="#{empresaVista.muestraRazonSocial}"  />  </span> 
+                <span><h:outputText value="Teléfono " />
+                    <p:selectBooleanCheckbox value="#{empresaVista.muestraTelefono}"  />  </span> 
+                <span><h:outputText value="Provincia " />
+                    <p:selectBooleanCheckbox value="#{empresaVista.muestraProvincia}"  />  </span> 
+                <span><h:outputText value="Localidad " />
+                    <p:selectBooleanCheckbox value="#{empresaVista.muestraLocalidad}"  />  </span> 
+                <span><h:outputText value="Actividad " />
+                    <p:selectBooleanCheckbox value="#{empresaVista.muestraActividad}"  />  </span> 
+                <span><h:outputText value="E.C. Superior " />
+                    <p:selectBooleanCheckbox value="#{empresaVista.muestraECSuperior}"  />  </span> 
+                <span><h:outputText value="Nivel E.C. " />
+                    <p:selectBooleanCheckbox value="#{empresaVista.muestraEC}"  />  </span> 
+                <span><h:outputText value="Tipo " />
+                    <p:selectBooleanCheckbox value="#{empresaVista.muestraTipo}"  />  </span> 
+                <span><h:outputText value="Estado " />
+                    <p:selectBooleanCheckbox value="#{empresaVista.muestraEstado}"  />  </span> 
+                <span><h:outputText value="NSS " />
+                    <p:selectBooleanCheckbox value="#{empresaVista.muestraNSS}"  />  </span> 
+                <span><h:outputText value="E-Mail " />
+                    <p:selectBooleanCheckbox value="#{empresaVista.muestraEmail}"  />  </span> 
+                <span><h:outputText value="Crédito Disponible en #{Fecha.anioActual} " />
+                    <p:selectBooleanCheckbox value="#{empresaVista.muestraCDAA}"  />  </span> 
+                <span><h:outputText value="Crédito Asignado en #{Fecha.anioActual} " />
+                    <p:selectBooleanCheckbox value="#{empresaVista.muestraCAAA}"  />  </span> 
+
+                <p:commandButton value="Aplicar" update="dataTable" styleClass="botonAplicar"/>
+            </p:fieldset>
+            <p:dataTable  filterEvent="change" id="dataTable" var="empresa" value="#{empresaVista.empresas}" widgetVar="empresaTable"   
+                          filteredValue="#{empresaVista.empresasFiltradas}"
+                          emptyMessage="No se encuentran empresas" styleClass="separador"
+                          paginator="true" rows="5"   
+                          paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {NextPageLink} {RowsPerPageDropdown}"  
+                          currentPageReportTemplate="Página {currentPage}" 
+                          rowsPerPageTemplate="5,10,15,25,50,100,300,500,1000"
+                          lazy="true"
+                          filterMap="#{empresaVista.filterMap}"
+                          >  
+                <p:column style="width: 30px; text-align: center;" exportable="false" >  
+                    <f:facet name="header">
+                        <p:commandButton type="button" icon="ui-icon-print" title="Invertir selección de matrículas para generar documentación en PDF."
+                                         onclick="$('.boton_imprimir_mat').click();
+                    $('.boton_imprimir_mat').focus();
+                    $('.boton_imprimir_mat').blur();" id="boton_impr"
+                                         />
+                        <p:contextMenu for="boton_impr" >  
+                            <p:menuitem actionListener="#{empresaVista.seleccionaTodosRegistros}" onclick="
+                    if (!confirm('Atención: este proceso puede tardar unos minutos. Se limitará el número de valores seleccionados a 10000. ¿Seguro que desea lanzar el proceso? (Si lo lanza, por favor sea paciente).')) {
+                        return false;
+                    }
+                                        " value="Seleccionar Empresas de todas las páginas" update="imprimir_mat :formulario_principal:growl :formulario_principal:messages :formulario_principal:dataTable" process="@this"/>
+                        </p:contextMenu>
+                    </f:facet>
+                    <p:selectBooleanButton value="#{empresa.empresa.seleccionarPDF}" onchange="$('.bt_imp_#{empresa.nif}').click();" id="imprimir_mat" styleClass="boton_imprimir_mat" onLabel="" offLabel="" onIcon="ui-icon-print" offIcon="ui-icon-print" style="width: 30px; height: 30px;float: left;" >
+
+                    </p:selectBooleanButton>
+
+
+
+                    <p:commandButton ajax="true" styleClass="bt_imp_#{empresa.nif}" style="display: none;">
+                        <f:setPropertyActionListener target="#{empresaVista.empPDF}" value="#{empresa.empresa}"/>
+                    </p:commandButton>
+                </p:column>
+
+                <p:column filterBy="#{empresa.nif}" sortBy="#{empresa.nif}"
+                          headerText="NIF"  exportable="false"
+                          filterMatchMode="contains" rendered="#{empresaVista.muestraNIF}">  
+                    <a href="../empresa/empresa.xhtml?empresa=#{empresa.nif}" target="_blank">#{empresa.nif}</a>
+                </p:column>
+                <p:column exportable="#{empresaVista.muestraNIF}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="NIF" />  
+                    </f:facet>  
+                    <h:outputText value="#{empresa.nif}" />  
+                </p:column>
+                <p:column filterBy="#{empresa.razonSocial}" sortBy="#{empresa.razonSocial}"
+                          headerText="Razón Social"  exportable="false"
+                          filterMatchMode="contains" rendered="#{empresaVista.muestraRazonSocial}">  
+                    <a href="../empresa/empresa.xhtml?empresa=#{empresa.nif}" target="_blank">#{empresa.razonSocial}</a>
+                </p:column>
+                <p:column exportable="#{empresaVista.muestraRazonSocial}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Razón Social" />  
+                    </f:facet>  
+                    <h:outputText value="#{empresa.razonSocial}" />  
+                </p:column>
+                <p:column filterBy="#{empresa.telefono}" sortBy="#{empresa.telefono}"
+                          headerText="Teléfonos"  exportable="false"
+                          filterMatchMode="contains" rendered="#{empresaVista.muestraTelefono}">  
+                    <p:dataList var="tel" value="#{empresa.telefono.split('\\-\\-\\-\\|\\|\\-\\-\\-')}" styleClass="listaTabla sinBorde">
+                        #{tel}
+                    </p:dataList>
+                </p:column>
+                <p:column exportable="#{empresaVista.muestraRazonSocial}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Teléfonos" />  
+                    </f:facet>  
+                    <h:outputText value="#{empresa.telefono}" />  
+                </p:column>
+                <p:column filterBy="#{empresa.provinciaNombre}" sortBy="#{empresa.provinciaNombre}"
+
+                          filterMatchMode="contains" rendered="#{empresaVista.muestraProvincia}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Provincia" />  
+                    </f:facet>  
+                    <h:outputText value="#{empresa.provinciaNombre}"/>
+                </p:column>
+                <p:column filterBy="#{empresa.localidadNombre}" sortBy="#{empresa.localidadNombre}"
+
+                          filterMatchMode="contains" rendered="#{empresaVista.muestraLocalidad}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Localidad" />  
+                    </f:facet>  
+                    <h:outputText value="#{empresa.localidadNombre}"/>
+                </p:column>
+                <p:column filterBy="#{empresa.actividad}" sortBy="#{empresa.actividad.actividad}"
+
+                          filterMatchMode="contains" rendered="#{empresaVista.muestraActividad}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Actividad" />  
+                    </f:facet>  
+                    <h:outputText value="#{empresa.actividad}"/>
+                </p:column>
+                <p:column filterBy="#{empresa.ecSuperior}" sortBy="#{empresa.ecSuperior}"
+                          headerText="Estructura Comercial Superior" exportable="false" 
+                          filterMatchMode="contains" rendered="#{empresaVista.muestraECSuperior}">  
+                    <p:dataList var="com" value="#{empresa.ecSuperior.split('%')}" styleClass="listaTabla sinBorde">
+                        #{com}
+                    </p:dataList>
+                </p:column>
+                <p:column exportable="#{empresaVista.muestraECSuperior}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Estructura Comercial Superior" />  
+                    </f:facet>  
+                    <h:outputText value="#{empresa.ecSuperior}" />  
+                </p:column>
+                <p:column filterBy="#{empresa.nivelEc}" sortBy="#{empresa.nivelEc}"
+                          headerText="Nivel E.C."  
+                          filterOptions="#{desplegableVista.nivelesECOptions}"  
+                          filterMatchMode="exact" rendered="#{empresaVista.muestraEC}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Nivel E.C." />  
+                    </f:facet>  
+                    <h:outputText value="#{empresa.nivelEc}"/>
+                </p:column>
+                <p:column filterBy="#{empresa.tipo}" sortBy="#{empresa.tipo}"
+                          headerText="Tipo"  
+                          filterOptions="#{desplegableVista.tipoEmpresaOptions}"  
+                          filterMatchMode="exact" rendered="#{empresaVista.muestraTipo}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Tipo" />  
+                    </f:facet>  
+                    <h:outputText value="#{empresa.tipo}"/>
+                </p:column>
+                <p:column filterBy="#{empresa.nombre}" sortBy="#{empresa.nombre}"
+                          headerText="Estado"  
+                          filterOptions="#{desplegableVista.estadoEmpresaOptions}"  
+                          filterMatchMode="exact" rendered="#{empresaVista.muestraEstado}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Estado" />  
+                    </f:facet>  
+                    <h:outputText value="#{empresa.nombre}"/>
+                </p:column>
+                <p:column filterBy="#{empresa.cotSs}" sortBy="#{empresa.cotSs}"
+                          headerText="NSS"  exportable="false"
+                          filterMatchMode="contains" rendered="#{empresaVista.muestraNSS}">  
+                    <a href="../empresa/empresa.xhtml?empresa=#{empresa.nif}" target="_blank">#{empresa.cotSs}</a>
+                </p:column>
+                <p:column exportable="#{empresaVista.muestraNSS}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="NSS" />  
+                    </f:facet>  
+                    <h:outputText value="#{empresa.cotSs}" />  
+                </p:column>
+                <p:column filterBy="#{empresa.mail}" sortBy="#{empresa.mail}"
+                          headerText="E-Mail"  exportable="false"
+                          filterMatchMode="contains" rendered="#{empresaVista.muestraEmail}">  
+                    <a href="../empresa/empresa.xhtml?empresa=#{empresa.nif}" target="_blank">#{empresa.mail}</a>
+                </p:column>
+                <p:column exportable="#{empresaVista.muestraEmail}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="E-Mail" />  
+                    </f:facet>  
+                    <h:outputText value="#{empresa.mail}" />  
+                </p:column>
+                <p:column filterBy="#{empresa.creditoDisponibleAnioActual}" sortBy="#{empresa.creditoDisponibleAnioActual}"
+                          headerText="Crédito Disponible en #{Fecha.anioActual}"  
+                          filterMatchMode="contains" rendered="#{empresaVista.muestraCDAA}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Crédito Disponible en #{Fecha.anioActual}" />  
+                    </f:facet>  
+                    <h:outputText value="#{(empresa.creditoDisponibleAnioActual ne null)? empresa.creditoDisponibleAnioActual : '--' }"/>
+                </p:column>
+                <p:column filterBy="#{empresa.creditoAsignadoAnioActual}" sortBy="#{empresa.creditoAsignadoAnioActual}"
+                          headerText="Crédito Asignado en #{Fecha.anioActual}"  
+                          filterMatchMode="contains" rendered="#{empresaVista.muestraCAAA}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Crédito Asignado en #{Fecha.anioActual}" />  
+                    </f:facet>  
+                    <h:outputText value="#{(empresa.creditoAsignadoAnioActual ne null)? empresa.creditoAsignadoAnioActual : '--' }"/>
+                </p:column>
+                <p:column style="width:4%" exportable="false">  
+                    <p:button id="selectButton" title="Ver" icon="ui-icon-search" href="empresa.xhtml?empresa=#{empresa.nif}"/>  
+                </p:column>
+            </p:dataTable>  
+            <p:panel style=" border: none; margin: auto; text-align: center;" id="botones_des">
+                <p:dialog modal="true" header="Descargar" id="dialog_desc" widgetVar="dialogDesc" visible="#{empresaVista.enlaceDescarga ne ''}">
+                    <h:form>
+                        <p:commandButton styleClass="boton_descarga" icon="ui-icon-print" value="Descargar" onclick="dialogDesc.hide();
+                    window.open('../../../..#{empresaVista.enlaceDescarga}');" style="float:left; width: 150px; margin: 5px;"/>
+                    </h:form>
+                </p:dialog>
+
+                <p:panel header="Documentación" style="display: inline-block; margin: auto;">
+                    <p:commandButton value="Generar Matrícula" actionListener="#{empresaVista.generarMatriculas}" onclick="if (!confirm('¿Seguro que desea Generar las Matrículas para las Empresas Seleccionadas?')) {
+                        return false;
+                    }" style="margin: 3px;"
+                                     update=":formulario_principal:messages :formulario_principal:growl :formulario_principal:dataTable :formulario_principal:dialog_desc :dialogo_CCC"
+                                     />
+                    <p:commandButton rendered="#{sesionActual.tienePermiso(1)}" value="Enviar E-Mail" actionListener="#{empresaVista.generarEnvioEmail}" icon="ui-icon-mail-closed"
+                                     update=":formulario_principal:messages :formulario_principal:growl :formulario_principal:dataTable :formulario_principal:dialog_desc :dialogo_Email"
+                                     />
+
+                </p:panel>
+
+            </p:panel>
+
+        </ui:define>
+        <ui:define name="dialogos">
+            <p:dialog modal="true" rendered="#{sesionActual.tienePermiso(1)}" header="Enviar e-mail" id="dialogo_Email" widgetVar="dialogoEmail" closable="true">
+                <h:form>
+                    <p>Asunto: <p:inputText size="85" value="#{empresaVista.asuntoEnviarEmail}" /></p>
+                    <p>Cuerpo: </p>
+                    <p:editor value="#{empresaVista.cuerpoEnviarEmail}"/>
+                    <br/>
+                    <p>
+                        <p:commandButton value="Enviar E-Mail" styleClass="botonAplicar" actionListener="#{empresaVista.enviarEmail}" 
+                                         update=":formulario_principal:messages :formulario_principal:growl :formulario_principal:dataTable"
+
+                                         />
+                    </p>
+                    <br/><br/>
+
+                    <p:fieldset legend="Ayuda" collapsed="true" toggleable="true" style="width: 90%;margin: auto;">
+                        <p>Variables que se pueden usar en el E-Mail:</p>
+                        <ul>
+                            <li><strong>_REPLEGNOM_</strong> - Nombre del Representante Legal</li>
+                            <li><strong>_REPLEGAP1_</strong> - Apellido 1 del Representante Legal</li>
+                            <li><strong>_REPLEGAP2_</strong> - Apellido 2 del Representante Legal</li>
+                            <li><strong>_RAZONSOCIAL_</strong> - Razón Social de la Empresa</li>
+                            <li><strong>_CREDASIG_</strong> - Crédito Asignado a la Empresa en el Año Actual</li>
+                            <li><strong>_CREDDISP_</strong> - Crédito Disponible de la Empresa en el Año Actual</li>
+                        </ul>
+                    </p:fieldset>
+                </h:form>
+            </p:dialog>
+            <p:dialog modal="true" header="Elegir CCC" id="dialogo_CCC" widgetVar="dialogoCCC" visible="#{not empty empresaVista.empresaCCC}" closable="true">
+                <h:form>
+                    <p>Las siguientes empresas tienen varios CCC a elegir. Por favor, elija los CCC que quiere mostrar en la matrícula:</p>
+                    <p:dataTable value="#{empresaVista.empresaCCC}" var="evccc" id="tabla_ccc">
+                        <p:column headerText="NIF">
+                            #{evccc.empresaMatricula.nif}
+                        </p:column>
+                        <p:column headerText="Razón Social">
+                            #{evccc.empresaMatricula.empresa.razonSocial}
+                        </p:column>
+                        <p:column headerText="CCC">
+                            <p:selectOneMenu value="#{evccc.empresaMatriculaCccPK.ccc}" >   
+                                <f:selectItems value="#{evccc.empresaMatricula.empresaMatriculaCccList}" var="emccc" itemLabel="#{emccc.empresaMatriculaCccPK.ccc}" itemValue="#{emccc.empresaMatriculaCccPK.ccc}"/>  
+
+                            </p:selectOneMenu>  
+                        </p:column>
+                    </p:dataTable>
+                    <br/>
+                    <p:commandButton value="Generar Matrículas" styleClass="botonAplicar" actionListener="#{empresaVista.generarMatriculas}" 
+                                     update=":formulario_principal:messages :formulario_principal:growl :formulario_principal:dataTable :formulario_principal:dialog_desc :dialogo_CCC"
+
+                                     />
+                </h:form>
+            </p:dialog>
+            <p:dialog modal="true" header="Subir Excel de Datos de Fundación Tripartita" id="dialog_ImpBonif" widgetVar="dialogoImpBonif">
+                <h:form enctype="multipart/form-data">
+                    <p:inputText style="width: 0px; height: 0px;position: absolute;left: -10px; top: -10px;"/>
+                    <p>Fecha de Importación: <p:calendar value="#{empresaVista.fechaDatosFundacion}" pattern="dd/MM/yyyy HH:mm" required="true" /></p>
+                    <p:fileUpload value="#{empresaVista.excelDatosFundacion}" mode="simple"/>  
+
+                    <p:commandButton value="Subir Archivo" ajax="false"  
+                                     actionListener="#{empresaVista.subirExcelDatosFundacion}" />  
+                </h:form>
+            </p:dialog>
+        </ui:define>
+    </ui:composition>
+</html>

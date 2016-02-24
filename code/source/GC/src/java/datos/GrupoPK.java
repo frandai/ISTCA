@@ -1,0 +1,81 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package datos;
+
+import java.io.Serializable;
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.Embeddable;
+import javax.validation.constraints.NotNull;
+
+/**
+ *
+ *
+ */
+@Embeddable
+public class GrupoPK implements Serializable {
+    @Basic(optional = false)
+    @NotNull
+    @Column(name = "ACCION_FORMATIVA", nullable = false)
+    private int accionFormativa;
+    @Basic(optional = false)
+    @NotNull
+    @Column(nullable = false)
+    private int id;
+
+    public GrupoPK() {
+    }
+
+    public GrupoPK(int accionFormativa, int id) {
+        this.accionFormativa = accionFormativa;
+        this.id = id;
+    }
+
+    public int getAccionFormativa() {
+        return accionFormativa;
+    }
+
+    public void setAccionFormativa(int accionFormativa) {
+        this.accionFormativa = accionFormativa;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (int) accionFormativa;
+        hash += (int) id;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (!(object instanceof GrupoPK)) {
+            return false;
+        }
+        GrupoPK other = (GrupoPK) object;
+        if (this.accionFormativa != other.accionFormativa) {
+            return false;
+        }
+        if (this.id != other.id) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "datos.GrupoPK[ accionFormativa=" + accionFormativa + ", id=" + id + " ]";
+    }
+    
+}

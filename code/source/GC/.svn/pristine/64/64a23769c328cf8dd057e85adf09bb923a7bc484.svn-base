@@ -1,0 +1,88 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package util;
+
+import bean.MatriculaFacade;
+import datos.Proveedor;
+import java.io.File;
+import java.util.Random;
+
+/**
+ *
+ * @author fran
+ */
+public class VariablesSistema {
+
+    public static String modo = getModo();// DESARROLLO / PRODUCCION
+    public static String ruta_absoluta_proyecto = modo.equals("DESARROLLO")
+            ? "/home/fran/NetBeansProjects/GC/build/web"
+            : "/home/administrador/glassfish3/glassfish/domains/f5consultoria/applications/GC_DAI";
+    public static String NIF_empresa_principal = "B18876318";
+    public static Proveedor proveedor_principal = null;
+    public static String password_IWI = "War9de9far";
+
+    public static Random r = new Random();
+
+
+    /**
+     * Devuelve los datos (si están guardados) del email pedido. Datos
+     * guardados: pruebas@grupoiwi.com
+     * @param email email pedido
+     * @return
+     */
+    public static DatosEmail getDatosEmail(String email) {
+        DatosEmail dat = new DatosEmail();
+        if (email.endsWith("@grupoiwi.com")) {
+            dat.dominio = "smtp.1and1.es";
+        }
+        if (email.equals("pruebas@grupoiwi.com")) {
+            dat.firma = "<br/> -- Una Firmica";
+            dat.password = "eljcv2399WDFeo03875";
+        }
+        //---
+        if (email.endsWith("@f5consultoria.com")) {
+            dat.dominio = "mail.f5consultoria.com";
+        }
+
+        if (email.equals("cursos@f5consultoria.com")) {
+            dat.firma = "<br/> -- <table style= \"FONT-FAMILY:'Times New Roman';COLOR:rgb(255,255,255);FONT-SIZE:12px \" border= \"0 \" cellspacing= \"0 \" cellpadding= \"0 \" width= \"100% \">"
+                    + "<tbody>"
+                    + "<tr>"
+                    + "<td height= \"94 \"><img src= \"http://f5consultoria.com/img/logo.png \"></td>"
+                    + "<td>&nbsp;</td>"
+                    + "<td height= \"137 \" rowspan= \"2 \" width= \"195 \"><img src= \"http://f5consultoria.com/img/idea.png \"></td></tr>"
+                    + "<tr style= \"BACKGROUND-COLOR:rgb(189,40,89) \">"
+                    + "<td style= \"PADDING-LEFT:25px \" height= \"43 \">Dpto. de Formación<br><a style= \"COLOR:rgb(255,255,255);TEXT-DECORATION:none \" href= \"mailto:cursos@f5consultoria.com \" target= \"_blank \">cursos@f5consultoria.com</a></td>"
+                    + ""
+                    + "<td style= \"PADDING-RIGHT:20px \" align= \"right \">Telf: 958 41 91 25 | Fax: 958 99 00 03<br><a style= \"COLOR:rgb(255,255,255);TEXT-DECORATION:none \" href= \"http://www.f5consultoria.com/ \" target= \"_blank \">www.f5consultoria.com</a></td>"
+                    + "</tr></tbody></table>"
+                    + "<p style= \"FONT-FAMILY:'Times New Roman';FONT-SIZE:medium \"><span style= \"LINE-HEIGHT:12px;FONT-SIZE:8pt \">Le informamos de que el contenido del mensaje de correo electrónico que ha recibido, incluidos los ficheros adjuntos, están protegidos por el artículo 18 de la Constitución Española, que garantiza la confidencialidad, protección y secreto de las comunicaciones. Si usted recibe este mensaje por error, por favor no difunda el contenido del mismo ni haga copias y proceda a borrarlo cuanto antes. Asimismo, le rogamos póngase en contacto con el remitente para informarle de este hecho.<u></u><u></u></span></p>"
+                    + ""
+                    + "<p style= \"FONT-FAMILY:'Times New Roman';FONT-SIZE:medium \"><span style= \"LINE-HEIGHT:12px;FONT-SIZE:8pt \">De conformidad con la LOPD, los datos personales que consten en esta comunicación están incorporados en un fichero responsabilidad de F5 Consultoría S.L, con CIF B18876318, inscrito en el Registro de la Agencia Española de Protección de Datos, con la finalidad de gestionar la relación contractual con nuestros clientes e informarles de nuestros servicios. Usted puede ejercitar los derechos de acceso, rectificación, cancelación y oposición ante esta entidad en los términos establecidos en la legislación vigente dirigiéndose por escrito a: F5 Consultoría S.L, Polígono Industrial Juncaril, Parcela 102, Edificio A, 18210 Peligros (Granada); o bien al correo electrónico <a href= \"mailto:administracion@f5consultoria.com \" target= \"_blank \">administracion@f5consultoria.<wbr>com</a>.</span></p><div class= \"yj6qo \"></div><div class= \"adL \">"
+                    + "</div>";
+            dat.password = "SBD34lq72y7Ci7a";
+        }
+        return dat;
+    }
+
+    private static String getModo() {
+        if (modo == null) {
+            try {
+                File f = new File("/home/fran/NetBeansProjects/GC/build/web");
+                if (f.exists()) {
+                    System.out.println("DESARROLLO");
+                    return "DESARROLLO";
+                } else {
+                    System.out.println("PRODUCCION");
+                    return "PRODUCCION";
+                }
+            } catch (Exception e) {
+                System.out.println("PRODUCCION");
+                return "PRODUCCION";
+            }
+        }
+        return modo;
+    }
+}

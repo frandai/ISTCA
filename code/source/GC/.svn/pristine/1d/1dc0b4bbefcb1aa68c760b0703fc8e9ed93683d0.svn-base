@@ -1,0 +1,132 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package datos;
+
+import java.io.Serializable;
+
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
+import javax.xml.bind.annotation.XmlRootElement;
+
+/**
+ *
+ * @author sergio
+ */
+@Entity
+@Table(name = "MATRICULA_COMERCIAL",  schema = "public")
+@XmlRootElement
+@NamedQueries({
+    @NamedQuery(name = "MatriculaComercial.findAll", query = "SELECT m FROM MatriculaComercial m"),
+    @NamedQuery(name = "MatriculaComercial.findByComercial", query = "SELECT m FROM MatriculaComercial m WHERE m.matriculaComercialPK.comercial = :comercial"),
+    @NamedQuery(name = "MatriculaComercial.findByMatricula", query = "SELECT m FROM MatriculaComercial m WHERE m.matriculaComercialPK.matricula = :matricula"),
+    @NamedQuery(name = "MatriculaComercial.findByPorcentaje", query = "SELECT m FROM MatriculaComercial m WHERE m.porcentaje = :porcentaje")})
+public class MatriculaComercial implements Serializable {
+    private static final long serialVersionUID = 1L;
+    @EmbeddedId
+    protected MatriculaComercialPK matriculaComercialPK;
+    @Basic(optional = false)
+    @NotNull
+    @Column(nullable = false)
+    private Double porcentaje;
+    @JoinColumn(name = "MATRICULA", referencedColumnName = "ID", nullable = false, insertable = false, updatable = false)
+    @ManyToOne(optional = false)
+    private Matricula matricula1;
+    @JoinColumn(name = "LIQUIDACION", referencedColumnName = "ID")
+    @ManyToOne
+    private Liquidacion liquidacion;
+    @JoinColumn(name = "COMERCIAL", referencedColumnName = "ID", nullable = false, insertable = false, updatable = false)
+    @ManyToOne(optional = false)
+    private Comercial comercial1;
+
+    public MatriculaComercial() {
+    }
+
+    public MatriculaComercial(MatriculaComercialPK matriculaComercialPK) {
+        this.matriculaComercialPK = matriculaComercialPK;
+    }
+
+    public MatriculaComercial(MatriculaComercialPK matriculaComercialPK, Double porcentaje) {
+        this.matriculaComercialPK = matriculaComercialPK;
+        this.porcentaje = porcentaje;
+    }
+
+    public MatriculaComercial(int comercial, int matricula) {
+        this.matriculaComercialPK = new MatriculaComercialPK(comercial, matricula);
+    }
+
+    public MatriculaComercialPK getMatriculaComercialPK() {
+        return matriculaComercialPK;
+    }
+
+    public void setMatriculaComercialPK(MatriculaComercialPK matriculaComercialPK) {
+        this.matriculaComercialPK = matriculaComercialPK;
+    }
+
+    public Double getPorcentaje() {
+        return porcentaje;
+    }
+
+    public void setPorcentaje(Double porcentaje) {
+        this.porcentaje = porcentaje;
+    }
+
+    public Matricula getMatricula1() {
+        return matricula1;
+    }
+
+    public void setMatricula1(Matricula matricula1) {
+        this.matricula1 = matricula1;
+    }
+
+    public Liquidacion getLiquidacion() {
+        return liquidacion;
+    }
+
+    public void setLiquidacion(Liquidacion liquidacion) {
+        this.liquidacion = liquidacion;
+    }
+
+    public Comercial getComercial1() {
+        return comercial1;
+    }
+
+    public void setComercial1(Comercial comercial1) {
+        this.comercial1 = comercial1;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (matriculaComercialPK != null ? matriculaComercialPK.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (!(object instanceof MatriculaComercial)) {
+            return false;
+        }
+        MatriculaComercial other = (MatriculaComercial) object;
+        if ((this.matriculaComercialPK == null && other.matriculaComercialPK != null) || (this.matriculaComercialPK != null && !this.matriculaComercialPK.equals(other.matriculaComercialPK))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "datos.MatriculaComercial[ matriculaComercialPK=" + matriculaComercialPK + " ]";
+    }
+    
+}

@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:c="http://java.sun.com/jsp/jstl/core">
+
+    <ui:composition template="/template.xhtml">
+        <ui:define name="title">
+            <h:outputText value="Grupos"></h:outputText>
+        </ui:define>
+        <ui:define name="body">
+            <p:button value="Nuevo Grupo" href="grupo.xhtml" styleClass="separador" rendered="#{sesionActual.tienePermiso(10)}"/>
+            <h:panelGrid columns="2" style="float: right;">  
+                <p:panel id="generar_excel">  
+                    <h:commandLink
+                        onclick="#{matriculaVista.todasLasPaginas?'validaTodasPag(); if(!lanzaProc){return false;};':''}"
+                        >  
+                        <p:graphicImage value="/img/excel.png" style="height: 30px;"  />  
+                        <p:dataExporter type="xls" target="dataTable" fileName="grupos" pageOnly="#{not matriculaVista.todasLasPaginas}" postProcessor="#{utilidadesVista.postProcessXLS}" />  
+                    </h:commandLink>  
+                    <p:contextMenu for="generar_excel" >  
+                        <p:menuitem actionListener="#{matriculaVista.cambiaValorPag}" value="#{matriculaVista.todasLasPaginas?'Generar Excel para esta página':'Generar Excel para todas las páginas'}" update="@this generar_excel" process="@this" />
+                    </p:contextMenu>
+                    <p:tooltip for="generar_excel" value="#{matriculaVista.todasLasPaginas?'Generar Excel para todas las páginas':'Generar Excel para esta página'}" />
+
+                </p:panel> 
+            </h:panelGrid>
+            <p:fieldset legend="Columnas a Mostrar" collapsed="true" toggleable="true"  styleClass="separador">  
+
+                <span><h:outputText value="Nombre Accion Formativa " />
+                    <p:selectBooleanCheckbox value="#{grupoVista.muestraAccionFormantiva}"  />  </span>
+                <span><h:outputText value="Nombre Grupo " />
+                    <p:selectBooleanCheckbox value="#{grupoVista.muestraNombre}"  />  </span>
+
+                <span> <h:outputText value="Tutores " />  
+                    <p:selectBooleanCheckbox value="#{grupoVista.muestraTutor}"/> </span>
+                <span> <h:outputText value="Horario Tutorías " />  
+                    <p:selectBooleanCheckbox value="#{grupoVista.muestraHorario}"/> </span>
+
+                <span> <h:outputText value="Fecha Inicio " />  
+                    <p:selectBooleanCheckbox value="#{grupoVista.muestraFInicio}"/> </span>
+
+                <span> <h:outputText value="Fecha Fin " />  
+                    <p:selectBooleanCheckbox value="#{grupoVista.muestraFFin}"/> </span> 
+                <span> <h:outputText value="Modalidad " />  
+                    <p:selectBooleanCheckbox value="#{grupoVista.muestraModalidad}"/> </span>
+                <span> <h:outputText value="Proveedor " />  
+                    <p:selectBooleanCheckbox value="#{grupoVista.muestraProveedor}"/> </span>
+
+
+
+                <p:commandButton value="Aplicar" update="dataTable" styleClass="botonAplicar"/>
+            </p:fieldset>
+
+            <p:dataTable  filterEvent="change" id="dataTable" var="grupo" value="#{grupoVista.grupos}" widgetVar="grupoTable"  
+                          lazy="true"
+                          filteredValue="#{grupoVista.gruposFiltrados}"
+                          emptyMessage="No se encuentran grupos" styleClass="separador"
+                          paginator="true" rows="5"   
+                          paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                          currentPageReportTemplate="{totalRecords} Filas (página {currentPage} de {totalPages})"
+                          rowsPerPageTemplate="5,10,15,25,50,100,300"
+                          >  
+
+                <f:facet name="header">  
+                </f:facet>   
+                <p:column filterBy="#{grupo.nombreAf}" 
+                          sortBy="#{grupo.nombreAf}"
+                          headerText="Nombre Acción Formativa"  
+                          filterMatchMode="contains" rendered="#{grupoVista.muestraAccionFormantiva}"
+                          exportable="false"
+                          >  
+                    <a href="../accionFormativa/accionFormativa.xhtml?accionFormativa=#{grupo.id_accion_formativa}" target="_blank">#{grupo.nombreAf}</a>
+                </p:column>
+                <p:column exportable="#{grupoVista.muestraAccionFormantiva}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Nombre Acción Formativa" />  
+                    </f:facet>  
+                    <h:outputText value="#{grupo.nombreAf}" />  
+                </p:column>
+                <p:column filterBy="#{grupo.nombreGrupo}" 
+                          sortBy="#{grupo.nombreGrupo}"
+                          headerText="Nombre Grupo"  
+                          exportable="false"
+                          filterMatchMode="contains" rendered="#{grupoVista.muestraNombre}">  
+                    <a href="../grupo/grupo.xhtml?grupo=#{grupo.id_grupo}&amp;accionformativa=#{grupo.id_accion_formativa}" target="_blank">#{grupo.nombreGrupo}</a> 
+                </p:column>
+                <p:column exportable="#{grupoVista.muestraNombre}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Nombre Grupo" />  
+                    </f:facet>  
+                    <h:outputText value="#{grupo.nombreGrupo}" />  
+                </p:column>
+
+                <p:column filterBy="#{grupo.horario}" 
+                          sortBy="#{grupo.horario}"
+                          filterMatchMode="contains" rendered="#{grupoVista.muestraHorario}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Horario Tutorías" />  
+                    </f:facet> 
+                    <h:outputText value="#{grupo.horario}"/>
+                </p:column>     
+
+
+                <p:column filterBy="#{grupo.arrayToString}" sortBy="#{grupo.arrayToString}"
+                          headerText="Tutores"
+                          exportable="false"
+                          filterMatchMode="contains" rendered="#{grupoVista.muestraTutor}">  
+                    <p:dataList var="tutores" value="#{grupo.grupo.tutorList}" styleClass="listaTabla sinBorde">
+                        <a href="../persona/persona.xhtml?persona=#{tutores.persona.nif}" target="_blank">#{tutores.persona.nombre} #{tutores.persona.apellido1} #{tutores.persona.apellido2} (#{tutores.nif})</a>
+                    </p:dataList> 
+                </p:column>
+                <p:column exportable="#{grupoVista.muestraTutor}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Tutores" />  
+                    </f:facet>  
+                    <h:outputText value="#{grupo.arrayToString}" />  
+                </p:column>
+                <p:column  filterBy="#{grupo.fechaInicio}" filterStyleClass="calendarFilter"
+                           sortBy="#{grupo.f_inicio}"  
+                           filterMatchMode="contains" rendered="#{grupoVista.muestraFInicio}"> 
+                      <f:facet name="header">  
+                        <h:outputText value="Fecha Inicio" />  
+                    </f:facet>  
+                    <h:outputText value="#{Fecha.getPGes(grupo.fechaInicio)}"/>
+                </p:column>
+                <p:column filterStyleClass="calendarFilter" filterBy="#{grupo.fechaFin}"
+                          sortBy="#{grupo.f_fin}"
+                          headerText="Fecha Fin"  
+                          filterMatchMode="contains" rendered="#{grupoVista.muestraFFin}"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Fecha Fin" />  
+                    </f:facet> 
+                    <h:outputText value="#{Fecha.getPGes(grupo.fechaFin)}"/>
+                </p:column>
+                <p:column filterBy="#{grupo.modalidad}"
+                          sortBy="#{grupo.modalidad}"  
+                          rendered="#{grupoVista.muestraModalidad}"
+                          filterOptions="#{desplegableVista.modalidadOptions}"  
+                          filterMatchMode="exact">  
+                    <f:facet name="header">  
+                        <h:outputText value="Modalidad" />  
+                    </f:facet>
+                    <h:outputText value="#{grupo.modalidad}"/>
+                </p:column>
+                <p:column filterBy="#{grupo.proveedor}"
+                          sortBy="#{grupo.proveedor}" 
+                          rendered="#{grupoVista.muestraProveedor}"
+                          filterMatchMode="contains" >  
+                    <f:facet name="header">  
+                        <h:outputText value="Proveedor" />  
+                    </f:facet>
+                    <h:outputText value="#{grupo.proveedor}"/>
+                </p:column>
+                <p:column style="width:4%" exportable="false">  
+                    <p:button id="selectButton" title="Ver" icon="ui-icon-search" href="grupo.xhtml?grupo=#{grupo.id_grupo}&amp;accionformativa=#{grupo.id_accion_formativa}" />  
+                </p:column>
+            </p:dataTable>  
+        </ui:define>
+    </ui:composition>
+</html>

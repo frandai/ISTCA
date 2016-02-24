@@ -1,0 +1,96 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package automatico;
+
+import bean.MatriculaFacade;
+import datosVistaFacade.MatriculasPendientesIwiFacade;
+import java.io.IOException;
+import java.io.Serializable;
+import java.net.MalformedURLException;
+import java.util.Hashtable;
+import java.util.Properties;
+import java.util.Random;
+import javax.ejb.EJB;
+import javax.faces.bean.ManagedBean;
+import javax.faces.bean.ViewScoped;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import util.ComunicacionGrupoIWI;
+import util.Encriptacion;
+import util.VariablesSistema;
+import util.Web;
+import vista.UtilidadesVista;
+
+/**
+ *
+ * Clase para ejecutar automáticamente desde CRON para realizar tareas automáticas.
+ * Actualmente se ejecuta para comunicarse y enviar datos de autorización de servicios
+ * a GrupoIWI.
+ * 
+ * @author fran
+ */
+@ManagedBean(name = "lanzador")
+@ViewScoped
+public class Lanzador implements Serializable {
+
+    @EJB
+    private MatriculaFacade matriculaFacade;
+    @EJB
+    private MatriculasPendientesIwiFacade matriculapiFacade;
+
+    /**
+     * 
+     * Se encarga de llamar a la página principal del Proyecto para cargar con JSF/EJB los datos
+     * para poder enviarlos a GrupoIWI.
+     * 
+     * @param args
+     * @throws NamingException
+     * @throws MalformedURLException
+     * @throws IOException 
+     */
+    public static void main(String[] args) throws NamingException, MalformedURLException, IOException {
+        
+        /**
+         * 
+         * PARA EJECUTARLO, LANZAR EN TERMINAL: 
+         * 
+         * java -cp /home/fran/NetBeansProjects/GC/build/web/WEB-INF/classes:/home/fran/NetBeansProjects/GC/build/web/WEB-INF/lib/* automatico.Lanzador
+         * 
+         * PARA REAL:
+         * 
+         * java -cp /home/administrador/glassfish3/glassfish/domains/f5consultoria/applications/GC_DAI/WEB-INF/classes:/home/administrador/glassfish3/glassfish/domains/f5consultoria/applications/GC_DAI/WEB-INF/lib/* automatico.Lanzador
+         * 
+         */
+        
+        int rand = VariablesSistema.r.nextInt();
+        String devuelto = Web.getWebContent(
+                (VariablesSistema.modo.equals("DESARROLLO")
+                ? "http://localhost:8080/GC/"
+                : "http://localhost:8080/GC_DAI/") + "?modo=automatico&md5=" + (Encriptacion.getMD5(
+                rand
+                + VariablesSistema.password_IWI)) + "&password=" + rand);
+    }
+
+    /**
+     * Se encarga de lanzar el envío de matrículas pendientes a GrupoIWI
+     * 
+     * @return 
+     */
+    public String getLanzar() {
+        try {
+            if (UtilidadesVista.getParametroReq("modo") != null
+                    && UtilidadesVista.getParametroReq("password") != null
+                    && UtilidadesVista.getParametroReq("md5") != null
+                    && UtilidadesVista.getParametroReq("modo").equals("automatico")
+                    && Encriptacion.getMD5(UtilidadesVista.getParametroReq("password") + VariablesSistema.password_IWI).equals(
+                    UtilidadesVista.getParametroReq("md5"))) {
+                ComunicacionGrupoIWI.enviarMatriculasPendientes(matriculaFacade, matriculapiFacade);
+            }
+        } catch (Exception e) {
+        }
+        return "";
+    }
+}

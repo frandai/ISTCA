@@ -1,0 +1,100 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package datos;
+
+import java.io.Serializable;
+import java.util.Date;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+import javax.xml.bind.annotation.XmlRootElement;
+
+/**
+ *
+ * @author sergio
+ */
+@Entity
+@Table(name = "LIQUIDACION_HISTORICO_ESTADO",  schema = "public")
+@XmlRootElement
+@NamedQueries({
+    @NamedQuery(name = "LiquidacionHistoricoEstado.findAll", query = "SELECT l FROM LiquidacionHistoricoEstado l"),
+    @NamedQuery(name = "LiquidacionHistoricoEstado.findByLiquidacion", query = "SELECT l FROM LiquidacionHistoricoEstado l WHERE l.liquidacionHistoricoEstadoPK.liquidacion = :liquidacion"),
+    @NamedQuery(name = "LiquidacionHistoricoEstado.findByFecha", query = "SELECT l FROM LiquidacionHistoricoEstado l WHERE l.liquidacionHistoricoEstadoPK.fecha = :fecha")})
+public class LiquidacionHistoricoEstado implements Serializable {
+    private static final long serialVersionUID = 1L;
+    @EmbeddedId
+    protected LiquidacionHistoricoEstadoPK liquidacionHistoricoEstadoPK;
+    @JoinColumn(name = "ESTADO", referencedColumnName = "ID", nullable = false)
+    @ManyToOne(optional = false)
+    private LiquidacionEstado estado;
+    @JoinColumn(name = "LIQUIDACION", referencedColumnName = "ID", nullable = false, insertable = false, updatable = false)
+    @ManyToOne(optional = false)
+    private Liquidacion liquidacion1;
+
+    public LiquidacionHistoricoEstado() {
+    }
+
+    public LiquidacionHistoricoEstado(LiquidacionHistoricoEstadoPK liquidacionHistoricoEstadoPK) {
+        this.liquidacionHistoricoEstadoPK = liquidacionHistoricoEstadoPK;
+    }
+
+    public LiquidacionHistoricoEstado(String liquidacion, Date fecha) {
+        this.liquidacionHistoricoEstadoPK = new LiquidacionHistoricoEstadoPK(liquidacion, fecha);
+    }
+
+    public LiquidacionHistoricoEstadoPK getLiquidacionHistoricoEstadoPK() {
+        return liquidacionHistoricoEstadoPK;
+    }
+
+    public void setLiquidacionHistoricoEstadoPK(LiquidacionHistoricoEstadoPK liquidacionHistoricoEstadoPK) {
+        this.liquidacionHistoricoEstadoPK = liquidacionHistoricoEstadoPK;
+    }
+
+    public LiquidacionEstado getEstado() {
+        return estado;
+    }
+
+    public void setEstado(LiquidacionEstado estado) {
+        this.estado = estado;
+    }
+
+    public Liquidacion getLiquidacion1() {
+        return liquidacion1;
+    }
+
+    public void setLiquidacion1(Liquidacion liquidacion1) {
+        this.liquidacion1 = liquidacion1;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (liquidacionHistoricoEstadoPK != null ? liquidacionHistoricoEstadoPK.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (!(object instanceof LiquidacionHistoricoEstado)) {
+            return false;
+        }
+        LiquidacionHistoricoEstado other = (LiquidacionHistoricoEstado) object;
+        if ((this.liquidacionHistoricoEstadoPK == null && other.liquidacionHistoricoEstadoPK != null) || (this.liquidacionHistoricoEstadoPK != null && !this.liquidacionHistoricoEstadoPK.equals(other.liquidacionHistoricoEstadoPK))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "datos.LiquidacionHistoricoEstado[ liquidacionHistoricoEstadoPK=" + liquidacionHistoricoEstadoPK + " ]";
+    }
+    
+}

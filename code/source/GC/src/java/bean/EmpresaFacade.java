@@ -1,0 +1,70 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package bean;
+
+import datos.Empresa;
+import datos.Persona;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import javax.ejb.Stateless;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+import org.primefaces.model.SortOrder;
+import util.VariablesSistema;
+
+/**
+ *
+ *
+ */
+@Stateless
+public class EmpresaFacade extends AbstractFacade<Empresa> {
+
+    @PersistenceContext(unitName = "GC_DAIPU")
+    private EntityManager em;
+
+    @Override
+    protected EntityManager getEntityManager() {
+        return em;
+    }
+
+    public EmpresaFacade() {
+        super(Empresa.class);
+    }
+
+    /**
+     * Edición de Empresa: si la emrpesa a modificar es la empresa del Proveedor
+     * Principal, se cactualiza el objeto estátitco del proveedor principal.
+     *
+     * @param entity
+     * @return
+     */
+    @Override
+    public Empresa edit(Empresa entity) {
+        Empresa e = super.edit(entity);
+        if (e.getNif().equals(VariablesSistema.NIF_empresa_principal) && e.getProveedor() != null) {
+            VariablesSistema.proveedor_principal = e.getProveedor();
+        }
+        return e;
+    }
+
+    /**
+     * Función para editar el NIF de las Empresas (por EJB, al ser la clave
+     * primaria, le hace una copia al objeto. Hay que hacerlo en SQL.
+     *
+     * @param empresaSeleccionada
+     * @param NIfPrimario
+     * @return
+     */
+    public Empresa cambiaNif(Empresa empresaSeleccionada, String NIfPrimario) {
+        Query query = em.createQuery("update Empresa e set e.nif = :nifNuevo  where e.nif = :nifAnt");
+        query.setParameter("nifAnt", NIfPrimario);
+        query.setParameter("nifNuevo", empresaSeleccionada.getNif());
+        query.executeUpdate();
+        return find(empresaSeleccionada.getNif());
+    }
+}

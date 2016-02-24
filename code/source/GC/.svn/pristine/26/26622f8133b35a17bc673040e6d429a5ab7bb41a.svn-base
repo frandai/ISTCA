@@ -1,0 +1,785 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package datos;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+
+import java.util.Date;
+import java.util.List;
+import javax.persistence.Basic;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinColumns;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import javax.persistence.Transient;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
+import util.Email;
+import util.Fecha;
+import util.Validacion;
+import util.descripcionEventos;
+import vista.UtilidadesVista;
+
+/**
+ *
+ * @author sergio
+ */
+@Entity
+@Table(schema = "public")
+@XmlRootElement
+@NamedQueries({
+    @NamedQuery(name = "Matricula.findAll", query = "SELECT m FROM Matricula m"),
+    @NamedQuery(name = "Matricula.findById", query = "SELECT m FROM Matricula m WHERE m.id = :id"),
+    @NamedQuery(name = "Matricula.findByFechaCreacion", query = "SELECT m FROM Matricula m WHERE m.fechaCreacion = :fechaCreacion"),
+    @NamedQuery(name = "Matricula.findByPrecio", query = "SELECT m FROM Matricula m WHERE m.precio = :precio"),
+    @NamedQuery(name = "Matricula.findByObservaciones", query = "SELECT m FROM Matricula m WHERE m.observaciones = :observaciones"),
+    @NamedQuery(name = "Matricula.findByFechaFirma", query = "SELECT m FROM Matricula m WHERE m.fechaFirma = :fechaFirma"),
+    @NamedQuery(name = "Matricula.findByFechaEntrega", query = "SELECT m FROM Matricula m WHERE m.fechaEntrega = :fechaEntrega")})
+public class Matricula implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Basic(optional = false)
+    @Column(nullable = false)
+    private Integer id;
+    @Basic(optional = false)
+    @NotNull
+    @Column(name = "FECHA_CREACION", nullable = false)
+    @Temporal(TemporalType.DATE)
+    private Date fechaCreacion;
+    @Basic(optional = false)
+    @NotNull
+    @Column(nullable = false)
+    private Double precio;
+    @Size(max = 2147483647)
+    @Column(length = 2147483647)
+    private String observaciones;
+    @Size(max = 2147483647)
+    @Column(length = 2147483647, name = "OBSERVACIONES_ENVIO")
+    private String observacionesEnivo;
+    @Column(name = "FECHA_FIRMA", nullable = false)
+    @Temporal(TemporalType.DATE)
+    private Date fechaFirma;
+    @Basic(optional = false)
+    @NotNull
+    @Column(name = "FECHA_ENTREGA")
+    @Temporal(TemporalType.DATE)
+    private Date fechaEntrega;
+    @JoinColumns({
+        @JoinColumn(name = "ACCION_FORMATIVA", referencedColumnName = "ACCION_FORMATIVA", nullable = false),
+        @JoinColumn(name = "GRUPO", referencedColumnName = "ID", nullable = false)})
+    @ManyToOne(optional = false)
+    private Grupo grupo;
+    @JoinColumn(name = "FORMA_PAGO", referencedColumnName = "ID", nullable = false)
+    @ManyToOne(optional = false)
+    private FormaPago formaPago;
+    @JoinColumns({
+        @JoinColumn(name = "EMPRESA_MATRICULA", referencedColumnName = "NIF", nullable = false),
+        @JoinColumn(name = "CCC", referencedColumnName = "CCC", nullable = false)})
+    @ManyToOne(optional = false)
+    private EmpresaMatriculaCcc empresaMatriculaCcc;
+    @JoinColumn(name = "DIRECCION_ENVIO", referencedColumnName = "ID")
+    @ManyToOne
+    private Direccion direccionEnvio;
+    @JoinColumn(name = "ALUMNO", referencedColumnName = "NIF", nullable = false)
+    @ManyToOne(optional = false)
+    private Alumno alumno;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "matricula1")
+    private List<MatriculaComercial> matriculaComercialList;
+    @OneToMany(mappedBy = "matricula")
+    private List<PedidoLinea> pedidoLineaList;
+    @OneToMany(mappedBy = "matricula", orphanRemoval = true)
+    private List<Evento> eventoList;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "matricula1")
+    private List<MatriculaFactura> matriculaFacturaList;
+    @Column(name = "IMPORTE_BONIFICAR_FECHA")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date importeBonificarFecha;
+    @Transient //Listado de Facturas asociadas a la matrícula (busca las matriculaFactura y coge sus facturas)
+    private List<Factura> facturaList;
+    @Transient //E-mail al que enviar la documentación (empresa si tiene/asesoría)
+    private String emailEnvio = "";
+    @Transient //Booleana que guarda si se ha generado el emailEnvio
+    private boolean generado_emailEnvio = false;
+    @Transient //E-mailde la asesoría asociada a la matrícula
+    private String emailEnvio_ase = "";
+    @Transient//Booleana que guarda si se ha generado el emailEnvio_ase
+    private boolean gen_ase = false;
+    @Transient //Parámetro booleano para identifivar si se ha seleccionado ésta Matrícula
+    //Para gestionarla en una función de impresión en PDF
+    private boolean seleccionarPDF;
+    @Transient //Parámetro booleano para identifivar si se ha seleccionado ésta Matrícula
+    //Para gestionarla en una función de enviar por e-mail
+    private boolean seleccionarEmail;
+    @Transient //Parámetro booleano para identifivar si se ha seleccionado ésta Matrícula
+    //Para gestionarla en una función de enviar por e-mail a asesoría
+    private boolean seleccionarEmail_ase;
+    @Transient //Variable que guarda si la matrícula tiene eventos de tipo Pago Posterior.
+    private Integer pagoPosterior;
+    @Basic
+    @Column(name = "IMPORTE_BONIFICAR")
+    private Double importeBonificar;
+    @Transient //Variable que guarda si la matrícula tiene Facturas Pendientes
+    private Boolean tieneFacturaPendiente;
+    @Transient //Variable que guarda si la matrícula está confirmada
+    private Boolean matriculaConfirmada;
+    @Transient  //Variable que guarda el Coste de Impartición de la Matrícula, conforme a sus
+    //Porcentajes disponibles en getTextoCostes().
+    private Double c_imparticion;
+    @Transient //Variable que guarda el Coste de Organización de la Matrícula, conforme a sus
+    //Porcentajes disponibles en getTextoCostes().
+    private Double c_organizacion;
+    @Transient //Variable que guarda el Costes Salariales de la Matrícula, conforme a sus
+    //Porcentajes disponibles en getTextoCostes().
+    private Double c_salariales;
+    @Transient //Variable de cadena de caracteres que guarda el texto de las facturas
+    //de la matrícula
+    private String facturasString;
+    @Transient//Valor que convierte la Estructura Comercial de la Matrícula en una cadena de caracteres,
+    //Para mostrársela al usuario.
+    private String ecString;
+    @Transient //Valor booleano que comprueba si la Matrícula está pendiente de finalizar
+    private Boolean afinalizar;
+    @Transient //Valor booleano que comprueba si la Matrícula
+    //Tiene generado el evento de Recepción de Evaluación
+    private Boolean evento_recepcion_evaluacion;
+    @Transient //Valor booleano que comprueba si la Matrícula
+    //Tiene generado el evento de Informe de Fin de Curso
+    private Boolean evento_envio_ifc;
+    @Transient //Valor booleano que comprueba si la Matrícula
+    //Tiene generado el evento de Diploma
+    private Boolean evento_envio_dip;
+    @Column(name = "baja")
+    private Boolean baja;
+    @Column(name = "enviada_alta_iwi")
+    private Boolean enviadaAltaIwi;
+    @Column(name = "enviada_autorizacion_iwi")
+    private Boolean enviadaAutorizacionIwi;
+
+    public Date getImporteBonificarFecha() {
+        return importeBonificarFecha;
+    }
+
+    public void setImporteBonificarFecha(Date importeBonificarFecha) {
+        this.importeBonificarFecha = importeBonificarFecha;
+    }
+
+    public Boolean getEnviadaAltaIwi() {
+        return enviadaAltaIwi;
+    }
+
+    public void setEnviadaAltaIwi(Boolean enviadaAltaIwi) {
+        this.enviadaAltaIwi = enviadaAltaIwi;
+    }
+
+    public Boolean getEnviadaAutorizacionIwi() {
+        return enviadaAutorizacionIwi;
+    }
+
+    public void setEnviadaAutorizacionIwi(Boolean enviadaAutorizacionIwi) {
+        this.enviadaAutorizacionIwi = enviadaAutorizacionIwi;
+    }
+
+    public Boolean getBaja() {
+        return baja;
+    }
+
+    public void setBaja(Boolean baja) {
+        this.baja = baja;
+    }
+
+    public Boolean getEvento_envio_dip() {
+        if (evento_envio_dip == null) {
+            evento_envio_dip = false;
+            for (Evento e : eventoList) {
+                if (e.getTipoDescripcionEvento() == descripcionEventos.ENVIO_DOCUMENTACION && e.getObservaciones().contains("Se le ha generado el Diploma")) {
+                    evento_envio_dip = true;
+                    break;
+                }
+            }
+        }
+        return evento_envio_dip;
+    }
+
+    public void setEvento_envio_dip(Boolean evento_envio_ifc) {
+        this.evento_envio_dip = evento_envio_ifc;
+    }
+
+    public Boolean getEvento_envio_ifc() {
+        if (evento_envio_ifc == null) {
+            evento_envio_ifc = false;
+            for (Evento e : eventoList) {
+                if (e.getTipoDescripcionEvento() == descripcionEventos.ENVIO_DOCUMENTACION && e.getObservaciones().contains("Se le ha generado el Informe Fin Curso")) {
+                    evento_envio_ifc = true;
+                    break;
+                }
+            }
+        }
+        return evento_envio_ifc;
+    }
+
+    public void setEvento_envio_ifc(Boolean evento_envio_ifc) {
+        this.evento_envio_ifc = evento_envio_ifc;
+    }
+
+    public Boolean getEvento_recepcion_evaluacion() {
+        if (evento_recepcion_evaluacion == null) {
+            evento_recepcion_evaluacion = false;
+            for (Evento e : eventoList) {
+                if (e.getTipoDescripcionEvento() == descripcionEventos.RECEPCION_EVALUACION) {
+                    evento_recepcion_evaluacion = true;
+                    break;
+                }
+            }
+        }
+        return evento_recepcion_evaluacion;
+    }
+
+    public void setEvento_recepcion_evaluacion(Boolean evento_recepcion_evaluacion) {
+        this.evento_recepcion_evaluacion = evento_recepcion_evaluacion;
+    }
+
+    public Boolean getAfinalizar() {
+        if (afinalizar == null) {
+            if (this.getGrupo().getNombre().equals("Pendiente de Gestionar")) {
+                afinalizar = false;
+            } else if (this.getBaja()) {
+                afinalizar = false;
+            } else if (this.getImporteBonificar() != null) {
+                afinalizar = false;
+            } else {
+                if (getUltimoEventoPago() != null) {
+                    afinalizar = true;
+                } else {
+                    afinalizar = !matriculaFacturaList.isEmpty();
+                    if (afinalizar) {
+                        for (MatriculaFactura f : matriculaFacturaList) {
+                            if (f.getFactura1().getImporte() < 0.0 || !f.getFactura1().getUltimoEstado().getEstado().getId().equals(3)) {
+                                afinalizar = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return afinalizar;
+    }
+
+    public void setAfinalizar(Boolean afinalizar) {
+        this.afinalizar = afinalizar;
+    }
+
+    public String getEcString() {
+        if (ecString == null) {
+            ecString = "";
+            for (MatriculaComercial mc : matriculaComercialList) {
+                if (!ecString.equals("")) {
+                    ecString += " / ";
+                }
+                ecString += "" + mc.getComercial1().getNombre() + " (" + mc.getComercial1().getComercialTipo().getNombre() + ")";
+            }
+        }
+        return ecString;
+    }
+
+    public void setEcString(String ecString) {
+        this.ecString = ecString;
+    }
+
+    public String getFacturasString() {
+        if (facturasString == null) {
+            facturasString = "";
+            for (MatriculaFactura f : matriculaFacturaList) {
+                if (!facturasString.equals("")) {
+                    facturasString += " / ";
+                }
+                facturasString += "" + f.getFactura1().getId() + " (" + ((f.getFactura1().getImporte() < 0.0) ? "ABONO" : (f.getFactura1().getUltimoEstado().getEstado().getNombre()))
+                        + ")";
+            }
+        }
+        return facturasString;
+    }
+
+    public void setFacturasString(String facturasString) {
+        this.facturasString = facturasString;
+    }
+
+    public Double getC_imparticion() {
+        if (c_imparticion == null) {
+            this.getTextoCostes();
+        }
+        return c_imparticion;
+    }
+
+    public void setC_imparticion(Double c_imparticion) {
+        this.c_imparticion = c_imparticion;
+    }
+
+    public Double getC_organizacion() {
+        if (c_organizacion == null) {
+            this.getTextoCostes();
+        }
+        return c_organizacion;
+    }
+
+    public void setC_organizacion(Double c_organizacion) {
+        this.c_organizacion = c_organizacion;
+    }
+
+    public Double getC_salariales() {
+        if (c_salariales == null) {
+            this.getTextoCostes();
+        }
+        return c_salariales;
+    }
+
+    public void setC_salariales(Double c_salariales) {
+        this.c_salariales = c_salariales;
+    }
+
+    public Boolean getTieneFacturaPendiente() {
+        if (tieneFacturaPendiente == null) {
+            tieneFacturaPendiente = false;
+            for (MatriculaFactura mf : matriculaFacturaList) {
+                if (mf.getFactura1().getUltimoEstado().getEstado().getId().equals(1)) {
+                    tieneFacturaPendiente = true;
+                    return tieneFacturaPendiente;
+                }
+            }
+        }
+        return tieneFacturaPendiente;
+    }
+
+    public Boolean getMatriculaConfirmada() {
+        if (matriculaConfirmada == null) {
+            matriculaConfirmada = true;
+            for (Evento ev : eventoList) {
+                if (ev.getTipoDescripcionEvento() == descripcionEventos.CONFIRMACION_MATRICULA && ev.getFechaRealizacion() != null) {
+                    matriculaConfirmada = false;
+                    return matriculaConfirmada;
+                }
+            }
+        }
+        return matriculaConfirmada;
+    }
+
+    public String getTextoCostes() {
+        if (this.getFacturaList() == null || this.getFacturaList().isEmpty()) {
+            return "[La matrícula necesita tener facturas para generar los Costes.]";
+        }
+        EmpresaMatriculaAnio eme = null;
+        if (!this.getEmpresaMatriculaCcc().getEmpresaMatricula().getEmpresaMatriculaAnioList().isEmpty()) {
+            for (EmpresaMatriculaAnio ema : this.getEmpresaMatriculaCcc().getEmpresaMatricula().getEmpresaMatriculaAnioList()) {
+                if (ema.getEmpresaMatriculaAnioPK().getAnio() == Fecha.getAnio(new Date())) {
+                    eme = ema;
+                }
+            }
+        }
+
+        if (eme == null) {
+            return "[La empresa necesita tener registrados los trabajadores del año actual.]";
+        }
+        double pct = this.getFacturaList().get(0).getPorcentaje() / 100.0;
+        if (pct < 0.0) {
+            pct = .2;
+        }
+        double n = .0;
+        if (eme.getPlantilla() >= 10 && eme.getPlantilla() <= 49) {
+            n = 0.1;
+        } else if (eme.getPlantilla() >= 50 && eme.getPlantilla() <= 249) {
+            n = 0.2;
+        } else if (eme.getPlantilla() >= 250) {
+            n = 0.4;
+        }
+        double precio_imp = this.precio; //(this.importeBonificar == null? this.precio : this.importeBonificar);
+        c_organizacion = Validacion.Redondear(precio_imp * pct);
+        c_imparticion = Validacion.Redondear(precio_imp * (1 - pct));
+        c_salariales = Validacion.Redondear(precio_imp * n / (1 - n));
+        String textoCostes = "Costes de Organización: " + Validacion.Redondear(precio_imp * pct) + " € - Costes de Impartición: " + Validacion.Redondear(precio_imp * (1 - pct)) + " € - Costes Salariales: " + Validacion.Redondear(precio_imp * n / (1 - n)) + " €";
+        return textoCostes;
+    }
+
+    public String getObservacionesEnivo() {
+        return observacionesEnivo;
+    }
+
+    public void setObservacionesEnivo(String observacionesEnivo) {
+        this.observacionesEnivo = observacionesEnivo;
+    }
+
+    public int getPagoPosterior() {
+        if (pagoPosterior == null) {
+            pagoPosterior = -1;
+            Evento e = getUltimoEventoPago();
+            if (e != null) {
+                if (e.getTipoDescripcionEvento() == descripcionEventos.PAGO_POSTERIOR_MESBON) {
+                    pagoPosterior = 2;
+                } else if (e.getTipoDescripcionEvento() == descripcionEventos.PAGO_POSTERIOR_TRASBON) {
+                    pagoPosterior = 1;
+                }
+            }
+        }
+        return pagoPosterior;
+    }
+
+    public Double getImporteBonificar() {
+        return importeBonificar;
+    }
+
+    public void setImporteBonificar(Double importeBonificar) {
+        this.importeBonificar = importeBonificar;
+    }
+
+    public void setPagoPosterior(int pagoPosterior) {
+        this.pagoPosterior = pagoPosterior;
+    }
+
+    public boolean isSeleccionarPDF() {
+        return seleccionarPDF;
+    }
+
+    public void setSeleccionarPDF(boolean seleccionarPDF) {
+        this.seleccionarPDF = seleccionarPDF;
+    }
+
+    public boolean isSeleccionarEmail() {
+        return seleccionarEmail;
+    }
+
+    public void setSeleccionarEmail(boolean seleccionarEmail) {
+        this.seleccionarEmail = seleccionarEmail;
+    }
+
+    public String getEmailEnvio() {
+        if (!generado_emailEnvio) {
+            try {
+                if (getEmpresaMatriculaCcc().getEmpresaMatricula().getEmpresa().getEmail() != null
+                        && getEmpresaMatriculaCcc().getEmpresaMatricula().getEmpresa().getEmail().contains("@")) {
+                    emailEnvio = getEmpresaMatriculaCcc().getEmpresaMatricula().getEmpresa().getEmail();
+                } else if (getAlumno().getPersona().getEmail() != null && getAlumno().getPersona().getEmail().contains("@")) {
+                    emailEnvio = getAlumno().getPersona().getEmail();
+                }
+            } catch (Exception e) {
+                emailEnvio = "";
+            }
+            generado_emailEnvio = true;
+        }
+        return emailEnvio;
+    }
+
+    public void setEmailEnvio(String emailEnvio) {
+        this.emailEnvio = emailEnvio;
+    }
+
+    public Direccion getDireccionAsesoria() {
+        Comercial asesoria = null;
+        for (MatriculaComercial matriculaComercial : matriculaComercialList) {
+            if (matriculaComercial.getComercial1().getComercialTipo().getId().equals(7)) { //7 = asesoria
+                asesoria = matriculaComercial.getComercial1();
+                break;
+            }
+        }
+        if (asesoria != null) {
+            if (!asesoria.getPersonaList().isEmpty()) {
+                return asesoria.getPersonaList().get(0).getDireccion();
+            }
+            if (!asesoria.getEmpresaList().isEmpty()) {
+                return asesoria.getEmpresaList().get(0).getDireccion();
+            }
+        }
+        return null;
+    }
+
+    public String getEmailEnvio_ase() {
+        Comercial asesoria = null;
+        try {
+            if (emailEnvio_ase.equals("") && !gen_ase) {
+                for (MatriculaComercial matriculaComercial : matriculaComercialList) {
+                    if (matriculaComercial.getComercial1().getComercialTipo().getId().equals(7)) { //7 = asesoria
+                        asesoria = matriculaComercial.getComercial1();
+                        break;
+                    }
+                }
+                if (asesoria != null) {
+                    if (asesoria.getEmpresaList() != null && !asesoria.getEmpresaList().isEmpty()
+                            && asesoria.getEmpresaList().get(0).getEmail().contains("@")) {
+                        emailEnvio_ase = asesoria.getEmpresaList().get(0).getEmail();
+                    } else if (asesoria.getPersonaList() != null && !asesoria.getPersonaList().isEmpty()
+                            && asesoria.getPersonaList().get(0).getEmail().contains("@")) {
+                        emailEnvio_ase = asesoria.getPersonaList().get(0).getEmail();
+                    }
+                }
+                gen_ase = true;
+            }
+        } catch (Exception e) {
+            emailEnvio_ase = "";
+        }
+        return emailEnvio_ase;
+    }
+
+    public void setEmailEnvio_ase(String emailEnvio_ase) {
+        this.emailEnvio_ase = emailEnvio_ase;
+    }
+
+    public boolean isSeleccionarEmail_ase() {
+        return seleccionarEmail_ase;
+    }
+
+    public void setSeleccionarEmail_ase(boolean seleccionarEmail_ase) {
+        this.seleccionarEmail_ase = seleccionarEmail_ase;
+    }
+
+    public List<Factura> getFacturaList() {
+        if (facturaList == null) {
+            facturaList = new ArrayList<Factura>();
+            for (MatriculaFactura mf : matriculaFacturaList) {
+                if (!facturaList.contains(mf.getFactura1())) {
+                    facturaList.add(mf.getFactura1());
+                }
+            }
+        }
+        return facturaList;
+    }
+
+    public void setFacturaList(List<Factura> facturaList) {
+        this.facturaList = facturaList;
+    }
+
+    public Matricula() {
+    }
+
+    public Matricula(Integer id) {
+        this.id = id;
+    }
+
+    public Matricula(Integer id, Date fechaCreacion, Double precio, Date fechaFirma) {
+        this.id = id;
+        this.fechaCreacion = fechaCreacion;
+        this.precio = precio;
+        this.fechaFirma = fechaFirma;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public Date getFechaCreacion() {
+        return fechaCreacion;
+    }
+
+    public void setFechaCreacion(Date fechaCreacion) {
+        this.fechaCreacion = fechaCreacion;
+    }
+
+    public Double getPrecio() {
+        return precio;
+    }
+
+    public void setPrecio(Double precio) {
+        if (precio < 0) {
+            precio = 0.0;
+        }
+        this.precio = precio;
+    }
+
+    public String getObservaciones() {
+        return observaciones;
+    }
+
+    public void setObservaciones(String observaciones) {
+        this.observaciones = observaciones;
+    }
+
+    public Date getFechaFirma() {
+        return fechaFirma;
+    }
+
+    public void setFechaFirma(Date fechaFirma) {
+        this.fechaFirma = fechaFirma;
+    }
+
+    public Date getFechaEntrega() {
+        return fechaEntrega;
+    }
+
+    public void setFechaEntrega(Date fechaEntrega) {
+        this.fechaEntrega = fechaEntrega;
+    }
+
+    public String getFechaCreacionString() {
+
+        return Fecha.getFechaDiaMesAnio(fechaCreacion);
+    }
+
+    public String getFechaEntregaString() {
+
+        return Fecha.getFechaDiaMesAnio(fechaEntrega);
+    }
+
+    public String getFechaFirmaString() {
+
+        return Fecha.getFechaDiaMesAnio(fechaFirma);
+    }
+
+    public Grupo getGrupo() {
+        return grupo;
+    }
+
+    public void setGrupo(Grupo grupo) {
+        this.grupo = grupo;
+    }
+
+    public FormaPago getFormaPago() {
+        return formaPago;
+    }
+
+    public void setFormaPago(FormaPago formaPago) {
+        this.formaPago = formaPago;
+    }
+
+    public EmpresaMatriculaCcc getEmpresaMatriculaCcc() {
+        return empresaMatriculaCcc;
+    }
+
+    public void setEmpresaMatriculaCcc(EmpresaMatriculaCcc empresaMatriculaCcc) {
+        this.empresaMatriculaCcc = empresaMatriculaCcc;
+    }
+
+    public Direccion getDireccionEnvio() {
+        if (direccionEnvio == null) {
+            direccionEnvio = new Direccion();
+        }
+        return direccionEnvio;
+    }
+
+    public void setDireccionEnvio(Direccion direccionEnvio) {
+        this.direccionEnvio = direccionEnvio;
+    }
+
+    public Alumno getAlumno() {
+        return alumno;
+    }
+
+    public void setAlumno(Alumno alumno) {
+        this.alumno = alumno;
+    }
+
+    @XmlTransient
+    public List<MatriculaComercial> getMatriculaComercialList() {
+        return matriculaComercialList;
+    }
+
+    public void setMatriculaComercialList(List<MatriculaComercial> matriculaComercialList) {
+        this.matriculaComercialList = matriculaComercialList;
+    }
+
+    @XmlTransient
+    public List<PedidoLinea> getPedidoLineaList() {
+        return pedidoLineaList;
+    }
+
+    public void setPedidoLineaList(List<PedidoLinea> pedidoLineaList) {
+        this.pedidoLineaList = pedidoLineaList;
+    }
+
+    @XmlTransient
+    public List<Evento> getEventoList() {
+        return eventoList;
+    }
+
+    public void setEventoList(List<Evento> eventoList) {
+        this.eventoList = eventoList;
+    }
+
+    @XmlTransient
+    public List<MatriculaFactura> getMatriculaFacturaList() {
+        return matriculaFacturaList;
+    }
+
+    public void setMatriculaFacturaList(List<MatriculaFactura> matriculaFacturaList) {
+        this.matriculaFacturaList = matriculaFacturaList;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (id != null ? id.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (!(object instanceof Matricula)) {
+            return false;
+        }
+        Matricula other = (Matricula) object;
+        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "datos.Matricula[ id=" + id + " ]";
+    }
+
+    public Double getImporteSinFacturar() {
+        Double d = 0.0;
+        if (matriculaFacturaList != null) {
+            for (MatriculaFactura m : matriculaFacturaList) {
+                if (m.getPrecio() > 0.0) {
+                    d += m.getPrecio();
+                }
+            }
+        }
+        return (((this.getPrecio() == null) ? 0.0 : this.getPrecio()) - d);
+    }
+
+    public boolean getExisteFacturaAbono() {
+        if (matriculaFacturaList != null) {
+            for (MatriculaFactura m : matriculaFacturaList) {
+                if (m.getPrecio() < 0.0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public Evento getUltimoEventoPago() {
+        Evento v = null;
+        for (Evento e : eventoList) {
+            int el = e.getTipoDescripcionEvento();
+            if ((el == descripcionEventos.PAGO_POSTERIOR_MESBON
+                    || el == descripcionEventos.PAGO_POSTERIOR_TRASBON)
+                    && (v == null || v.getFechaCreacion().before(e.getFechaCreacion()))) {
+                v = e;
+            }
+        }
+        return v;
+    }
+}

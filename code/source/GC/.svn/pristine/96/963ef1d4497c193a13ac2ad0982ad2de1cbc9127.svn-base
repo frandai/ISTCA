@@ -1,0 +1,104 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package util;
+
+import bean.MatriculaFacade;
+import datos.Evento;
+import datos.Matricula;
+import datosVista.MatriculasPendientesIwi;
+import datosVistaFacade.MatriculasPendientesIwiFacade;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ *
+ * @author fran
+ */
+public class ComunicacionGrupoIWI {
+
+    public static void enviarAltaMatricula(Matricula matricula) {
+        if (!matricula.getEnviadaAltaIwi()) {
+            try {
+                String baja = "";
+                if(matricula.getBaja()){
+                    for (Evento e : matricula.getEventoList()) {
+                        if(e.getTipo().getId().equals(6)){
+                            baja = e.getDescripcion().replaceAll(" ", "_");
+                        }
+                    }
+                }
+                String devuelto = Web.getWebContent(
+                        (VariablesSistema.modo.equals("DESARROLLO")
+                        ? "http://grupoiwi.no-ip.org/"
+                        : "http://www.grupoiwi.com/")
+                        + "F5Consultoria?"
+                        + "nif=" + matricula.getEmpresaMatriculaCcc().getEmpresaMatricula().getNif() + "&"
+                        + "precio=" + matricula.getPrecio() + "&"
+                        + "idmatricula=" + matricula.getId() + "&"
+                        + "fechaentrega=" + Fecha.getfechaDDMMAA(matricula.getFechaEntrega()) + "&"
+                        + (matricula.getBaja()?"baja="+baja+"&":"")
+                        + "pass=" + Encriptacion.getMD5(
+                        matricula.getEmpresaMatriculaCcc().getEmpresaMatricula().getNif()
+                        + matricula.getPrecio()
+                        + matricula.getId()
+                        + Fecha.getfechaDDMMAA(matricula.getFechaEntrega())
+                        + VariablesSistema.password_IWI));
+                if (devuelto.contains("CORRECTO")) {
+                    matricula.setEnviadaAltaIwi(true);
+                }
+            } catch (MalformedURLException ex) {
+                Logger.getLogger(ComunicacionGrupoIWI.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(ComunicacionGrupoIWI.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
+    public static void enviarMatriculasPendientes(MatriculaFacade mf, MatriculasPendientesIwiFacade mpfac) {
+        List<Matricula> mats = mf.findMatriculaPendienteInicio();
+        if (mats != null) {
+            for (Matricula matricula : mats) {
+                enviarAltaMatricula(matricula);
+                mf.edit(matricula);
+            }
+        }
+        List<MatriculasPendientesIwi> pendientes = mpfac.findAll();
+        if (pendientes != null) {
+            String id_matriculas = "";
+            for (MatriculasPendientesIwi matpend : pendientes) {
+                id_matriculas += matpend.getIdmatricula() + "-" + matpend.getMatricula().getEmpresaMatriculaCcc().getEmpresaMatriculaCccPK().getNif() +",";
+            }
+            try {
+                String devuelto = Web.getWebContent(
+                        (VariablesSistema.modo.equals("DESARROLLO")
+                        ? "http://grupoiwi.no-ip.org/"
+                        : "http://www.grupoiwi.com/")
+                        + "F5Consultoria?"
+                        + "idmatriculascobradas=" + id_matriculas + "&"
+                        + "pass=" + Encriptacion.getMD5(
+                        id_matriculas
+                        + VariablesSistema.password_IWI));
+                if (devuelto.contains("CORRECTO")) {
+                    for (MatriculasPendientesIwi matpend : pendientes) {
+                        matpend.getMatricula().setEnviadaAutorizacionIwi(true);
+                        mf.edit(matpend.getMatricula());
+                    }
+                }
+            } catch (MalformedURLException ex) {
+                Logger.getLogger(ComunicacionGrupoIWI.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(ComunicacionGrupoIWI.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+}

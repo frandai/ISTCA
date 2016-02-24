@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:c="http://java.sun.com/jsp/jstl/core">
+
+    <ui:composition template="/template.xhtml">
+        <ui:define name="title">
+            <h:outputText value="Gestión de mi usuario"></h:outputText>
+        </ui:define>
+        <ui:define name="body">
+            <p:fieldset legend="Datos del Usuario" styleClass="campoRellena" id="datosUsuario">
+                <p>
+                    <h:outputLabel value="Persona asociada:"/>
+                    <h:outputLink  value="../persona/persona.xhtml?persona=#{usuarioGestion.usuarioSeleccionado.persona.nif}" id="valorPersona" target="_blank"><h:outputLabel styleClass="valor" value="#{usuarioGestion.usuarioSeleccionado.persona.nombre} #{usuarioGestion.usuarioSeleccionado.persona.apellido1} #{usuarioGestion.usuarioSeleccionado.persona.apellido2} (#{usuarioGestion.usuarioSeleccionado.persona.nif})"/>
+                    </h:outputLink>
+                    <p:commandButton icon="ui-icon-search" title="Asociar Persona" onclick="dlg.show()" styleClass="separador" rendered="#{sesionActual.tienePermiso(16)}" />
+                </p>
+                <p>
+                    <h:outputLabel value="Nombre de Usuario:"/>
+                    <p:inputText autocomplete="OFF" styleClass="valor" value="#{usuarioGestion.usuarioSeleccionado.usuario}" rendered="#{sesionActual.tienePermiso(16)}"/>
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(16)}" styleClass="valor" value="#{usuarioGestion.usuarioSeleccionado.usuario}"/>
+                </p>
+                <c:if test="#{not usuarioGestion.quiereCambiarPassword}">
+                    <p>
+                        <p:commandButton value="Cambiar Contraseña" update=":formulario_principal">
+                            <f:setPropertyActionListener target="#{usuarioGestion.quiereCambiarPassword}" value="true"/>
+                        </p:commandButton>
+                    </p>
+                </c:if>
+                <p:fieldset rendered="#{usuarioGestion.quiereCambiarPassword}" style="border:none;">
+                    <p>
+                        <h:outputLabel value="Nueva Contraseña:"/>
+                        <p:password autocomplete="OFF" id="pass1" styleClass="valor" value="#{usuarioGestion.nuevaPassword}" feedback="true"
+                                    promptLabel="Por favor introduzca una contraseña" weakLabel="Débil"  
+                                    goodLabel="Buena" strongLabel="Óptima"
+                                    label="Repetición Contraseña"
+                                    /> 
+                        <p:password autocomplete="OFF" id="pass2" styleClass="valor" value="#{usuarioGestion.nuevaPassword2}" label="Repetición Contraseña" /> 
+                    </p>
+                </p:fieldset>
+            </p:fieldset>
+            <p:commandButton actionListener="#{usuarioGestion.guarda}"  disabled="#{usuarioGestion.borrado}" value="Guardar" id="botonGuarda" icon="ui-icon-check" update="messages growl" styleClass="botonAplicar" process="pass1 pass2 @this"/> 
+            <p:commandButton value="Salir" icon="ui-icon ui-icon-arrowreturn-1-w" onclick="location.href = '../bienvenido.xhtml'" styleClass="botonAplicar" />
+
+        </ui:define>
+
+        <ui:define name="dialogos">
+            <p:dialog header="Asociar Persona" widgetVar="dlg" resizable="true" rendered="#{sesionActual.tienePermiso(16)}">   
+                <h:form id="form1"> 
+                    <p:dataTable  filterEvent="change" var="persona" value="#{usuarioGestion.personasAsociarUsuario}" style="width: 500px;"
+                                  lazy="true"
+                                  emptyMessage="No se encuentran personas a asociar" styleClass="separador"
+                                  paginator="true" rows="5" 
+                                  paginatorTemplate="{FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                                  rowsPerPageTemplate="5,10,15"
+                                  >
+                        <p:column filterBy="#{persona.nombre}" 
+                                  headerText="Nombre"
+                                  filterMatchMode="contains"
+                                  >
+                            <h:outputText value="#{persona.nombre}"/>
+                        </p:column>
+                        <p:column filterBy="#{persona.nif}" 
+                                  headerText="NIF"
+                                  filterMatchMode="contains"
+                                  >
+                            <h:outputText value="#{persona.nif}"/>
+                        </p:column>
+                        <p:column style="width:4%">  
+                            <p:commandButton id="submitButton" update=":formulario_principal:valorPersona" oncomplete="dlg.hide()" icon="ui-icon-check" title="Seleccionar">  
+                                <f:setPropertyActionListener value="#{persona.persona}" target="#{usuarioGestion.usuarioSeleccionado.persona}" />  
+                                <f:setPropertyActionListener value="#{persona.nif}" target="#{usuarioGestion.usuarioSeleccionado.nif}" />  
+                            </p:commandButton>  
+                        </p:column> 
+                    </p:dataTable>
+                </h:form>
+            </p:dialog>
+
+
+
+        </ui:define>
+    </ui:composition>
+</html>

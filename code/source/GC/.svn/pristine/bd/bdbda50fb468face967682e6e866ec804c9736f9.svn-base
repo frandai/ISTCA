@@ -1,0 +1,529 @@
+package gestion;
+
+import bean.AccionFormativaFacade;
+import bean.AccionFormativaGrupoFacade;
+import datos.AccionFormativaGrupo;
+import bean.AccionFormativaCncpFacade;
+import bean.AccionFormativaExtraFacade;
+import bean.AccionFormativaGrupoFundacionFacade;
+import datos.AccionFormativaCncp;
+import datos.AccionFormativa;
+import java.io.Serializable;
+import javax.ejb.EJB;
+import javax.faces.application.FacesMessage;
+import javax.faces.bean.ManagedBean;
+import javax.faces.bean.ViewScoped;
+import javax.faces.event.ActionEvent;
+import vista.UtilidadesVista;
+import bean.AccionFormativaModalidadFacade;
+import bean.EventoFacade;
+import bean.GrupoFacade;
+import bean.MatriculaFacade;
+import datos.AccionFormativaExtra;
+import datos.AccionFormativaModalidad;
+import java.util.List;
+import bean.ProveedorFacade;
+import datos.AccionFormativaGrupoFundacion;
+import datos.Evento;
+import datos.Grupo;
+import datos.GrupoPK;
+import datos.Matricula;
+import datos.PersonaTelefono;
+import datos.Proveedor;
+import datos.Tutor;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import javax.faces.bean.ManagedProperty;
+import javax.faces.context.FacesContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import util.Fecha;
+import util.Validacion;
+import util.VariablesSistema;
+import util.descripcionEventos;
+import vista.SesionActual;
+
+/**
+ *
+ * @author sergio
+ */
+@ManagedBean(name = "accionFormativaGestion")
+@ViewScoped
+public class AccionFormativaGestion implements Serializable {
+
+    @EJB
+    private AccionFormativaFacade accionFormativaFacade;
+    @EJB
+    private AccionFormativaModalidadFacade accionModalidadFacade;
+    @EJB
+    private AccionFormativaCncpFacade cncpFacade;
+    @EJB
+    private AccionFormativaGrupoFacade gruposFacade;
+    @EJB
+    private AccionFormativaExtraFacade accionExtraFacade;
+    private boolean modoAlta = false; //Variable booleana que identifica si estamos en Modo de Alta
+    //o Modo de Guardado
+    private AccionFormativa accionFormativaSeleccionado; //Variable que guarda la AF Selecionada
+    private List<AccionFormativaModalidad> accionesModalidad; //Listado de Modalidades de la AF
+    private List<AccionFormativaGrupo> gruposAF; //Listado de Grupos a seleccionar para la AF
+    private List<AccionFormativaCncp> accionFormativaCncp; //Listado de CNCP a seleccionar para la AF
+    private List<Proveedor> proveedores; //Listado de Proveedores a seleccionar para la AF
+    @EJB
+    private ProveedorFacade proveFacade;
+    @EJB
+    private AccionFormativaGrupoFundacionFacade afgffac;
+    private Proveedor proveedorSeleccionada; //Variable Proveedor Seleccionado para la AF
+    private boolean borrado = false; //Valor booleano que indica TRUE si se ha eliminado la AF
+    //(para que se oculten los campos en el XHTML)
+    private Integer idPrimario = 0; //Variable que identifica el ID de la AF, si cambia se comprueba
+    //que el nuevo ID no existe en la plataforma.
+    @ManagedProperty("#{sesionActual}")
+    private SesionActual sesionActual; //Parámetro de Sesión que guarda los datos de la Sesión Actual
+    private boolean vieneDesdeMatricula = false; //Variable booleana que indica si viene desde la página 
+    //de Gestión de Matrícula, para hacer las gestiones determinadas.
+    @EJB
+    private MatriculaFacade matfac;
+    @EJB
+    private EventoFacade evfac;
+    @EJB
+    private GrupoFacade grupoFacade;
+    private String matID; //Identificador de la Matrícula para volver a la Gestión de Matrículas
+    private List<AccionFormativaGrupoFundacion> gruposFundacionFiltrados; //Listado de Grupos de Fundación Tripartita (filtro)
+    private List<AccionFormativaGrupoFundacion> gruposFundacion; //Listado de Grupos de Fundación Tripartita
+    private String url; //Variable URL para AF de tipo Teleformación
+    private String user; //Variable USER para AF de tipo Teleformación
+    private String pass; //Variable PASS para AF de tipo Teleformación
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+
+    public String getPass() {
+        return pass;
+    }
+
+    public void setPass(String pass) {
+        this.pass = pass;
+    }
+
+    public List<AccionFormativaGrupoFundacion> getGruposFundacionFiltrados() {
+        return gruposFundacionFiltrados;
+    }
+
+    public void setGruposFundacionFiltrados(List<AccionFormativaGrupoFundacion> gruposFundacionFiltrados) {
+        this.gruposFundacionFiltrados = gruposFundacionFiltrados;
+    }
+
+    public List<AccionFormativaGrupoFundacion> getGruposFundacion() {
+        if (gruposFundacion == null) {
+            gruposFundacion = afgffac.findAll();
+        }
+        return gruposFundacion;
+    }
+
+    public void setGruposFundacion(List<AccionFormativaGrupoFundacion> gruposFundacion) {
+        this.gruposFundacion = gruposFundacion;
+    }
+
+    public String getMatID() {
+        return matID;
+    }
+
+    public void setMatID(String matID) {
+        this.matID = matID;
+    }
+
+    public boolean isVieneDesdeMatricula() {
+        return vieneDesdeMatricula;
+    }
+
+    public void setVieneDesdeMatricula(boolean vieneDesdeMatricula) {
+        this.vieneDesdeMatricula = vieneDesdeMatricula;
+    }
+
+    public SesionActual getSesionActual() {
+        return sesionActual;
+    }
+
+    public void setSesionActual(SesionActual sesionActual) {
+        this.sesionActual = sesionActual;
+    }
+
+    /**
+     * Constructor: si viene por parámetro los datos de AF y/o matrícula, se cargan en variables
+     * de la clase.
+     */
+    public AccionFormativaGestion() {
+        modoAlta = (UtilidadesVista.getParametroReq("accionFormativa") == null);
+        vieneDesdeMatricula = (UtilidadesVista.getParametroReq("matricula") != null);
+        if (vieneDesdeMatricula) {
+            matID = UtilidadesVista.getParametroReq("matricula");
+        }
+    }
+/**
+ * Busca la AF seleccionada.
+ * En caso de no enviar AF seleccionada por parámetro, se supone que se desea crear una AF nueva.
+ * 
+ * @return 
+ */
+    public AccionFormativa getAccionFormativaSeleccionado() {
+        if (accionFormativaSeleccionado == null) {
+            String accionFormativa = UtilidadesVista.getParametroReq("accionFormativa");
+            if (accionFormativa != null) {
+                accionFormativaSeleccionado = accionFormativaFacade.find(Integer.parseInt(accionFormativa));
+                idPrimario = getAccionFormativaSeleccionado().getId();
+            } else {
+                //Se parametriza la AF nueva incluyendo valores por defecto
+                accionFormativaSeleccionado = new AccionFormativa();
+                accionFormativaSeleccionado.setProveedorList(new ArrayList<Proveedor>());
+                //accionFormativaSeleccionado.setId(Validacion.generaID(accionFormativaFacade));
+                accionFormativaSeleccionado.setAccionFormativaExtra(new AccionFormativaExtra(accionFormativaSeleccionado.getId()));
+                accionFormativaSeleccionado.setModalidad(new AccionFormativaModalidad((short) 8));
+
+            }
+            //Se rellenan los valores Extra de Teleformación (URI/USER/PASS)
+            if (accionFormativaSeleccionado.getAccionFormativaExtra() != null) {
+                url = accionFormativaSeleccionado.getAccionFormativaExtra().getUri();
+                user = accionFormativaSeleccionado.getAccionFormativaExtra().getUsuario();
+                pass = accionFormativaSeleccionado.getAccionFormativaExtra().getPassword();
+            }
+        }
+        //Se parametriza la AF nueva incluyendo valores por defecto
+        if (accionFormativaSeleccionado.getAccionFormativaExtra() == null) {
+            accionFormativaSeleccionado.setAccionFormativaExtra(new AccionFormativaExtra(accionFormativaSeleccionado.getId()));
+        }
+        return accionFormativaSeleccionado;
+    }
+
+    public Proveedor getAniadirProveedor() {
+        return null;
+    }
+
+    public void setAccionFormativaSeleccionado(AccionFormativa accionFormativaSeleccionado) {
+        this.accionFormativaSeleccionado = accionFormativaSeleccionado;
+    }
+
+    //Función para Añadir Proveedor a la AF.
+    public void setAniadirProveedor(Proveedor proveedorSeleccionada) {
+        for (Proveedor prov : getAccionFormativaSeleccionado().getProveedorList()) {
+            if (proveedorSeleccionada.equals(prov)) {
+                return;
+            }
+        }
+        accionFormativaSeleccionado.getProveedorList().add(proveedorSeleccionada);
+        proveedorSeleccionada.getAccionFormativaList().add(accionFormativaSeleccionado);
+    }
+
+    public boolean isModoAlta() {
+        return modoAlta;
+    }
+
+    public void setModoAlta(boolean modoAlta) {
+        this.modoAlta = modoAlta;
+    }
+
+    public List<Proveedor> getProveedores() {
+        if (proveedores == null) {
+            proveedores = proveFacade.findAll();
+        }
+        return proveedores;
+    }
+
+    public void setProveedores(List<Proveedor> proveedores) {
+        this.proveedores = proveedores;
+    }
+
+    public List<AccionFormativaModalidad> getAccionesModalidad() {
+        if (accionesModalidad == null) {
+            accionesModalidad = accionModalidadFacade.findAll();
+        }
+        return accionesModalidad;
+    }
+
+    public void aniadirCNCP(ActionEvent actionEvent) {
+        AccionFormativaCncp cncp = new AccionFormativaCncp();
+        accionFormativaSeleccionado.setCncp(cncp);
+    }
+
+    public void setAccionesModalidad(List<AccionFormativaModalidad> accionesModalidad) {
+        this.accionesModalidad = accionesModalidad;
+    }
+
+    public List<AccionFormativaCncp> getAccionFormativaCncp() {
+        if (accionFormativaCncp == null) {
+            accionFormativaCncp = cncpFacade.findAll();
+        }
+        return accionFormativaCncp;
+    }
+
+    public void setAccionFormativaCncp(List<AccionFormativaCncp> accionFormativaCncp) {
+        this.accionFormativaCncp = accionFormativaCncp;
+    }
+
+    /**
+     * Elimina la AF del Sistema.
+     * 
+     * @param event
+     * @throws IOException 
+     */
+    public void elimina(ActionEvent event) throws IOException {
+        if (accionFormativaSeleccionado.getAccionFormativaExtra() != null && accionFormativaSeleccionado.getAccionFormativaExtra().getId() == null) {
+            accionFormativaSeleccionado.setAccionFormativaExtra(null);
+        }
+        accionFormativaFacade.remove(accionFormativaSeleccionado);
+        System.out.println("[BORRAR][" + Fecha.getFechaAnioMesDiaHoraMinutoSegundo(new Date()) + "]Se ha Borrado la Acción Formativa " + this.getAccionFormativaSeleccionado().getId());
+        borrado = true;
+        UtilidadesVista.Mensaje("La acción formativa se ha eliminado", FacesMessage.SEVERITY_INFO);
+    }
+
+    /**
+     * Guarda la AF en el sistema.
+     * 
+     * Valida que:
+     * -Si es una AF nueva, el ID de la AF no exista en el sistema.
+     * -Debe tener asociada una Modalidad
+     * -Debe de tener asociado un Grupo de la Fundación Tripartita
+     * -Debe de tener un ID
+     * -Debe de tener un Nombre
+     * -Debe de tener Objetivos
+     * -Debe de tener Contenidos
+     * -Debe de estar Asociada a un Proveedor
+     * 
+     * @param event 
+     */
+    public void guarda(ActionEvent event) {
+        try {
+
+            boolean valido = true;
+
+            if (idPrimario == 0
+                    || !idPrimario.equals(getAccionFormativaSeleccionado().getId())) {
+                try {
+                    if (accionFormativaFacade.find(getAccionFormativaSeleccionado().getId()) != null) {
+                        UtilidadesVista.Mensaje("La referencia de acción formativa introducido ya existe en la plataforma.", FacesMessage.SEVERITY_ERROR);
+                        valido = false;
+                    }
+                } catch (Exception e) {
+                }
+            }
+
+            if (accionFormativaSeleccionado.getModalidad() == null) {
+                UtilidadesVista.Mensaje("La acción Formativa debe tener una modalidad", FacesMessage.SEVERITY_ERROR);
+                valido = false;
+            } else if (!accionFormativaSeleccionado.getModalidad().getId().equals(new Short("9"))) {
+                accionFormativaSeleccionado.setAccionFormativaExtra(null);
+            }
+            if (accionFormativaSeleccionado.getAccionFormativaGrupoFundacion() == null) {
+                UtilidadesVista.Mensaje("La acción Formativa debe tener un Grupo de Fundación Tripartita", FacesMessage.SEVERITY_ERROR);
+                valido = false;
+            }
+            if (accionFormativaSeleccionado.getId() == null || accionFormativaSeleccionado.getId().equals(0)) {
+                UtilidadesVista.Mensaje("La acción Formativa debe tener un ID", FacesMessage.SEVERITY_ERROR);
+                valido = false;
+            }
+            if (accionFormativaSeleccionado.getNombre() == null || accionFormativaSeleccionado.getNombre().equals("")) {
+                UtilidadesVista.Mensaje("La acción Formativa debe tener un nombre", FacesMessage.SEVERITY_ERROR);
+                valido = false;
+            }
+
+            if (accionFormativaSeleccionado.getContenidos() == null || accionFormativaSeleccionado.getContenidos().equals("")) {
+                UtilidadesVista.Mensaje("La acción Formativa debe tener contenidos", FacesMessage.SEVERITY_ERROR);
+                valido = false;
+            }
+
+            if (accionFormativaSeleccionado.getProveedorList() == null || accionFormativaSeleccionado.getProveedorList().isEmpty()) {
+                UtilidadesVista.Mensaje("La acción Formativa debe tener asociada algún proveedor", FacesMessage.SEVERITY_ERROR);
+                valido = false;
+            }
+
+            if (valido) {
+                Grupo grupoSeleccionado = null;
+                //Si no tiene observaciones, se ponen vacías.
+                if (accionFormativaSeleccionado.getObservaciones() == null) {
+                    accionFormativaSeleccionado.setObservaciones("");
+                }
+                //Si es de Teleformación, se cargan los URL/USER/PASS
+                if (accionFormativaSeleccionado.getModalidad().getId().equals(new Short("10"))) {
+                    if (accionFormativaSeleccionado.getAccionFormativaExtra() == null) {
+                        accionFormativaSeleccionado.setAccionFormativaExtra(new AccionFormativaExtra(accionFormativaSeleccionado.getId()));
+                    }
+                    accionFormativaSeleccionado.getAccionFormativaExtra().setUri(url);
+                    accionFormativaSeleccionado.getAccionFormativaExtra().setUsuario(user);
+                    accionFormativaSeleccionado.getAccionFormativaExtra().setPassword(pass);
+                }
+
+                if (modoAlta) {
+                    modoAlta = false;
+                    if (accionFormativaSeleccionado.getAccionFormativaExtra() != null) {
+                        accionFormativaSeleccionado.getAccionFormativaExtra().setId(accionFormativaSeleccionado.getId());
+                    }
+                    accionFormativaSeleccionado = accionFormativaFacade.create(accionFormativaSeleccionado);
+                    //Generamos el grupo "Pendiente de Gestionar"
+                    Grupo grupoPendienteGes = new Grupo(new GrupoPK(accionFormativaSeleccionado.getId(), 0));
+                    grupoPendienteGes.setFInicio(Fecha.getFechaStringDiaMesAnio("1/1/1900"));
+                    grupoPendienteGes.setFFin(Fecha.getFechaStringDiaMesAnio("1/1/1900"));
+                    grupoPendienteGes.setNombre("Pendiente de Gestionar");
+                    grupoPendienteGes.setObservaciones("Grupo generado para agrupar matrículas Pendiestes de Gestionar.");
+                    grupoPendienteGes.setProveedor1(accionFormativaSeleccionado.getProveedorList().get(0));
+                    try {
+                        //Se le asocia como Responsable el usuario conectado
+                        grupoPendienteGes.setPersonaTelefono(getSesionActual().getUsuario_conectado().getPersona().getPersonaTelefonoList().get(0));
+                    } catch (Exception e) {
+                        PersonaTelefono pt = null;
+                        for (Tutor t : VariablesSistema.proveedor_principal.getEmpresa().getTutorList()) {
+                            if (t.getPersona().getPersonaTelefonoList() != null && !t.getPersona().getPersonaTelefonoList().isEmpty()) {
+                                pt = t.getPersona().getPersonaTelefonoList().get(0);
+                                break;
+                            }
+                        }
+                        grupoPendienteGes.setPersonaTelefono(pt);
+                    }
+                    if (grupoPendienteGes.getPersonaTelefono() != null) {
+                        if (accionFormativaSeleccionado.getGrupoList() == null) {
+                            accionFormativaSeleccionado.setGrupoList(new ArrayList<Grupo>());
+                        }
+                        accionFormativaSeleccionado.getGrupoList().add(grupoPendienteGes);
+                        grupoSeleccionado = grupoPendienteGes;
+                    }
+                    accionFormativaSeleccionado = accionFormativaFacade.edit(accionFormativaSeleccionado);
+                    //Fin generación grupo "Pendiente de Gestionar"
+
+                    //Si es de Modalidad Mixta, se incluye Acción Formativa Extra
+                    if (accionFormativaSeleccionado.getModalidad().getId() == 9) {
+                        AccionFormativaExtra ACE = new AccionFormativaExtra(accionFormativaSeleccionado.getId());
+                        accionFormativaSeleccionado.setAccionFormativaExtra(ACE);
+                    }
+                } else {
+                    accionFormativaFacade.edit(accionFormativaSeleccionado);
+                    if (accionFormativaSeleccionado.getModalidad().getId() == 9 && accionFormativaSeleccionado.getAccionFormativaExtra() == null) {
+                        accionExtraFacade.edit(accionFormativaSeleccionado.getAccionFormativaExtra());
+                    }
+
+                }
+                idPrimario = accionFormativaSeleccionado.getId();
+                UtilidadesVista.Mensaje("La acción formativa se ha guardado", FacesMessage.SEVERITY_INFO);
+
+                if (vieneDesdeMatricula) {
+                    //Si viene desde Matrícula, se gestiona el guardado de la Matrícula
+                    Matricula m;
+                    if (getSesionActual().getMatriculasAFin().containsKey(matID)) {
+                        m = getSesionActual().getMatriculasAFin().get(matID).getMatriculaSeleccionada();
+                    } else {
+                        m = matfac.find(Integer.parseInt(matID));
+                    }
+                    try {
+                        grupoSeleccionado = grupoFacade.find(new GrupoPK(accionFormativaSeleccionado.getId(), 0));
+                        m.setGrupo(grupoSeleccionado);
+                        m.setPrecio(grupoSeleccionado.getAccionFormativa1().getPrecio());
+                        for (Evento ev : m.getEventoList()) {
+                            //Si tiene Eventos en estado Pendiente de Gestionar, activa el evento
+                            if (ev.getEstado().equals("G")) {
+                                if (ev.getTipoDescripcionEvento() == descripcionEventos.SEGUIMIENTO_TUTORIAL) {
+                                    ev.setFechaCreacion(grupoSeleccionado.getFInicio());
+                                    descripcionEventos.configurarEvento(ev, descripcionEventos.SEGUIMIENTO_TUTORIAL);
+                                    evfac.edit(ev);
+                                }
+                            }
+                        }
+                        Evento ev = m.getUltimoEventoPago();
+                        if (ev != null) {
+                            descripcionEventos.configurarEvento(ev, ev.getTipoDescripcionEvento());
+                            evfac.edit(ev);
+                        }
+                        try {
+                            matfac.edit(m);
+                        } catch (Exception e) {
+                        }
+
+                        UtilidadesVista.Mensaje("El grupo se ha añadido a la matrícula.", FacesMessage.SEVERITY_INFO);
+                    } catch (Exception e) {
+                        UtilidadesVista.Mensaje("El grupo NO se ha añadido a la matrícula.", FacesMessage.SEVERITY_ERROR);
+
+                    }
+
+                }
+            }
+        } catch (Exception e) {
+            String c = "";
+            for (StackTraceElement t : e.getStackTrace()) {
+                if (t.getMethodName().contains("guarda")) {
+                    c += t;
+                }
+            }
+            UtilidadesVista.Mensaje(e.getMessage() + ": " + e.getCause() + " - " + c, FacesMessage.SEVERITY_FATAL);
+        }
+    }
+
+    public List<AccionFormativaGrupo> getGruposAF() {
+        if (gruposAF == null) {
+            gruposAF = gruposFacade.findAll();
+        }
+        return gruposAF;
+    }
+
+    public void setGruposAF(List<AccionFormativaGrupo> gruposAF) {
+        this.gruposAF = gruposAF;
+    }
+
+    public boolean isBorrado() {
+        return borrado;
+    }
+
+    public void setBorrado(boolean borrado) {
+        this.borrado = borrado;
+    }
+
+    public Proveedor getProveedorSeleccionada() {
+        return proveedorSeleccionada;
+    }
+
+    public void setProveedorSeleccionada(Proveedor proveedorSeleccionada) {
+        this.proveedorSeleccionada = proveedorSeleccionada;
+    }
+
+    public Proveedor getProveedorSeleccionadaBorrar() {
+        return null;
+    }
+/**
+ * Función para Borrar Proveedor de la AF.
+ * 
+ * Sólo se permite borrar dicho Proveedor de la AF si no tiene Grupos Asociados.
+ * 
+ * @param proveedorSeleccionadaBorrar 
+ */
+    public void setProveedorSeleccionadaBorrar(Proveedor proveedorSeleccionadaBorrar) {
+        Proveedor selec = null;
+        for (Proveedor p : accionFormativaSeleccionado.getProveedorList()) {
+            if (p.getNif().equals(proveedorSeleccionadaBorrar.getNif())) {
+                boolean puede = true;
+                for (Grupo g : accionFormativaSeleccionado.getGrupoList()) {
+                    if (g.getProveedor1().getNif().equals(p.getNif())) {
+                        puede = false;
+                    }
+                }
+                if (puede) {
+                    selec = p;
+                } else {
+                    UtilidadesVista.Mensaje("No se puede eliminar un Proveedor con asociación a una Acción Formativa que tiene Grupos asociados.", FacesMessage.SEVERITY_ERROR);
+                    selec = null;
+                }
+            }
+        }
+        if (selec != null) {
+            accionFormativaSeleccionado.getProveedorList().remove(selec);
+        }
+    }
+}

@@ -1,0 +1,203 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package datos;
+
+import java.io.Serializable;
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+import javax.xml.bind.annotation.XmlRootElement;
+
+/**
+ *
+ * @author sergio
+ */
+@Entity
+@Table(name = "ACCION_FORMATIVA_EXTRA",  schema = "public")
+@XmlRootElement
+@NamedQueries({
+    @NamedQuery(name = "AccionFormativaExtra.findAll", query = "SELECT a FROM AccionFormativaExtra a"),
+    @NamedQuery(name = "AccionFormativaExtra.findById", query = "SELECT a FROM AccionFormativaExtra a WHERE a.id = :id"),
+    @NamedQuery(name = "AccionFormativaExtra.findByMixtaHpr", query = "SELECT a FROM AccionFormativaExtra a WHERE a.mixtaHpr = :mixtaHpr"),
+    @NamedQuery(name = "AccionFormativaExtra.findByMixtaHdi", query = "SELECT a FROM AccionFormativaExtra a WHERE a.mixtaHdi = :mixtaHdi"),
+    @NamedQuery(name = "AccionFormativaExtra.findByMixtaHte", query = "SELECT a FROM AccionFormativaExtra a WHERE a.mixtaHte = :mixtaHte"),
+    @NamedQuery(name = "AccionFormativaExtra.findByModTecnologia", query = "SELECT a FROM AccionFormativaExtra a WHERE a.modTecnologia = :modTecnologia"),
+    @NamedQuery(name = "AccionFormativaExtra.findByModPrevRiesgos", query = "SELECT a FROM AccionFormativaExtra a WHERE a.modPrevRiesgos = :modPrevRiesgos"),
+    @NamedQuery(name = "AccionFormativaExtra.findByModSensMedAmb", query = "SELECT a FROM AccionFormativaExtra a WHERE a.modSensMedAmb = :modSensMedAmb"),
+    @NamedQuery(name = "AccionFormativaExtra.findByModPromocion", query = "SELECT a FROM AccionFormativaExtra a WHERE a.modPromocion = :modPromocion"),
+    @NamedQuery(name = "AccionFormativaExtra.findByUri", query = "SELECT a FROM AccionFormativaExtra a WHERE a.uri = :uri"),
+    @NamedQuery(name = "AccionFormativaExtra.findByUsuario", query = "SELECT a FROM AccionFormativaExtra a WHERE a.usuario = :usuario"),
+    @NamedQuery(name = "AccionFormativaExtra.findByPassword", query = "SELECT a FROM AccionFormativaExtra a WHERE a.password = :password")})
+public class AccionFormativaExtra implements Serializable {
+    private static final long serialVersionUID = 1L;
+    @Id
+    @Basic(optional = false)
+    @NotNull
+    @Column(nullable = false)
+    private Integer id;
+    @Column(name = "MIXTA_HPR")
+    private Short mixtaHpr;
+    @Column(name = "MIXTA_HDI")
+    private Short mixtaHdi;
+    @Column(name = "MIXTA_HTE")
+    private Short mixtaHte;
+    @Column(name = "MOD_TECNOLOGIA")
+    private Short modTecnologia;
+    @Column(name = "MOD_PREV_RIESGOS")
+    private Short modPrevRiesgos;
+    @Column(name = "MOD_SENS_MED_AMB")
+    private Short modSensMedAmb;
+    @Column(name = "MOD_PROMOCION")
+    private Short modPromocion;
+    @Size(max = 2147483647)
+    @Column(length = 2147483647)
+    private String uri;
+    @Size(max = 2147483647)
+    @Column(length = 2147483647)
+    private String usuario;
+    @Size(max = 2147483647)
+    @Column(length = 2147483647)
+    private String password;
+    @JoinColumn(name = "ID", referencedColumnName = "ID", nullable = false, insertable = false, updatable = false)
+    @OneToOne(optional = false)
+    private AccionFormativa accionFormativa;
+
+    public AccionFormativaExtra() {
+    }
+
+    public AccionFormativaExtra(Integer id) {
+        this.id = id;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public Short getMixtaHpr() {
+        return mixtaHpr;
+    }
+
+    public void setMixtaHpr(Short mixtaHpr) {
+        this.mixtaHpr = mixtaHpr;
+    }
+
+    public Short getMixtaHdi() {
+        return mixtaHdi;
+    }
+
+    public void setMixtaHdi(Short mixtaHdi) {
+        this.mixtaHdi = mixtaHdi;
+    }
+
+    public Short getMixtaHte() {
+        return mixtaHte;
+    }
+
+    public void setMixtaHte(Short mixtaHte) {
+        this.mixtaHte = mixtaHte;
+    }
+
+    public Short getModTecnologia() {
+        return modTecnologia;
+    }
+
+    public void setModTecnologia(Short modTecnologia) {
+        this.modTecnologia = modTecnologia;
+    }
+
+    public Short getModPrevRiesgos() {
+        return modPrevRiesgos;
+    }
+
+    public void setModPrevRiesgos(Short modPrevRiesgos) {
+        this.modPrevRiesgos = modPrevRiesgos;
+    }
+
+    public Short getModSensMedAmb() {
+        return modSensMedAmb;
+    }
+
+    public void setModSensMedAmb(Short modSensMedAmb) {
+        this.modSensMedAmb = modSensMedAmb;
+    }
+
+    public Short getModPromocion() {
+        return modPromocion;
+    }
+
+    public void setModPromocion(Short modPromocion) {
+        this.modPromocion = modPromocion;
+    }
+
+    public String getUri() {
+        return uri;
+    }
+
+    public void setUri(String uri) {
+        this.uri = uri;
+    }
+
+    public String getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(String usuario) {
+        this.usuario = usuario;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public AccionFormativa getAccionFormativa() {
+        return accionFormativa;
+    }
+
+    public void setAccionFormativa(AccionFormativa accionFormativa) {
+        this.accionFormativa = accionFormativa;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (id != null ? id.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (!(object instanceof AccionFormativaExtra)) {
+            return false;
+        }
+        AccionFormativaExtra other = (AccionFormativaExtra) object;
+        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "datos.AccionFormativaExtra[ id=" + id + " ]";
+    }
+    
+}

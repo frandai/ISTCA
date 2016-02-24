@@ -1,0 +1,97 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package datos;
+
+import java.io.Serializable;
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.Embeddable;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
+/**
+ *
+ *
+ */
+@Embeddable
+public class MatriculaFacturaPK implements Serializable {
+    @Basic(optional = false)
+    @NotNull
+    @Column(nullable = false)
+    private int matricula;
+    @Basic(optional = false)
+    @NotNull
+    @Size(min = 1, max = 2147483647)
+    @Column(nullable = false, length = 2147483647)
+    private String factura;
+    @Basic(optional = false)
+    @Column(nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    public MatriculaFacturaPK() {
+    }
+
+    public MatriculaFacturaPK(int matricula, String factura) {
+        this.matricula = matricula;
+        this.factura = factura;
+    }
+
+    public int getMatricula() {
+        return matricula;
+    }
+
+    public void setMatricula(int matricula) {
+        this.matricula = matricula;
+    }
+
+    public String getFactura() {
+        return factura;
+    }
+
+    public void setFactura(String factura) {
+        this.factura = factura;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (int) matricula;
+        hash += (factura != null ? factura.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (!(object instanceof MatriculaFacturaPK)) {
+            return false;
+        }
+        MatriculaFacturaPK other = (MatriculaFacturaPK) object;
+        if (this.matricula != other.matricula) {
+            return false;
+        }
+        if ((this.factura == null && other.factura != null) || (this.factura != null && !this.factura.equals(other.factura))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "datos.MatriculaFacturaPK[ matricula=" + matricula + ", factura=" + factura + " ]";
+    }
+    
+}

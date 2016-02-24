@@ -1,0 +1,284 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package datos;
+
+import java.io.Serializable;
+import java.util.Date;
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import javax.persistence.Transient;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+import javax.xml.bind.annotation.XmlRootElement;
+import util.Fecha;
+import util.descripcionEventos;
+
+/**
+ *
+ *
+ */
+@Entity
+@Table(schema = "public")
+@XmlRootElement
+@NamedQueries({
+    @NamedQuery(name = "Evento.findAll", query = "SELECT e FROM Evento e"),
+    @NamedQuery(name = "Evento.findById", query = "SELECT e FROM Evento e WHERE e.id = :id"),
+    @NamedQuery(name = "Evento.findByFechaCreacion", query = "SELECT e FROM Evento e WHERE e.fechaCreacion = :fechaCreacion"),
+    @NamedQuery(name = "Evento.findByFechaRealizacion", query = "SELECT e FROM Evento e WHERE e.fechaRealizacion = :fechaRealizacion"),
+    @NamedQuery(name = "Evento.findByFechaVencimiento", query = "SELECT e FROM Evento e WHERE e.fechaVencimiento = :fechaVencimiento"),
+    @NamedQuery(name = "Evento.findByDescripcion", query = "SELECT e FROM Evento e WHERE e.descripcion = :descripcion"),
+    @NamedQuery(name = "Evento.findByObservaciones", query = "SELECT e FROM Evento e WHERE e.observaciones = :observaciones")})
+public class Evento implements Serializable, Comparable<Evento> {
+
+    private static final long serialVersionUID = 1L;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Basic(optional = false)
+    @Column(nullable = false)
+    private Integer id;
+    @Basic(optional = false)
+    @NotNull
+    @Column(name = "FECHA_CREACION", nullable = false)
+    @Temporal(TemporalType.DATE)
+    private Date fechaCreacion;
+    @Column(name = "FECHA_REALIZACION")
+    @Temporal(TemporalType.DATE)
+    private Date fechaRealizacion;
+    @Column(name = "FECHA_VENCIMIENTO")
+    @Temporal(TemporalType.DATE)
+    private Date fechaVencimiento;
+    @Basic(optional = false)
+    @NotNull
+    @Size(min = 1, max = 2147483647)
+    @Column(nullable = false, length = 2147483647)
+    private String descripcion;
+    @Size(max = 2147483647)
+    @Column(length = 2147483647)
+    private String observaciones;
+    @JoinColumn(name = "TUTOR", referencedColumnName = "NIF")
+    @ManyToOne
+    private Tutor tutor;
+    @JoinColumn(name = "EMPRESA", referencedColumnName = "NIF")
+    @ManyToOne
+    private Empresa empresa;
+    @JoinColumn(name = "CREADOR", referencedColumnName = "NIF", nullable = false)
+    @ManyToOne(optional = false)
+    private Persona creador;
+    @JoinColumn(name = "MATRICULA", referencedColumnName = "ID")
+    @ManyToOne
+    private Matricula matricula;
+    @JoinColumn(name = "TIPO", referencedColumnName = "ID", nullable = false)
+    @ManyToOne(optional = false)
+    private EventoTipo tipo;
+    @Transient //Variable que genera el estado del evento dependiendo de sus fechas
+            //(realizado, pendiente, vencido)
+    String estado = null;
+
+    public Empresa getEmpresa() {
+        return empresa;
+    }
+
+    public void setEmpresa(Empresa empresa) {
+        this.empresa = empresa;
+    }
+
+    public Evento() {
+    }
+
+    public Evento(Integer id) {
+        this.id = id;
+    }
+
+    public Evento(Integer id, Date fechaCreacion, String descripcion) {
+        this.id = id;
+        this.fechaCreacion = fechaCreacion;
+        this.descripcion = descripcion;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public Date getFechaCreacion() {
+        return fechaCreacion;
+    }
+
+    public void setFechaCreacion(Date fechaCreacion) {
+        this.fechaCreacion = fechaCreacion;
+    }
+
+    public Date getFechaRealizacion() {
+        return fechaRealizacion;
+    }
+
+    public void setFechaRealizacion(Date fechaRealizacion) {
+        this.fechaRealizacion = fechaRealizacion;
+    }
+
+    public Date getFechaVencimiento() {
+        return fechaVencimiento;
+    }
+
+    public void setFechaVencimiento(Date fechaVencimiento) {
+        this.fechaVencimiento = fechaVencimiento;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
+    }
+
+    public String getObservaciones() {
+        return observaciones;
+    }
+
+    public void setObservaciones(String observaciones) {
+        this.observaciones = observaciones;
+    }
+
+    public Tutor getTutor() {
+        return tutor;
+    }
+
+    public void setTutor(Tutor tutor) {
+        this.tutor = tutor;
+    }
+
+    public Persona getCreador() {
+        return creador;
+    }
+
+    public void setCreador(Persona creador) {
+        this.creador = creador;
+    }
+
+    public Matricula getMatricula() {
+        return matricula;
+    }
+
+    public void setMatricula(Matricula matricula) {
+        this.matricula = matricula;
+    }
+
+    public EventoTipo getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(EventoTipo tipo) {
+        this.tipo = tipo;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (id != null ? id.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (!(object instanceof Evento)) {
+            return false;
+        }
+        Evento other = (Evento) object;
+        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "datos.Evento[ id=" + id + " ]";
+    }
+
+    public String getEstado() {
+        estado = "P";
+        if (Fecha.getAnio(fechaCreacion) == 1900 || Fecha.getAnio(fechaVencimiento) == 1900) {
+            estado = "G";
+        } else {
+            if (fechaVencimiento != null && fechaVencimiento.before(new Date()) && fechaRealizacion == null) {
+                estado = "V";
+            } else if (fechaRealizacion != null ) {
+                estado = "R";
+            }
+        }
+
+        return estado;
+    }
+
+    public String getEstadoLargo() {
+        String e = getEstado();
+        String estadoL = "Pendiente";
+        if (e.equals("P")) {
+            estadoL = "Pendiente";
+        } else if (e.equals("G")) {
+            estadoL = "Pendiente de Gestionar";
+        } else if (e.equals("V")) {
+            estadoL = "Vencido";
+        } else if (e.equals("RV")) {
+            estadoL = "Realizado tras Vencimiento";
+        } else if (e.equals("R")) {
+            estadoL = "Realizado";
+        }
+
+        return estadoL;
+    }
+
+    public String getNifID() {
+        if (matricula != null) {
+            return matricula.getEmpresaMatriculaCcc().getEmpresaMatricula().getEmpresa().getRazonSocial();
+        }
+        return tutor.getPersona().getNombre() + " " + tutor.getPersona().getApellido1();
+    }
+
+    public int getTipoDescripcionEvento() {
+        return descripcionEventos.getTipoEvento(this);
+    }
+
+    public String getClaseEvento() {
+        return descripcionEventos.getClaseEvento(this) + " estado" + getEstado();
+    }
+
+    @Override
+    public int compareTo(Evento o) {
+        return this.getFechaCreacion().compareTo(o.getFechaCreacion());
+    }
+
+    public String getDocumentacionEvento() {
+        String ret = "";
+        if (getObservaciones() != null) {
+            if (getObservaciones().contains("Se le ha generado el Informe Fin Curso")) {
+                ret += " [Inf. Fin Curso] ";
+            }
+            if (getObservaciones().contains("Se le ha(n) generado la(s) Factura(s)")) {
+                ret += " [Factura] ";
+            }
+            if (getObservaciones().contains("Se le ha generado el Diploma")) {
+                ret += " [Diploma] ";
+            }
+        }
+        return ret;
+    }
+}

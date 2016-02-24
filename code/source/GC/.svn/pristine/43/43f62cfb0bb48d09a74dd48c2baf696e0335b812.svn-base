@@ -1,0 +1,94 @@
+package vista;
+
+import bean.PedidoFacade;
+import datos.Pedido;
+import datos.PedidoLinea;
+import bean.PedidoLineaFacade;
+import java.io.Serializable;
+import java.util.List;
+import javax.ejb.EJB;
+import javax.faces.bean.ManagedBean;
+import javax.faces.bean.ViewScoped;
+
+/**
+ *
+ * @author sergio
+ */
+@ManagedBean(name = "inventarioVista")
+@ViewScoped
+public class InventarioVista implements Serializable {
+
+    /**
+     * Creates a new instance of EmpresaVista
+     */
+    @EJB
+    private PedidoLineaFacade pedidoLineaFacade;
+    private List<PedidoLinea> pedidosLinea;
+    private List<PedidoLinea> pedidosFiltrados;
+    public boolean muestraId = true;
+    public boolean muestraSumin = true;
+    public boolean muestraRecep = true;
+    public boolean muestraEstado = true;
+
+    public InventarioVista() {
+
+
+    }
+
+    public List<PedidoLinea> getPedidos() {
+        if (pedidosLinea == null){
+            pedidosLinea = pedidoLineaFacade.findAll();
+        }
+        return pedidosLinea;
+    }
+
+    public List<PedidoLinea> getPedidosLinea() {
+        return pedidosLinea;
+    }
+
+    public void setPedidosLinea(List<PedidoLinea> pedidosLinea) {
+        this.pedidosLinea = pedidosLinea;
+    }
+
+    public List<PedidoLinea> getPedidosFiltrados() {
+        return pedidosFiltrados;
+    }
+
+    public void setPedidosFiltrados(List<PedidoLinea> pedidosFiltrados) {
+        this.pedidosFiltrados = pedidosFiltrados;
+    }
+
+   
+
+    public boolean isMuestraId() {
+        return muestraId;
+    }
+
+    public void setMuestraId(boolean muestraId) {
+        this.muestraId = muestraId;
+    }
+
+    public boolean isMuestraSumin() {
+        return muestraSumin;
+    }
+
+    public void setMuestraSumin(boolean muestraSumin) {
+        this.muestraSumin = muestraSumin;
+    }
+
+    public boolean isMuestraRecep() {
+        return muestraRecep;
+    }
+
+    public void setMuestraRecep(boolean muestraRecep) {
+        this.muestraRecep = muestraRecep;
+    }
+
+    public boolean isMuestraEstado() {
+        return muestraEstado;
+    }
+
+    public void setMuestraEstado(boolean muestraEstado) {
+        this.muestraEstado = muestraEstado;
+    }
+}

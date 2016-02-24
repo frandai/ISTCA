@@ -1,0 +1,569 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:c="http://java.sun.com/jsp/jstl/core">
+
+    <ui:composition template="/template.xhtml">
+        <ui:define name="title">
+            <h:outputText value="Facturas"></h:outputText>
+        </ui:define>
+        <ui:define name="body">
+            <p:commandButton value="Por Defecto" actionListener="#{facturaVista.filtrarDefecto}" update=":formulario_principal" oncomplete="filtraDefecto();"/>
+            <p:commandButton value="Facturas a Cobrar" actionListener="#{facturaVista.filtrarFacturasACobrar}" update=":formulario_principal" oncomplete="filtraCobrar();"/>
+            <p:commandButton value="Facturas a Cobrar con Pago Aplazado" actionListener="#{facturaVista.filtrarFacturasACobrarPagoAplazado}" update=":formulario_principal" oncomplete="filtraCobrarPagoAplazado();"/>
+            <p:commandButton value="Facturas a Cobrar con Pago Posterior" actionListener="#{facturaVista.filtrarFacturasACobrarPagoPosterior}" update=":formulario_principal" oncomplete="filtraCobrarPagoPosterior();"/>
+            <p:commandButton type="button" value="Facturación por Empresa" onclick="dialogoFacEmpresa.show();"/>
+            <p:commandButton type="button" value="Fechas Estado Factura" onclick="dialogoFechasEstado.show();"/>
+            <p:commandButton value="Remesas Pendientes" actionListener="#{facturaVista.filtrarRemesasPendientes}" update=":formulario_principal" oncomplete="filtraRemesa();"/>&nbsp;
+            <p:commandButton icon="ui-icon-arrowrefresh-1-s" title="Recargar Datos" actionListener="#{facturaVista.recargarDatos}" update=":formulario_principal" oncomplete="filtra();"/>
+
+            <h:panelGrid columns="2" style="float: right;">  
+                <p:panel id="generar_excel">  
+                    <h:commandLink
+                        onclick="#{matriculaVista.todasLasPaginas?'validaTodasPag(); if(!lanzaProc){return false;};':''}"
+                        >  
+                        <p:graphicImage value="/img/excel.png" style="height: 30px;"  />  
+                        <p:dataExporter type="xls" target="dataTable" fileName="facturas" pageOnly="#{not matriculaVista.todasLasPaginas}" postProcessor="#{utilidadesVista.postProcessXLS}" />  
+                    </h:commandLink>  
+                    <p:contextMenu for="generar_excel" >  
+                        <p:menuitem actionListener="#{matriculaVista.cambiaValorPag}" value="#{matriculaVista.todasLasPaginas?'Generar Excel para esta página':'Generar Excel para todas las páginas'}" update="@this generar_excel" process="@this" />
+                    </p:contextMenu>
+                    <p:tooltip for="generar_excel" value="#{matriculaVista.todasLasPaginas?'Generar Excel para todas las páginas':'Generar Excel para esta página'}" />
+
+                </p:panel> 
+            </h:panelGrid>
+            <p:fieldset legend="Columnas a Mostrar" collapsed="true" toggleable="true"  styleClass="separador">  
+
+
+                <span><h:outputText value="Número de Fila  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraNumFila}" /> </span>
+                <span><h:outputText value="ID Factura " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraIdFactura}" /> </span>
+                <span><h:outputText value="Empresa  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraRazonSocial}" /> </span>
+                <span><h:outputText value="Alumno  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraAlumno}" /> </span>
+                <span><h:outputText value="Importe  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraImporte }" /> </span>
+                <span><h:outputText value="Grupo  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraGrupo}" /> </span>
+                <span><h:outputText value="Fecha Entrega Matrícula  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraFechaMatricula}" /> </span>
+                <span><h:outputText value="Baja  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraBaja }" /> </span>
+                <span><h:outputText value="Pago Posterior  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraPagoPosterior}" /> </span>
+                <span><h:outputText value="Fechas Pago Posterior  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraFechasPagoPosterior}" /> </span>
+                <span><h:outputText value="CCC  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraCcc}" /> </span>
+                <span><h:outputText value="Estado  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraEstadoFactura}" /> </span>
+                <span><h:outputText value="Fecha Estado  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraFechaEstado}" /> </span>
+                <span><h:outputText value="Fecha Creación Factura  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraFechaCreacionFactura}" /> </span>
+                <span><h:outputText value="ID Matrícula  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraIdMatricula}" /> </span>
+                <span><h:outputText value="Pago Aplazado  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraPagoAplazado}" /> </span>
+                <span><h:outputText value="Fechas Pago Aplazado  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraFechasPagoAplazado}" /> </span>
+                <span><h:outputText value="Puede Generar Remesa  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraPuedeGenerarRemesa}" /> </span>
+
+                <span><h:outputText value="Fecha Inicio Grupo  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraFechaInicioGrupo}" /> </span>
+                <span><h:outputText value="Fecha Fin Grupo  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraFechaFinGrupo}" /> </span>
+                <span><h:outputText value="Remesas  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraRemesas}" /> </span>
+                <span><h:outputText value="Total Facturado  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraTotalFacturado}" /> </span>
+                <span><h:outputText value="Proveedor  " /> <p:selectBooleanCheckbox value="#{facturaVista.muestraProveedor}" /> </span>
+
+                <p:commandButton value="Aplicar" update="dataTable" styleClass="botonAplicar"/>
+            </p:fieldset>
+
+            <p:outputLabel style="text-align: center; font-weight: bolder; color: black; background-color: white; display: block; width: 100%;" 
+                           rendered="#{facturaVista.desdeImporteFac ne null or facturaVista.hastaImporteFac ne null}" >
+                Facturas con Total Facturado en el rango: ( #{facturaVista.desdeImporteFac} - #{facturaVista.hastaImporteFac} )
+                <p:commandButton update=":formulario_principal dataTable" icon="ui-icon-close" actionListener="#{facturaVista.borraFiltro}"/>
+            </p:outputLabel>
+
+
+            <p:outputLabel style="text-align: center; font-weight: bolder; color: black; background-color: white; display: block; width: 100%;" 
+                           rendered="#{facturaVista.desdeFechaEstadoFac ne null or facturaVista.hastaFechaEstadoFac ne null}" >
+                Facturas con Fecha de Cambio de Estado de Factura en el rango: ( #{Fecha.getFechaDiaMesAnio(facturaVista.desdeFechaEstadoFac)} - #{Fecha.getFechaDiaMesAnio(facturaVista.hastaFechaEstadoFac)} )
+                <p:commandButton update=":formulario_principal dataTable" icon="ui-icon-close" actionListener="#{facturaVista.borraFiltro}"/>
+            </p:outputLabel>
+
+            <script>
+
+                function filtra() {
+                    facturaTable.filter();
+                }
+
+                $(function() {
+                    filtra();
+                });
+
+                function filtraDefecto() {
+                    $(".ui-column-filter").val("");
+                    $(".baja").val("No");
+                    filtra();
+                }
+
+                function  filtraRemesa() {
+                    $(".ui-column-filter").val("");
+                    $(".baja").val("No");
+                    $(".generar_remesa_col").val("Sí");
+                    filtra();
+                }
+
+                function filtraCobrar() {
+                    $(".ui-column-filter").val("");
+                    $(".baja").val("No");
+                    $(".pago_pos").val("No");
+                    $(".pago_apl").val("No");
+                    $(".estado_fac").val("Pendiente");
+                    filtra();
+                }
+
+                function filtraCobrarPagoAplazado() {
+                    $(".ui-column-filter").val("");
+                    $(".baja").val("No");
+                    $(".pago_pos").val("No");
+                    $(".pago_apl").val("Sí");
+                    $(".estado_fac").val("Pendiente");
+                    filtra();
+                }
+
+
+                function filtraCobrarPagoPosterior() {
+                    $(".ui-column-filter").val("");
+                    $(".baja").val("No");
+                    $(".pago_pos").val("Sí");
+                    $(".pago_apl").val("No");
+                    $(".estado_fac").val("Pendiente");
+                    filtra();
+                }
+
+            </script>
+
+            <p:dataTable  filterEvent="change" id="dataTable" var="factura" value="#{facturaVista.facturas}" widgetVar="facturaTable"  
+
+                          filteredValue="#{facturaVista.facturasFiltradas}"
+                          emptyMessage="No se encuentran facturas" styleClass="separador"
+                          paginator="true" rows="5"    
+                          paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                          currentPageReportTemplate="{totalRecords} Filas (página {currentPage} de {totalPages})"
+                          rowsPerPageTemplate="5,10,15,25,50,100, 300" selection="#{facturaVista.facturasSeleccionadas}"
+                          rowIndexVar="rowIndex"
+                          filterMap="#{facturaVista.filterMap}"
+                          >  
+
+                <f:facet name="header">  
+                </f:facet>   
+                <p:column exportable="false" rendered="#{facturaVista.muestraNumFila}" style="width:1%">
+                    <f:facet name="header">  
+                        <p:commandButton icon="#{facturaVista.seleccionadoTodo?'ui-icon-minus':'ui-icon-check'}" style="width: 16px; height: 16px;"
+                                         onclick="#{facturaVista.seleccionadoTodo?'':'validaTodasPag(); if(!lanzaProc){return false;};'}" title="#{facturaVista.seleccionadoTodo?'Borrar Selección de Facturas':'Seleccionar Facturas de todas las páginas'}" update=":formulario_principal:growl :formulario_principal:messages :formulario_principal:dataTable" process="@this"        
+                                         actionListener="#{facturaVista.seleccionaTodo}"
+                                         />
+                    </f:facet> 
+                    #{rowIndex+1}
+                </p:column>
+                <p:column selectionMode="multiple" style="width:20px" exportable="false" id="seleccionaTodas" >
+
+
+                </p:column>
+                <p:column filterBy="#{factura.idfactura}" 
+                          sortBy="#{factura.idfactura}"
+                          headerText="ID Factura"  
+                          filterMatchMode="contains" rendered="#{facturaVista.muestraIdFactura}" exportable="false">  
+                    <a href="../matricula/matricula.xhtml?matricula=#{factura.idmatricula}" target="_blank">#{factura.idfactura}</a>
+                </p:column>
+                <p:column headerText="ID Factura"  
+                          exportable="#{facturaVista.muestraIdFactura}" styleClass="noMostrar">  
+                    <f:facet name="header">  
+                        <h:outputText value="ID Factura" />  
+                    </f:facet>  
+                    <h:outputText value="#{factura.idfactura}" />  
+                </p:column>
+
+
+                <!--muestraRazonSocial-->
+                <p:column filterBy="#{factura.razonSocial}" 
+                          sortBy="#{factura.razonSocial}"
+                          headerText="Empresa"  exportable="false"
+                          filterMatchMode="contains" rendered="#{facturaVista.muestraRazonSocial}"> 
+                    <a href="../empresa/empresa.xhtml?empresa=#{factura.nifEmpresa}" target="_blank"> #{factura.razonSocial}</a>
+                </p:column>
+                <p:column exportable="#{facturaVista.muestraRazonSocial}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Razón Social Empresa" />  
+                    </f:facet>  
+                    <h:outputText value="#{factura.razonSocialEmpresa}" />  
+                </p:column>
+                <p:column exportable="#{facturaVista.muestraRazonSocial}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="NIF Empresa" />  
+                    </f:facet>  
+                    <h:outputText value="#{factura.nifEmpresa}" />  
+                </p:column>
+
+
+                <!--muestraAlumno-->
+                <p:column filterBy="#{factura.alumno}" 
+                          exportable="false"
+                          headerText="Alumno"  
+                          filterMatchMode="contains" rendered="#{facturaVista.muestraAlumno}">  
+                    <a href="../persona/persona.xhtml?persona=#{factura.nifAlumno}" target="_blank"><h:outputText value="#{factura.alumno}" /></a> 
+                </p:column>
+
+                <p:column exportable="#{facturaVista.muestraAlumno}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Nombre Alumno" />  
+                    </f:facet>  
+                    <h:outputText value="#{factura.nombreAlumno}" />  
+                </p:column>
+                <p:column exportable="#{facturaVista.muestraAlumno}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="NIF Alumno" />  
+                    </f:facet>  
+                    <h:outputText value="#{factura.nifAlumno}" />  
+                </p:column>
+
+
+                <!--muestraImporte-->
+                <p:column filterBy="#{factura.importe}"
+                          filterMatchMode="contains" rendered="#{facturaVista.muestraImporte}" exportable="#{facturaVista.muestraImporte}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Importe" />  
+                    </f:facet> 
+                    <h:outputText value="#{factura.importe} €" /> 
+                </p:column>
+
+
+                <!--muestraGrupo-->
+                <p:column filterBy="#{factura.grupo}"
+                          filterMatchMode="contains" rendered="#{facturaVista.muestraGrupo}" exportable="#{facturaVista.muestraGrupo}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Grupo" />  
+                    </f:facet> 
+                    <h:outputText value="#{factura.grupo}" /> 
+                </p:column>
+                <!--muestraFechaInicio-->
+                <p:column filterStyleClass="calendarFilter" filterBy="#{factura.fechaInicio}"
+                          filterMatchMode="contains" rendered="#{facturaVista.muestraFechaInicioGrupo}" exportable="#{facturaVista.muestraFechaInicioGrupo}">  
+                    <f:facet name="header">  
+                        <h:outputText value="F. Inicio Grupo" />  
+                    </f:facet> 
+                    <h:outputText value="#{Fecha.getPGes(factura.fechaInicio)}" /> 
+                </p:column>
+
+                <!--muestraFechaFin-->
+                <p:column filterStyleClass="calendarFilter" filterBy="#{factura.fechaFin}"
+                          filterMatchMode="contains" rendered="#{facturaVista.muestraFechaFinGrupo}" exportable="#{facturaVista.muestraFechaFinGrupo}">  
+                    <f:facet name="header">  
+                        <h:outputText value="F. Fin Grupo" />  
+                    </f:facet> 
+                    <h:outputText value="#{Fecha.getPGes(factura.fechaFin)}" /> 
+                </p:column>
+                <!--muestraFechaMatricula-->
+                <p:column filterStyleClass="calendarFilter" filterBy="#{factura.fechaMatricula}"
+                          filterMatchMode="contains" rendered="#{facturaVista.muestraFechaMatricula}" exportable="#{facturaVista.muestraFechaMatricula}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Fecha Entrega Matrícula" />  
+                    </f:facet> 
+                    <h:outputText value="#{factura.fechaMatricula}" /> 
+                </p:column>
+                <!--muestraBaja-->
+                <p:column filterBy="#{factura.asbaja}"
+                          filterOptions="#{desplegableVista.sinoOptionsDefectoNo}"
+                          exportable="#{facturaVista.muestraBaja}"
+                          filterMatchMode="exact" 
+                          rendered="#{facturaVista.muestraBaja}"
+                          styleClass="sino_col" 
+                          filterStyleClass="baja"
+                          >  
+                    <f:facet name="header">  
+                        <h:outputText value="Baja" />  
+                    </f:facet> 
+                    <h:outputText value="#{factura.asbaja}" /> 
+                </p:column>
+                <!--muestraPagoPosterior-->
+                <p:column filterBy="#{factura.pagoPosterior}"
+                          filterOptions="#{desplegableVista.sinoOptions}"
+                          exportable="#{facturaVista.muestraPagoPosterior}"
+                          filterMatchMode="exact" style="width: 10px;"
+                          rendered="#{facturaVista.muestraPagoPosterior}"
+                          styleClass="sino_col" 
+                          filterStyleClass="pago_pos"
+                          >  
+                    <f:facet name="header">  
+                        <h:outputText value="Pago Post." />  
+                    </f:facet>
+                    <h:outputText value="#{factura.pagoPosterior}" /> 
+                </p:column>
+                <!--muestraFechasPagoPosterior-->
+                <p:column filterStyleClass="calendarFilter" filterBy="#{factura.fechasPagoPosterior}"
+                          filterMatchMode="contains" rendered="#{facturaVista.muestraFechasPagoPosterior}" exportable="#{facturaVista.muestraFechasPagoPosterior}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Fechas Pago Posterior" />  
+                    </f:facet> 
+                    <h:outputText value="#{factura.fechasPagoPosterior}" /> 
+                </p:column>
+                <!--muestraCcc-->
+                <p:column filterBy="#{factura.ccc}"
+                          filterMatchMode="contains" rendered="#{facturaVista.muestraCcc}" exportable="#{facturaVista.muestraCcc}">  
+                    <f:facet name="header">  
+                        <h:outputText value="CCC" />  
+                    </f:facet> 
+                    <h:outputText value="#{factura.ccc}" /> 
+                </p:column>
+                <!--muestraEstadoFactura-->
+                <p:column filterBy="#{factura.estadoFactura}"
+                          filterMatchMode="exact" rendered="#{facturaVista.muestraEstadoFactura}" exportable="#{facturaVista.muestraEstadoFactura}"
+                          filterStyleClass="estado_fac"
+                          filterOptions="#{desplegableVista.estadoFacturaOptions}"
+                          >  
+                    <f:facet name="header">  
+                        <h:outputText value="Estado Factura" />  
+                    </f:facet> 
+                    <h:outputText value="#{factura.estadoFactura}" /> 
+                </p:column>
+                <!--muestraFechaEstado-->
+                <p:column filterStyleClass="calendarFilter" filterBy="#{factura.fechaEstado}"
+                          filterMatchMode="contains" rendered="#{facturaVista.muestraFechaEstado}" exportable="#{facturaVista.muestraFechaEstado}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Fecha Estado Factura" />  
+                    </f:facet> 
+                    <h:outputText value="#{factura.fechaEstado}" /> 
+                </p:column>
+                <!--muestraFechaCreacionFactura-->
+                <p:column filterStyleClass="calendarFilter" filterBy="#{factura.fechaCreacionFac}"
+                          filterMatchMode="contains" rendered="#{facturaVista.muestraFechaCreacionFactura}" exportable="#{facturaVista.muestraFechaCreacionFactura}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Fecha Creación Factura" />  
+                    </f:facet> 
+                    <h:outputText value="#{factura.fechaCreacionFac}" /> 
+                </p:column>
+                <!--muestraIdMatricula-->
+                <p:column filterBy="#{factura.idmatricula}" sortBy="#{factura.idmatricula}"
+                          headerText="ID Matrícula"  
+                          filterMatchMode="contains" rendered="#{facturaVista.muestraIdMatricula}"
+                          exportable="false"
+                          >  
+                    <a href="../matricula/matricula.xhtml?matricula=#{factura.idmatricula}" target="_blank"><h:outputText value="#{factura.idmatricula}" /></a>
+                </p:column> 
+                <p:column exportable="#{facturaVista.muestraIdMatricula}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="ID Matrícula" />  
+                    </f:facet>  
+                    <h:outputText value="#{factura.idmatricula}" />  
+                </p:column>
+                <!--muestraPagoAplazado-->
+                <p:column filterBy="#{factura.pagoAplazado}"
+                          filterOptions="#{desplegableVista.sinoOptions}"
+                          exportable="#{facturaVista.muestraPagoAplazado}"
+                          filterMatchMode="exact" style="width: 10px;"
+                          rendered="#{facturaVista.muestraPagoAplazado}"
+                          styleClass="sino_col" 
+                          filterStyleClass="pago_apl"
+                          >  
+                    <f:facet name="header">  
+                        <h:outputText value="Pago Aplz." title="Pago Aplazado" />  
+                    </f:facet>
+                    <h:outputText value="#{factura.pagoAplazado}" /> 
+                </p:column>
+                <!--muestraFechasPagoAplazado-->
+                <p:column filterStyleClass="calendarFilter" filterBy="#{factura.fechasPagoAplazado}"
+                          filterMatchMode="contains" rendered="#{facturaVista.muestraFechasPagoAplazado}" exportable="#{facturaVista.muestraFechasPagoAplazado}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Fechas Pago Aplazado" />  
+                    </f:facet> 
+                    <h:outputText value="#{factura.fechasPagoAplazado}" /> 
+                </p:column>
+                <!--muestraPuedeGenerarRemesa-->
+                <p:column filterBy="#{factura.puedeGenerarRemesa}"
+                          filterOptions="#{desplegableVista.sinoOptions}"
+                          exportable="#{facturaVista.muestraPuedeGenerarRemesa}"
+                          filterMatchMode="exact" style="width: 10px;"
+                          rendered="#{facturaVista.muestraPuedeGenerarRemesa}"
+                          styleClass="sino_col" filterStyleClass="generar_remesa_col"
+                          >  
+                    <f:facet name="header">  
+                        <h:outputText value="P. G. Rem." title="Puede Generar Remesa" />  
+                    </f:facet>
+                    <h:outputText value="#{factura.puedeGenerarRemesa}" /> 
+                </p:column>
+
+                <!--muestraRemesas-->
+                <p:column filterBy="#{factura.remesas}"
+                          filterMatchMode="contains" rendered="#{facturaVista.muestraRemesas}" exportable="false">  
+                    <f:facet name="header">  
+                        <h:outputText value="Remesas" />  
+                    </f:facet> 
+                    <p:dataList var="rems" value="#{factura.remesas.split(',')}" styleClass="listaTabla" rendered="#{factura.remesas ne ''}">
+                        <p:commandLink value="#{rems}" actionListener="#{facturaVista.seleccionarRemesa(rems)}"
+                                       update=":fromRemesa:genRemesa :fromRemesa :fromRemesa:tablaFacturaRemesa :formulario_principal:messages :formulario_principal:growl :formulario_principal"
+                                       />
+                    </p:dataList>
+                </p:column>
+                <p:column exportable="#{facturaVista.muestraRemesas}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Remesas" />  
+                    </f:facet>  
+                    <h:outputText value="#{factura.remesas}" />  
+                </p:column>
+
+                <!--muestraImporte-->
+                <p:column filterBy="#{factura.sumImportesFacturas}"
+                          filterMatchMode="contains" rendered="#{facturaVista.muestraTotalFacturado}" exportable="#{facturaVista.muestraTotalFacturado}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Total Facturado" />  
+                    </f:facet> 
+                    <h:outputText value="#{factura.sumImportesFacturas} €" /> 
+                </p:column>
+
+                <!--muestraProveedor-->
+                <p:column filterBy="#{factura.proveedor}" 
+                          sortBy="#{factura.proveedor}"
+                          headerText="Proveedor"  exportable="false"
+                          filterMatchMode="contains" rendered="#{facturaVista.muestraProveedor}"> 
+                    <a href="../empresa/empresa.xhtml?empresa=#{factura.nifProveedor}" target="_blank"> #{factura.proveedor}</a>
+                </p:column>
+                <p:column exportable="#{facturaVista.muestraProveedor}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Razón Social Proveedor" />  
+                    </f:facet>  
+                    <h:outputText value="#{factura.razon_social_proveedor}" />  
+                </p:column>
+                <p:column exportable="#{facturaVista.muestraProveedor}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="NIF Proveedor" />  
+                    </f:facet>  
+                    <h:outputText value="#{factura.nifProveedor}" />  
+                </p:column>
+
+
+            </p:dataTable>  
+            <p:panel style=" border: none; margin: auto; width: 100%; text-align: center;" id="botones_des">
+                <p:panel header="Acciones Facturas" style="display: inline-block; margin: auto;">
+                    <p:commandButton value="Generar Remesa" update=":fromRemesa:genRemesa :fromRemesa :fromRemesa:tablaFacturaRemesa :formulario_principal:messages :formulario_principal:growl :formulario_principal" actionListener="#{facturaVista.generarRemesa()}" style="margin: 3px;" title="Generar Remesa para Facturas Seleccionadas"/>
+                    <p:commandButton actionListener="#{facturaVista.cambiarEstadoFac(4)}" value="Pasar a Gestión Remesa" onclick="confirmaProc();
+                    if (!lanzaProc) {
+                        return false;
+                    }
+                    ;" style="margin: 3px;" title="Pasar Facturas a estado 'Gestión Remesa'"
+                                     update=":formulario_principal:messages :formulario_principal:growl :formulario_principal :formulario_principal:botones_des :formulario_principal:dataTable"
+                                     />
+                    <p:commandButton actionListener="#{facturaVista.cambiarEstadoFac(3)}" value="Cobrar" onclick="confirmaProc();
+                    if (!lanzaProc) {
+                        return false;
+                    }
+                    ;" style="margin: 3px;" title="Pasar Facturas a estado 'Cobrada'"
+                                     update=":formulario_principal:messages :formulario_principal:growl :formulario_principal :formulario_principal:botones_des :formulario_principal:dataTable"/>
+                </p:panel>
+            </p:panel>
+        </ui:define>
+        <ui:define name="dialogos">
+            <p:confirmDialog header="Añadir Factura a la remesa" widgetVar="dlgAniadirFacturaRemesa" message="Introduzca el ID de la Factura a añadir:" >
+                <h:form id="aniadir_fac_rem">
+                    <p>
+                        <p:inputText value="#{facturaVista.facturaAniadir}" id="facAnia" >
+                            <f:ajax event="change" render="facAnia"/> 
+                        </p:inputText>
+                    </p><br/><br/>
+                    <p:commandButton actionListener="#{facturaVista.aniadirFacturaRemesa}" styleClass="botonAplicar" value="Añadir" style="margin: 0px 10px;" update=":formulario_principal:messages :formulario_principal:growl :formulario_principal:dataTable
+                                     :fromRemesa:genRemesa :fromRemesa"/>
+
+                </h:form>
+            </p:confirmDialog>
+            
+            <h:form id="fromRemesa">
+                <p:dialog widgetVar="dialogoRemesa" header="Remesas" id="genRemesa">
+                    <p:inputText style="width: 0px; height: 0px;position: absolute;left: -10px; top: -10px;"/>
+                    <p:panel style="border:none;" rendered="#{facturaVista.remesaSeleccionada.id ne null}">
+                        <p>ID Remesa: #{facturaVista.remesaSeleccionada.id}</p>
+                        <p>Número de Registros: #{facturaVista.remesaSeleccionada.numRegistros}</p>
+                        <p>Total Remesa: #{validarVista.numeroAPrecio(facturaVista.remesaSeleccionada.totalRemesa)} €</p>
+                        <p style="text-align: center; cursor: pointer;border: 1px dashed gray; padding: 5px; margin: 1px"><a href="../../../docs/temp/#{facturaVista.remesaSeleccionada.archivo}" target="_blank">Descargar</a>
+                        <br/><br/>
+                        <span style='font-size: 9px;'>(Para guardar el archivo, pulse botón derecho &rArr; 'Guardar Como')</span>
+                        </p>
+                    </p:panel>
+                    <p>Fecha de Creación: #{Fecha.getFechaDiaMesAnio(facturaVista.remesaSeleccionada.fecha)}</p>
+                    <p>Fecha de Cobro: <p:calendar label="Fecha de Cobro" id="calendarioFCObro" required="true"
+                    rendered="#{not facturaVista.remesaSeleccionada.cobrada}" value="#{facturaVista.remesaSeleccionada.fechaCobro}" mindate="#{facturaVista.remesaSeleccionada.fecha}">
+                            <p:ajax update="calendarioFCObro" process="@this" />  
+                        </p:calendar>
+                        <p:outputLabel value="#{Fecha.getFechaDiaMesAnio(facturaVista.remesaSeleccionada.fechaCobro)}" rendered="#{facturaVista.remesaSeleccionada.cobrada}"/>
+                    
+                    <p:commandButton value="Añadir Factura" style="float:right;" rendered="#{not facturaVista.remesaSeleccionada.cobrada}"
+                                     onclick="dlgAniadirFacturaRemesa.show()"
+                                     />
+                    </p>
+
+                        
+                    <p:dataTable id="tablaFacturaRemesa" paginator="true" rows="5"    
+                                 paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                                 currentPageReportTemplate="{totalRecords} Filas (página {currentPage} de {totalPages})"
+                                 rowsPerPageTemplate="5,10,15"
+                                 value="#{facturaVista.remesaSeleccionada.facturaList}" var="facRem"
+                                 >
+                        <p:column filterBy="#{facRem.id}" headerText="Facturas" filterMatchMode="contains">
+                            <p:outputLabel value="#{facRem.id}"/>
+                        </p:column>
+                        <p:column filterBy="#{facRem.ultimoEstado.estado.nombre}" headerText="Estado Factura" filterMatchMode="contains">
+                            <p:outputLabel value="#{facRem.ultimoEstado.estado.nombre}"/>
+                        </p:column>
+                        <p:column style="width:10px" rendered="#{not facturaVista.remesaSeleccionada.cobrada}" >
+                            <p:commandButton icon="ui-icon-trash"
+                    update="tablaFacturaRemesa" onclick="if (!confirm('¿Seguro que desea eliminar la factura #{facRem.id} de esta remesa?')) {
+                        return false;
+                    }" style="width: 16px; height: 16px;" process="@this tablaFacturaRemesa">
+                                <f:setPropertyActionListener target="#{facturaVista.borrarFactura}" value="#{facRem}"/>
+                            </p:commandButton>
+                        </p:column>
+                    </p:dataTable>
+                    <br/>
+                    <div style="text-align: center; width: 100%;">
+                        Agrupada: <p:selectBooleanCheckbox
+                            disabled="#{facturaVista.remesaSeleccionada.cobrada}" styleClass="noTransp"
+                            id="RMAgrupada" value="#{facturaVista.remesaSeleccionada.agrupada eq null? true : facturaVista.remesaSeleccionada.agrupada}">
+                            <p:ajax update="RMAgrupada" process="@this" />  
+                        </p:selectBooleanCheckbox>
+                    </div>
+                    <br/><br/>
+                    <p:commandButton value="Cobrar" styleClass="greenyellow" actionListener="#{facturaVista.cobraRemesa}" style="float:right;"
+                                     update=":formulario_principal:messages :formulario_principal:growl :formulario_principal:dataTable
+                                     :fromRemesa:genRemesa :fromRemesa
+                                     "
+                                     onclick="if (!confirm('¿Seguro que desea pasar a estado \'Cobrada\' las facturas en estado \'Gestión Remesa\' de esta remesa? Si la remesa tiene asociadas facturas en estado \'Cobrada\', no podrá editar los datos de la remesa')) {
+                        return false;
+                    }"
+                    rendered="#{facturaVista.remesaSeleccionada.id ne null and not facturaVista.remesaSeleccionada.cobrada}"
+                                     />
+                    <p:commandButton value="Guardar" actionListener="#{facturaVista.guardaRemesa}" style="float:right;"
+                                     update=":formulario_principal:messages :formulario_principal:growl :formulario_principal:dataTable
+                                     :fromRemesa:genRemesa :fromRemesa
+                                     "
+                    rendered="#{not facturaVista.remesaSeleccionada.cobrada}"
+                                     />
+                    <p:commandButton style="float: left; " value="Eliminar"  icon="ui-icon-trash" styleClass="botonAplicar bg-red"
+                                     actionListener="#{facturaVista.eliminaRemesa}"
+                                     onclick="if (!confirm('¿Seguro que desea eliminar esta remesa?')) {
+                        return false;
+                    }" update=":formulario_principal:messages :formulario_principal:growl :formulario_principal:dataTable
+                                     :fromRemesa:genRemesa :fromRemesa
+                                     "
+                    rendered="#{facturaVista.remesaSeleccionada.id ne null and not facturaVista.remesaSeleccionada.cobrada}"
+                                     />  
+                </p:dialog></h:form>
+
+            <p:dialog widgetVar="dialogoFacEmpresa" header="Elegir rango de Importe Anual de Facturación">
+                <h:form id="busca_finicio">
+                    <p>Desde: <p:inputText label="Importe Facturas (Desde)" value="#{facturaVista.desdeImporteFac}" >
+                            <f:validateDoubleRange />
+                        </p:inputText> € - Hasta: <p:inputText label="Importe Facturas (Hasta)" value="#{facturaVista.hastaImporteFac}" >
+                            <f:validateDoubleRange />
+                        </p:inputText> €</p>
+                    <p:commandButton styleClass="botonAplicar" onclick="dialogoFacEmpresa.hide();" value="Filtrar" actionListener="#{facturaVista.buscaFiltroImporteFac}" update=":formulario_principal:dataTable :formulario_principal:growl :formulario_principal:messages :formulario_principal" oncomplete="filtraDefecto();"/>   
+                </h:form>
+            </p:dialog>
+
+            <p:dialog widgetVar="dialogoFechasEstado" header="Elegir rango de Fechas de Cambio de Estado de Factura">
+                <h:form id="busca_rango">
+                    <p>Desde: <p:calendar label="Fecha Cambio Estado (Desde)" value="#{facturaVista.desdeFechaEstadoFac}" /> - Hasta: <p:calendar label="Fecha Cambio Estado (Hasta)" value="#{facturaVista.hastaFechaEstadoFac}" /></p>
+                    <p:commandButton styleClass="botonAplicar" onclick="dialogoFechasEstado.hide();" value="Filtrar" actionListener="#{facturaVista.buscaFiltroFechaEstadoFac}" update=":formulario_principal:dataTable :formulario_principal:growl :formulario_principal:messages :formulario_principal" oncomplete="filtraDefecto();"/>   
+                </h:form>
+            </p:dialog>
+
+        </ui:define>
+    </ui:composition>
+</html>

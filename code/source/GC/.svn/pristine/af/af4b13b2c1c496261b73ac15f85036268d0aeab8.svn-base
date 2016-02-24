@@ -1,0 +1,596 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package vista;
+
+import bean.EmpresaFacade;
+import bean.EventoFacade;
+import com.sun.xml.rpc.processor.modeler.j2ee.xml.variableMappingType;
+import datos.Empresa;
+import datos.EmpresaMatriculaAnio;
+import datos.EmpresaMatriculaAnioPK;
+import datos.EmpresaMatriculaCcc;
+import datos.EmpresaMatriculaCredito;
+import datos.EmpresaMatriculaCreditoPK;
+import datos.Evento;
+import datos.Matricula;
+import datosVista.Empresavista;
+import datosVista.Matriculavista;
+import datosVistaFacade.EmpresavistaFacade;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import javax.ejb.EJB;
+import javax.faces.application.FacesMessage;
+import javax.faces.bean.ManagedBean;
+import javax.faces.bean.ManagedProperty;
+import javax.faces.bean.ViewScoped;
+import lazyDataModel.LazyEmpresaDataModel;
+import lazyDataModel.LazyGrupoDataModel;
+import lazyDataModel.LazyMatriculaDataModel;
+import org.primefaces.context.RequestContext;
+import org.primefaces.model.LazyDataModel;
+import org.primefaces.model.SortOrder;
+import org.primefaces.model.UploadedFile;
+import util.Documentacion;
+import util.Email;
+import util.Excel;
+import util.Fecha;
+import util.descripcionEventos;
+
+/**
+ *
+ * @author sergio
+ */
+@ManagedBean(name = "empresaVista")
+@ViewScoped
+public class EmpresaVista implements Serializable {
+
+    /**
+     * Creates a new instance of EmpresaVista
+     */
+    @EJB
+    private EmpresavistaFacade empresaFacade;
+    @EJB
+    private EmpresaFacade empFacade;
+    @EJB
+    private EventoFacade evFac;
+    private LazyDataModel<Empresavista> empresas;
+    private List<Empresavista> empresasFiltradas;
+    private boolean muestraNIF = true;
+    private boolean muestraRazonSocial = true;
+    private boolean muestraTelefono = true;
+    private boolean muestraProvincia = false;
+    private boolean muestraLocalidad = false;
+    private boolean muestraActividad = false;
+    private boolean muestraECSuperior = false;
+    private boolean muestraEC = false;
+    private boolean muestraTipo = true;
+    private boolean muestraEstado = false;
+    private boolean muestraNSS = false;
+    private boolean muestraEmail = false;
+    private boolean muestraCDAA = false;
+    private boolean muestraCAAA = false;
+    @ManagedProperty("#{sesionActual}")
+    private SesionActual sesionActual;
+    private Map<String, String> filterMap;
+    private String enlaceDescarga = "";
+    private ArrayList<EmpresaMatriculaCcc> empresaCCC = new ArrayList<EmpresaMatriculaCcc>();
+    private UploadedFile excelDatosFundacion;
+    private Date fechaDatosFundacion = new Date();
+    private String asuntoEnviarEmail;
+    private String cuerpoEnviarEmail;
+
+    public String getAsuntoEnviarEmail() {
+        return asuntoEnviarEmail;
+    }
+
+    public void setAsuntoEnviarEmail(String asuntoEnviarEmail) {
+        this.asuntoEnviarEmail = asuntoEnviarEmail;
+    }
+
+    public String getCuerpoEnviarEmail() {
+        return cuerpoEnviarEmail;
+    }
+
+    public void setCuerpoEnviarEmail(String cuerpoEnviarEmail) {
+        this.cuerpoEnviarEmail = cuerpoEnviarEmail;
+    }
+
+    public boolean isMuestraCDAA() {
+        return muestraCDAA;
+    }
+
+    public void setMuestraCDAA(boolean muestraCDAA) {
+        this.muestraCDAA = muestraCDAA;
+    }
+
+    public boolean isMuestraCAAA() {
+        return muestraCAAA;
+    }
+
+    public void setMuestraCAAA(boolean muestraCAAA) {
+        this.muestraCAAA = muestraCAAA;
+    }
+
+    public void subirExcelDatosFundacion() throws IOException {
+        if (excelDatosFundacion != null) {
+            try {
+
+                if (excelDatosFundacion.getFileName().endsWith(".xls")) {
+
+                    ArrayList<ArrayList<String>> excel = Excel.getDatosExcel(excelDatosFundacion.getInputstream());
+                    int num_com_cif = 0;
+                    for (ArrayList<String> fila : excel) {
+                        if (util.Validacion.esNifValido(fila.get(1))) {
+                            break;
+                        }
+                        num_com_cif++;
+                    }
+                    if (excel.size() >= num_com_cif) {
+                        String cif_error = "";
+                        String cif_noMat = "";
+                        for (int i = num_com_cif; i < excel.size(); i++) {
+                            if (excel.get(i) != null && excel.get(i).get(1) != null) {
+                                Empresa e = empFacade.find(excel.get(i).get(1).toUpperCase());
+                                if (e == null) {
+                                    cif_error += excel.get(i).get(1).toUpperCase() + " - " + excel.get(i).get(3) + "; \n";
+                                } else if (e.getEmpresaMatricula() == null) {
+                                    cif_noMat += excel.get(i).get(1).toUpperCase() + " - " + excel.get(i).get(3) + "; \n";
+                                } else {
+                                    if (e.getEmpresaMatricula().getEmpresaMatriculaAnioList() == null) {
+                                        e.getEmpresaMatricula().setEmpresaMatriculaAnioList(new ArrayList<EmpresaMatriculaAnio>());
+                                    }
+                                    EmpresaMatriculaAnio ema = null;
+                                    for (EmpresaMatriculaAnio em : e.getEmpresaMatricula().getEmpresaMatriculaAnioList()) {
+                                        if (em.getEmpresaMatriculaAnioPK().getAnio() == Fecha.getAnio(fechaDatosFundacion)) {
+                                            ema = em;
+                                        }
+                                    }
+                                    if (ema == null) {
+                                        ema = new EmpresaMatriculaAnio(new EmpresaMatriculaAnioPK(e.getNif(), Fecha.getAnio(fechaDatosFundacion)));
+                                        ema.setCreadoCentro(false);
+                                        ema.setRecibeFormacion(false);
+                                        e.getEmpresaMatricula().getEmpresaMatriculaAnioList().add(ema);
+                                    }
+                                    ema.setPlantilla((int) Double.parseDouble(excel.get(i).get(4)));
+                                    ema.setCreditoAsignado(Double.parseDouble(excel.get(i).get(5)));
+                                    if (e.getEmpresaMatricula().getEmpresaMatriculaCreditoList() == null) {
+                                        e.getEmpresaMatricula().setEmpresaMatriculaCreditoList(new ArrayList<EmpresaMatriculaCredito>());
+                                    }
+                                    e.getEmpresaMatricula().getEmpresaMatriculaCreditoList().add(new EmpresaMatriculaCredito(new EmpresaMatriculaCreditoPK(e.getNif(), fechaDatosFundacion), Double.parseDouble(excel.get(i).get(7))));
+                                    empFacade.edit(e);
+                                }
+                            }
+                        }
+
+                        if (!cif_error.equals("")) {
+                            UtilidadesVista.Mensaje("Las empresas no existen en la plataforma pero existen en la hoja excel, por lo que no han podido importarse sus datos: " + cif_error, FacesMessage.SEVERITY_WARN);
+                        }
+                        if (!cif_noMat.equals("")) {
+                            UtilidadesVista.Mensaje("Las empresas existen en la plataforma, pero no son empresas de tipo 'Matriculable', por lo que no han podido importarse sus datos: " + cif_noMat, FacesMessage.SEVERITY_WARN);
+                        }
+
+                        UtilidadesVista.Mensaje("Se han importado los datos correctamente.", FacesMessage.SEVERITY_INFO);
+                        return;
+                    }
+                }
+
+            } catch (Exception e) {
+                String c = "";
+                for (StackTraceElement t : e.getStackTrace()) {
+                    if (t.getMethodName().contains("subirExcelDatosFundacion")) {
+                        c += t;
+                    }
+                }
+                UtilidadesVista.Mensaje(e.getMessage() + ": " + e.getCause() + " - " + c, FacesMessage.SEVERITY_FATAL);
+            }
+        }
+        UtilidadesVista.Mensaje("Debe de seleccionar un archivo en formato 'xls' válido para este proceso.", FacesMessage.SEVERITY_ERROR);
+    }
+
+    public Date getFechaDatosFundacion() {
+        return fechaDatosFundacion;
+    }
+
+    public void setFechaDatosFundacion(Date fechaDatosFundacion) {
+        this.fechaDatosFundacion = fechaDatosFundacion;
+    }
+
+    public UploadedFile getExcelDatosFundacion() {
+        return excelDatosFundacion;
+    }
+
+    public void setExcelDatosFundacion(UploadedFile excelDatosFundacion) {
+        this.excelDatosFundacion = excelDatosFundacion;
+    }
+
+    public ArrayList<EmpresaMatriculaCcc> getEmpresaCCC() {
+        return empresaCCC;
+    }
+
+    public void setEmpresaCCC(ArrayList<EmpresaMatriculaCcc> empresaCCC) {
+        this.empresaCCC = empresaCCC;
+    }
+
+    public String getEnlaceDescarga() {
+        return enlaceDescarga;
+    }
+
+    public void setEnlaceDescarga(String enlaceDescarga) {
+        this.enlaceDescarga = enlaceDescarga;
+    }
+
+    public void generarMatriculas() throws Exception {
+        enlaceDescarga = "";
+        boolean valido = true;
+        if (((LazyEmpresaDataModel) empresas).getEmpresasPDF() == null || ((LazyEmpresaDataModel) empresas).getEmpresasPDF().isEmpty()) {
+            UtilidadesVista.Mensaje("No se puede generar Documentación puesto que no se han seleccionado empresas.", FacesMessage.SEVERITY_ERROR);
+            valido = false;
+        }
+        if (valido) {
+            String nif_error = "";
+            for (Empresa e : ((LazyEmpresaDataModel) empresas).getEmpresasPDF()) {
+                if (e.getEmpresaMatricula() == null || e.getDireccion() == null) {
+                    nif_error += " " + e.getNif();
+                    valido = false;
+                }
+            }
+            if (!valido) {
+                UtilidadesVista.Mensaje("No se puede generar Documentación puesto que las siguientes empresas seleccionadas no son matriculables o no tienen dirección asociada:" + nif_error + ".", FacesMessage.SEVERITY_ERROR);
+            } else {
+                boolean sal = false;
+                ArrayList<EmpresaMatriculaCcc> emc = new ArrayList<EmpresaMatriculaCcc>();
+                for (Empresa e : ((LazyEmpresaDataModel) empresas).getEmpresasPDF()) {
+                    EmpresaMatriculaCcc em = null;
+                    for (EmpresaMatriculaCcc empresaMatriculaCcc : empresaCCC) {
+                        if (empresaMatriculaCcc.getEmpresaMatricula().getNif().equals(e.getNif())) {
+                            em = empresaMatriculaCcc;
+                        }
+                    }
+                    if (em == null) {
+                        if (e.getEmpresaMatricula().getEmpresaMatriculaCccList().size() > 2) {
+                            empresaCCC.add(e.getEmpresaMatricula().getEmpresaMatriculaCccList().get(0));
+                            sal = true;
+                        } else {
+                            for (EmpresaMatriculaCcc empresaMatriculaCcc : e.getEmpresaMatricula().getEmpresaMatriculaCccList()) {
+                                if (em == null || em.getEmpresaMatriculaCccPK().getCcc().equals("")) {
+                                    em = empresaMatriculaCcc;
+                                }
+                            }
+                        }
+                    }
+                    if (em != null) {
+                        emc.add(em);
+                    }
+                }
+
+                if (sal) {
+                    RequestContext.getCurrentInstance().execute("dialogoCCC.show()");
+                    return;
+                }
+
+                enlaceDescarga = Documentacion.enviarPDFMatricula(emc);
+                if (((LazyEmpresaDataModel) empresas).getEmpresasPDF() != null && !((LazyEmpresaDataModel) empresas).getEmpresasPDF().isEmpty()) {
+                    for (Empresa empresa : ((LazyEmpresaDataModel) empresas).getEmpresasPDF()) {
+                        empresa.setSeleccionarPDF(false);
+                    }
+                }
+                ((LazyEmpresaDataModel) empresas).setEmpresasPDF(new ArrayList<Empresa>());
+                empresaCCC = new ArrayList<EmpresaMatriculaCcc>();
+            }
+        }
+    }
+
+    public Map<String, String> getFilterMap() {
+        return filterMap;
+    }
+
+    public void setFilterMap(Map<String, String> filterMap) {
+        this.filterMap = filterMap;
+    }
+
+    public void seleccionaTodosRegistros() {
+        if (empresaFacade.count(filterMap) >= 10000) {
+            UtilidadesVista.Mensaje("No se pueden seleccionar todas las empresa de un filtro de más de 10000 registros. Por favor, haga un filtro con menos registros.", FacesMessage.SEVERITY_ERROR);
+        } else {
+            List<Empresavista> mv = empresas.load(0, 10000, "", SortOrder.UNSORTED, filterMap);
+            List<Empresa> m = new ArrayList<Empresa>();
+            for (Empresavista matriculavista : mv) {
+                matriculavista.getEmpresa().setSeleccionarPDF(true);
+                m.add(matriculavista.getEmpresa());
+
+            }
+            ((LazyEmpresaDataModel) empresas).setEmpresasPDF(m);
+        }
+    }
+
+    public void setEmpPDF(Empresa epresa) {
+        if (((LazyEmpresaDataModel) empresas).getEmpresasPDF() == null) {
+            ((LazyEmpresaDataModel) empresas).setEmpresasPDF(new ArrayList<Empresa>());
+        }
+        ((LazyEmpresaDataModel) empresas).getEmpresasPDF().remove(epresa);
+        if (epresa.isSeleccionarPDF()) {
+            ((LazyEmpresaDataModel) empresas).getEmpresasPDF().add(epresa);
+        }
+    }
+
+    public SesionActual getSesionActual() {
+        return sesionActual;
+    }
+
+    public void setSesionActual(SesionActual sesionActual) {
+        this.sesionActual = sesionActual;
+    }
+
+    public boolean isMuestraEmail() {
+        return muestraEmail;
+    }
+
+    public void setMuestraEmail(boolean muestraEmail) {
+        this.muestraEmail = muestraEmail;
+    }
+
+    public boolean isMuestraNSS() {
+        return muestraNSS;
+    }
+
+    public void setMuestraNSS(boolean muestraNSS) {
+        this.muestraNSS = muestraNSS;
+    }
+
+    public EmpresaVista() {
+    }
+
+    public LazyDataModel<Empresavista> getEmpresas() {
+        if (empresas == null) {
+            empresas = new LazyEmpresaDataModel(empresaFacade, getSesionActual().tienePermiso(23) ? getSesionActual().getUsuario_conectado().getNif() : "");
+        }
+        return empresas;
+
+    }
+
+    public List<Empresavista> getEmpresasFiltradas() {
+        return empresasFiltradas;
+    }
+
+    public void setEmpresasFiltradas(List<Empresavista> empresasFiltradas) {
+        this.empresasFiltradas = empresasFiltradas;
+    }
+
+    public boolean isMuestraRazonSocial() {
+        return muestraRazonSocial;
+    }
+
+    public void setMuestraRazonSocial(boolean muestraRazonSocial) {
+        this.muestraRazonSocial = muestraRazonSocial;
+    }
+
+    public boolean isMuestraNIF() {
+        return muestraNIF;
+    }
+
+    public void setMuestraNIF(boolean muestraNIF) {
+        this.muestraNIF = muestraNIF;
+    }
+
+    public boolean isMuestraActividad() {
+        return muestraActividad;
+    }
+
+    public void setMuestraActividad(boolean muestraActividad) {
+        this.muestraActividad = muestraActividad;
+    }
+
+    public boolean isMuestraTelefono() {
+        return muestraTelefono;
+    }
+
+    public void setMuestraTelefono(boolean muestraTelefono) {
+        this.muestraTelefono = muestraTelefono;
+    }
+
+    public boolean isMuestraEstado() {
+        return muestraEstado;
+    }
+
+    public void setMuestraEstado(boolean muestraEstado) {
+        this.muestraEstado = muestraEstado;
+    }
+
+    public boolean isMuestraTipo() {
+        return muestraTipo;
+    }
+
+    public void setMuestraTipo(boolean muestraTipo) {
+        this.muestraTipo = muestraTipo;
+    }
+
+    public boolean isMuestraProvincia() {
+        return muestraProvincia;
+    }
+
+    public void setMuestraProvincia(boolean muestraProvincia) {
+        this.muestraProvincia = muestraProvincia;
+    }
+
+    public boolean isMuestraLocalidad() {
+        return muestraLocalidad;
+    }
+
+    public void setMuestraLocalidad(boolean muestraLocalidad) {
+        this.muestraLocalidad = muestraLocalidad;
+    }
+
+    public boolean isMuestraECSuperior() {
+        return muestraECSuperior;
+    }
+
+    public void setMuestraECSuperior(boolean muestraECSuperior) {
+        this.muestraECSuperior = muestraECSuperior;
+    }
+
+    public boolean isMuestraEC() {
+        return muestraEC;
+    }
+
+    public void setMuestraEC(boolean muestraEC) {
+        this.muestraEC = muestraEC;
+    }
+
+    public void generarEnvioEmail() {
+        boolean valido = true;
+        if (((LazyEmpresaDataModel) empresas).getEmpresasPDF() == null || ((LazyEmpresaDataModel) empresas).getEmpresasPDF().isEmpty()) {
+            UtilidadesVista.Mensaje("No se puede enviar e-mail puesto que no se han seleccionado empresas.", FacesMessage.SEVERITY_ERROR);
+            valido = false;
+        } else {
+            for (Empresa e : ((LazyEmpresaDataModel) empresas).getEmpresasPDF()) {
+                if (e.getEmail() == null || !e.getEmail().contains("@")) {
+                    UtilidadesVista.Mensaje("La empresa " + e.getRazonSocial() + " (" + e.getNif() + ") no tiene un e-Mail válido.", FacesMessage.SEVERITY_ERROR);
+                    valido = false;
+                }
+            }
+        }
+        if (valido) {
+            RequestContext.getCurrentInstance().execute("dialogoEmail.show()");
+        }
+    }
+
+    public void enviarEmail() throws Exception {
+        boolean valido = true;
+        if (asuntoEnviarEmail == null || cuerpoEnviarEmail == null || asuntoEnviarEmail.equals("") || cuerpoEnviarEmail.equals("")) {
+            UtilidadesVista.Mensaje("Debe de rellenar el Asunto y el Cuerpo del E-mail.", FacesMessage.SEVERITY_ERROR);
+            valido = false;
+        } else {
+            if (asuntoEnviarEmail.contains("_CREDASIG_") || cuerpoEnviarEmail.contains("_CREDASIG_")) {
+                for (Empresa e : ((LazyEmpresaDataModel) empresas).getEmpresasPDF()) {
+                    boolean mensaje = false;
+                    if (e.getEmpresaMatricula() == null || e.getEmpresaMatricula().getEmpresaMatriculaAnioList() == null || e.getEmpresaMatricula().getEmpresaMatriculaAnioList().isEmpty()) {
+                        mensaje = true;
+                    } else {
+                        EmpresaMatriculaAnio em = null;
+                        for (EmpresaMatriculaAnio ema : e.getEmpresaMatricula().getEmpresaMatriculaAnioList()) {
+                            if (ema.getEmpresaMatriculaAnioPK().getAnio() == Fecha.getAnio(new Date())) {
+                                em = ema;
+                            }
+                        }
+                        if (em == null) {
+                            mensaje = true;
+                        } else {
+                            if (em.getCreditoAsignado() == null) {
+                                mensaje = true;
+                            }
+                        }
+                    }
+                    if (mensaje) {
+                        UtilidadesVista.Mensaje("La empresa " + e.getRazonSocial() + " (" + e.getNif() + ") no tiene Crédito Asignado en el Año Actual", FacesMessage.SEVERITY_ERROR);
+                        valido = false;
+                    }
+                }
+            }
+            if (asuntoEnviarEmail.contains("_CREDDISP_") || cuerpoEnviarEmail.contains("_CREDDISP_")) {
+                for (Empresa e : ((LazyEmpresaDataModel) empresas).getEmpresasPDF()) {
+                    boolean mensaje = false;
+                    if (e.getEmpresaMatricula() == null || e.getEmpresaMatricula().getEmpresaMatriculaAnioList() == null || e.getEmpresaMatricula().getEmpresaMatriculaAnioList().isEmpty()) {
+                        mensaje = true;
+                    } else {
+                        EmpresaMatriculaAnio em = null;
+                        for (EmpresaMatriculaAnio ema : e.getEmpresaMatricula().getEmpresaMatriculaAnioList()) {
+                            if (ema.getEmpresaMatriculaAnioPK().getAnio() == Fecha.getAnio(new Date())) {
+                                em = ema;
+                            }
+                        }
+                        if (em == null) {
+                            mensaje = true;
+                        } else {
+                            if (em.getCreditoDisponible() == null) {
+                                mensaje = true;
+                            }
+                        }
+                    }
+                    if (mensaje) {
+                        UtilidadesVista.Mensaje("La empresa " + e.getRazonSocial() + " (" + e.getNif() + ") no tiene Crédito Disponible en el Año Actual", FacesMessage.SEVERITY_ERROR);
+                        valido = false;
+                    }
+                }
+            }
+            if (asuntoEnviarEmail.contains("_REPLEGNOM_") || cuerpoEnviarEmail.contains("_REPLEGNOM_")
+                    || asuntoEnviarEmail.contains("_REPLEGAP1_") || cuerpoEnviarEmail.contains("_REPLEGAP1_")
+                    || asuntoEnviarEmail.contains("_REPLEGAP2_") || cuerpoEnviarEmail.contains("_REPLEGAP2_")) {
+                for (Empresa e : ((LazyEmpresaDataModel) empresas).getEmpresasPDF()) {
+                    if (e.getRepresLegal().getNif().equals("-100")) {
+                        UtilidadesVista.Mensaje("La empresa " + e.getRazonSocial() + " (" + e.getNif() + ") no tiene un Representante Legal Válido", FacesMessage.SEVERITY_ERROR);
+                        valido = false;
+                    }
+                }
+            }
+        }
+        if (valido) {
+            for (Empresa e : ((LazyEmpresaDataModel) empresas).getEmpresasPDF()) {
+                String asuntoEM = reemplazarVariables(asuntoEnviarEmail, e);
+                String cuerpoEM = reemplazarVariables(cuerpoEnviarEmail, e);
+                Email mail = new Email("cursos@f5consultoria.com");
+                mail.setAsunto(asuntoEM);
+                mail.setCuerpo(cuerpoEM);
+                mail.setPara(new String[]{e.getEmail()});
+                Evento evnto = new Evento();
+                evnto.setCreador(getSesionActual().getUsuario_conectado().getPersona());
+                evnto.setEmpresa(e);
+                evnto.setFechaCreacion(new Date());
+                descripcionEventos.configurarEvento(evnto, descripcionEventos.NOTA_EMPRESA);
+                evnto.setDescripcion("Enviado E-Mail");
+                matriculaVista.realizarEventoComunicacion(evnto, mail, evFac);
+                mail.enviar();
+            }
+            UtilidadesVista.Mensaje("E-Mails enviados correctamente", FacesMessage.SEVERITY_INFO);
+            asuntoEnviarEmail = "";
+            cuerpoEnviarEmail = "";
+            RequestContext.getCurrentInstance().execute("dialogoEmail.hide()");
+            if (((LazyEmpresaDataModel) empresas).getEmpresasPDF() != null && !((LazyEmpresaDataModel) empresas).getEmpresasPDF().isEmpty()) {
+                for (Empresa empresa : ((LazyEmpresaDataModel) empresas).getEmpresasPDF()) {
+                    empresa.setSeleccionarPDF(false);
+                }
+            }
+            ((LazyEmpresaDataModel) empresas).setEmpresasPDF(new ArrayList<Empresa>());
+            empresaCCC = new ArrayList<EmpresaMatriculaCcc>();
+        }
+    }
+
+    private String reemplazarVariables(String asuntoEnviarEmail, Empresa e) {
+        String s = asuntoEnviarEmail;
+
+        s = s.replaceAll("_REPLEGNOM_", e.getRepresLegal().getNombre() == null ? "" : e.getRepresLegal().getNombre());
+        s = s.replaceAll("_REPLEGAP1_", e.getRepresLegal().getApellido1() == null ? "" : e.getRepresLegal().getApellido1());
+        s = s.replaceAll("_REPLEGAP2_", e.getRepresLegal().getApellido2() == null ? "" : e.getRepresLegal().getApellido2());
+        s = s.replaceAll("_RAZONSOCIAL_", e.getRazonSocial());
+        validarVista vv = new validarVista();
+        if (s.contains("_CREDASIG_")) {
+            EmpresaMatriculaAnio em = null;
+            for (EmpresaMatriculaAnio ema : e.getEmpresaMatricula().getEmpresaMatriculaAnioList()) {
+                if (ema.getEmpresaMatriculaAnioPK().getAnio() == Fecha.getAnio(new Date())) {
+                    em = ema;
+                }
+            }
+            if (em != null) {
+                s = s.replaceAll("_CREDASIG_", vv.numeroAPrecio(em.getCreditoAsignado()));
+            }
+        }
+        if (s.contains("_CREDDISP_")) {
+            EmpresaMatriculaAnio em = null;
+            for (EmpresaMatriculaAnio ema : e.getEmpresaMatricula().getEmpresaMatriculaAnioList()) {
+                if (ema.getEmpresaMatriculaAnioPK().getAnio() == Fecha.getAnio(new Date())) {
+                    em = ema;
+                }
+            }
+            if (em != null) {
+                s = s.replaceAll("_CREDDISP_", vv.numeroAPrecio(em.getCreditoDisponible()));
+            }
+        }
+        return s;
+    }
+}

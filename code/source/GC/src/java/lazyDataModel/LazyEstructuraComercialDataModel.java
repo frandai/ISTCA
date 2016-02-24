@@ -1,0 +1,39 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package lazyDataModel;
+
+import datosVista.Empresamcccvista;
+import datosVista.EstructuraComercial;
+import datosVistaFacade.EmpresamcccvistaFacade;
+import datosVistaFacade.EstructuraComercialFacade;
+import java.util.List;
+import java.util.Map;
+import javax.ejb.EJB;
+import org.primefaces.model.LazyDataModel;
+import org.primefaces.model.SortOrder;
+
+/**
+ *
+ *
+ */
+public class LazyEstructuraComercialDataModel extends LazyDataModel<EstructuraComercial> {
+
+    private EstructuraComercialFacade ecFacade;
+
+    public LazyEstructuraComercialDataModel(EstructuraComercialFacade ecFacade) {
+        this.ecFacade = ecFacade;
+    }
+
+    @Override
+    public List<EstructuraComercial> load(int first, int pageSize, String sortField, SortOrder sortOrder, Map<String, String> filters) {
+        List<EstructuraComercial> emp = ecFacade.load(first, pageSize, sortField, sortOrder, filters);
+        if (emp.size() < pageSize) {
+            this.setRowCount(first + pageSize);
+        } else {
+            this.setRowCount(Integer.MAX_VALUE);
+        }
+        return emp;
+    }
+}

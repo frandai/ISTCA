@@ -1,0 +1,274 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package util;
+
+import java.io.DataInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import org.apache.poi.hssf.usermodel.*;
+import org.apache.poi.hssf.util.HSSFColor;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+
+/**
+ *
+ * @author fran
+ */
+public class Excel {
+
+    public static void exportarExcelEstandar(String datos[][], String ruta) throws FileNotFoundException, IOException {
+
+        HSSFWorkbook libro = new HSSFWorkbook(); // crear un libro
+        HSSFSheet hoja = libro.createSheet("Listado"); // crear un hoja del libro con nombre
+        HSSFCell celda;
+        HSSFRichTextString cadena;
+        HSSFRow fila;
+        int nFila = 0;
+
+        Map<String, HSSFCellStyle> styles = crearEstilos(libro);
+
+        //turn off gridlines
+        hoja.setDisplayGridlines(false);
+        hoja.setPrintGridlines(false);
+        hoja.setFitToPage(true);
+        hoja.setHorizontallyCenter(true);
+        HSSFPrintSetup printSetup = hoja.getPrintSetup();
+        printSetup.setLandscape(true);
+
+        //the following three statements are required only for HSSF
+        hoja.setAutobreaks(true);
+        printSetup.setFitHeight((short) 1);
+        printSetup.setFitWidth((short) 1);
+
+        fila = hoja.createRow(nFila++);
+
+        // insertar la cabecera
+        fila = hoja.createRow(nFila++);
+        fila.setHeightInPoints(15f);
+        for (int j = 0; j < datos[0].length; j++) {
+            celda = fila.createCell(j + 1);
+            cadena = new HSSFRichTextString(datos[0][j]);
+            celda.setCellValue(cadena);
+            celda.setCellStyle(styles.get("header"));
+            hoja.setColumnWidth(j + 1, 256 * 20);
+        }
+
+        // insertar los demas datos
+        for (int i = 1; i < datos.length; i++) {
+            fila = hoja.createRow(nFila++);
+            fila.setHeightInPoints(15f);
+            for (int j = 0; j < datos[i].length; j++) {
+                celda = fila.createCell(j + 1);
+                cadena = new HSSFRichTextString(datos[i][j]);
+                celda.setCellValue(cadena);
+                celda.setCellStyle(styles.get("cell_normal"));
+                if (datos[i][j].endsWith("_TEXTO_")) {
+                    celda.setCellValue(datos[i][j].replace("_TEXTO_", ""));
+                } else {
+                    try {
+                        celda.setCellValue(Double.parseDouble(datos[i][j]));
+                        celda.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
+
+                    } catch (Exception ex) {
+                    }
+                }
+            }
+        }
+
+        //Escribir el excel a un archivo
+        //Writer out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(ruta), "UTF-8"));
+
+        FileOutputStream out = new FileOutputStream(ruta);
+
+        libro.write(out);
+        out.close();
+    }
+
+    public static Map<String, HSSFCellStyle> crearEstilos(HSSFWorkbook wb) {
+        Map<String, HSSFCellStyle> styles = new HashMap<String, HSSFCellStyle>();
+        HSSFDataFormat df = wb.createDataFormat();
+
+        HSSFCellStyle style;
+        HSSFFont headerFont = wb.createFont();
+        headerFont.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
+        style = crearCeldaBordeada(wb);
+        style.setAlignment(HSSFCellStyle.ALIGN_CENTER);
+        style.setFillForegroundColor(HSSFColor.LIGHT_CORNFLOWER_BLUE.index);
+        style.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
+        style.setFont(headerFont);
+        styles.put("header", style);
+
+        style = crearCeldaBordeada(wb);
+        style.setAlignment(HSSFCellStyle.ALIGN_CENTER);
+        style.setFillForegroundColor(HSSFColor.RED.index);
+        style.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
+        style.setFont(headerFont);
+        styles.put("header_red", style);
+
+        style = crearCeldaBordeada(wb);
+        style.setAlignment(HSSFCellStyle.ALIGN_CENTER);
+        style.setFillForegroundColor(HSSFColor.ORANGE.index);
+        style.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
+        style.setFont(headerFont);
+        styles.put("header_orange", style);
+
+        style = crearCeldaBordeada(wb);
+        style.setAlignment(HSSFCellStyle.ALIGN_CENTER);
+        style.setFillForegroundColor(HSSFColor.GREEN.index);
+        style.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
+        style.setFont(headerFont);
+        styles.put("header_green", style);
+
+        style = crearCeldaBordeada(wb);
+        style.setAlignment(HSSFCellStyle.ALIGN_CENTER);
+        style.setFillForegroundColor(HSSFColor.BLUE.index);
+        style.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
+        style.setFont(headerFont);
+        styles.put("header_blue", style);
+
+        style = crearCeldaBordeada(wb);
+        style.setAlignment(HSSFCellStyle.ALIGN_CENTER);
+        style.setFillForegroundColor(HSSFColor.LIGHT_CORNFLOWER_BLUE.index);
+        style.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
+        style.setFont(headerFont);
+        style.setDataFormat(df.getFormat("d-mmm"));
+        styles.put("header_date", style);
+
+        HSSFFont font1 = wb.createFont();
+        font1.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
+        style = crearCeldaBordeada(wb);
+        style.setAlignment(HSSFCellStyle.ALIGN_LEFT);
+        style.setFont(font1);
+        styles.put("cell_b", style);
+
+        style = crearCeldaBordeada(wb);
+        style.setAlignment(HSSFCellStyle.ALIGN_CENTER);
+        style.setFont(font1);
+        styles.put("cell_b_centered", style);
+
+        style = crearCeldaBordeada(wb);
+        style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+        style.setFont(font1);
+        style.setDataFormat(df.getFormat("d-mmm"));
+        styles.put("cell_b_date", style);
+
+        style = crearCeldaBordeada(wb);
+        style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+        style.setFont(font1);
+        style.setFillForegroundColor(HSSFColor.GREY_25_PERCENT.index);
+        style.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
+        style.setDataFormat(df.getFormat("d-mmm"));
+        styles.put("cell_g", style);
+
+        HSSFFont font2 = wb.createFont();
+        font2.setColor(HSSFColor.BLUE.index);
+        font2.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
+        style = crearCeldaBordeada(wb);
+        style.setAlignment(HSSFCellStyle.ALIGN_LEFT);
+        style.setFont(font2);
+        styles.put("cell_bb", style);
+
+        style = crearCeldaBordeada(wb);
+        style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+        style.setFont(font1);
+        style.setFillForegroundColor(HSSFColor.GREY_25_PERCENT.index);
+        style.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
+        style.setDataFormat(df.getFormat("d-mmm"));
+        styles.put("cell_bg", style);
+
+        HSSFFont font3 = wb.createFont();
+        font3.setFontHeightInPoints((short) 14);
+        font3.setColor(HSSFColor.DARK_BLUE.index);
+        font3.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
+        style = crearCeldaBordeada(wb);
+        style.setAlignment(HSSFCellStyle.ALIGN_LEFT);
+        style.setFont(font3);
+        style.setWrapText(true);
+        style.setVerticalAlignment(HSSFCellStyle.VERTICAL_CENTER);
+        styles.put("cell_h", style);
+
+        style = crearCeldaBordeada(wb);
+        style.setAlignment(HSSFCellStyle.ALIGN_LEFT);
+        style.setWrapText(false);
+        styles.put("cell_normal", style);
+
+        style = crearCeldaBordeada(wb);
+        style.setAlignment(HSSFCellStyle.ALIGN_LEFT);
+        style.setWrapText(false);
+        style.setFillForegroundColor(HSSFColor.BLUE.index);
+
+        styles.put("cell_normal_blue", style);
+
+        style = crearCeldaBordeada(wb);
+        style.setAlignment(HSSFCellStyle.ALIGN_CENTER);
+        style.setWrapText(true);
+        styles.put("cell_normal_centered", style);
+
+        style = crearCeldaBordeada(wb);
+        style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+        style.setWrapText(true);
+        style.setDataFormat(df.getFormat("d-mmm"));
+        styles.put("cell_normal_date", style);
+
+        style = crearCeldaBordeada(wb);
+        style.setAlignment(HSSFCellStyle.ALIGN_LEFT);
+        style.setIndention((short) 1);
+        style.setWrapText(true);
+        styles.put("cell_indented", style);
+
+        style = crearCeldaBordeada(wb);
+        style.setFillForegroundColor(HSSFColor.BLUE.index);
+        style.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
+        styles.put("cell_blue", style);
+
+        return styles;
+    }
+
+    private static HSSFCellStyle crearCeldaBordeada(HSSFWorkbook wb) {
+        HSSFCellStyle style = wb.createCellStyle();
+        style.setBorderRight(HSSFCellStyle.BORDER_THIN);
+        style.setRightBorderColor(HSSFColor.BLACK.index);
+        style.setBorderBottom(HSSFCellStyle.BORDER_THIN);
+        style.setBottomBorderColor(HSSFColor.BLACK.index);
+        style.setBorderLeft(HSSFCellStyle.BORDER_THIN);
+        style.setLeftBorderColor(HSSFColor.BLACK.index);
+        style.setBorderTop(HSSFCellStyle.BORDER_THIN);
+        style.setTopBorderColor(HSSFColor.BLACK.index);
+        return style;
+    }
+
+    public static ArrayList<ArrayList<String>> getDatosExcel(InputStream inputstream) throws IOException {
+        POIFSFileSystem fs = new POIFSFileSystem(inputstream);
+        HSSFWorkbook wb = new HSSFWorkbook(fs);
+        HSSFSheet sheet = wb.getSheetAt(0);
+        Iterator rows = sheet.rowIterator();
+        ArrayList<ArrayList<String>> dt = new ArrayList<ArrayList<String>>();
+        while (rows.hasNext()) {
+            HSSFRow row = (HSSFRow) rows.next();
+            ArrayList<String> fila = new ArrayList<String>();
+            Iterator cells = row.cellIterator();
+            while (cells.hasNext()) {
+                String s = "";
+                HSSFCell cell = (HSSFCell) cells.next();
+                if (HSSFCell.CELL_TYPE_NUMERIC == cell.getCellType()) {
+                    s = ""+cell.getNumericCellValue();
+                } else if (HSSFCell.CELL_TYPE_STRING == cell.getCellType()) {
+                    s = ""+cell.getStringCellValue();
+                } else if (HSSFCell.CELL_TYPE_BOOLEAN == cell.getCellType()) {
+                    s = ""+cell.getBooleanCellValue();
+                }
+                fila.add(s);
+            }
+            dt.add(fila);
+        }
+
+        return dt;
+    }
+}

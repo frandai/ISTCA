@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:c="http://java.sun.com/jsp/jstl/core">
+
+    <ui:composition template="/template.xhtml">
+        <ui:define name="title">
+            <h:outputText value="#{accionFormativaGestion.modoAlta? 'Nueva' : 'Gestión'} acción Formativa"> </h:outputText> 
+        </ui:define>
+        <ui:define name="body">
+            <p:fieldset collapsed="#{accionFormativaGestion.borrado}" legend="Datos de la Acción Fomativa" styleClass="campoRellena" id="datosAccionFormativa">
+
+                <div style="float: right;">
+                    <p>
+                        <h:outputLabel value="Horas totales:"  styleClass="separador"/>
+                        <p:spinner min="0" required="true" id="Horastotales" value="#{accionFormativaGestion.accionFormativaSeleccionado.horas}" immediate="true" rendered="#{sesionActual.tienePermiso(7)}" >
+                            <f:ajax event="change" render="Horastotales"/>
+                        </p:spinner>
+                        <p:outputLabel rendered="#{not sesionActual.tienePermiso(7)}" styleClass="valor" value="#{accionFormativaGestion.accionFormativaSeleccionado.horas}"/>
+
+                    </p>
+                    <p>
+                        <h:outputLabel value="Precio Acción Formativa:"  styleClass="separador"/>
+                        <p:spinner min="0" required="true" id="Precio" value="#{accionFormativaGestion.accionFormativaSeleccionado.precio}" rendered="#{sesionActual.tienePermiso(7)}">
+                            <f:ajax event="change" render="Precio"/> 
+                        </p:spinner> 
+                        <p:outputLabel rendered="#{not sesionActual.tienePermiso(7)}" styleClass="valor" value="#{accionFormativaGestion.accionFormativaSeleccionado.precio}"/>
+                        €
+                    </p>
+                    <div>
+                        <h:outputLabel value="Tipo de acción: "  styleClass="separador"/>  
+                        <p:selectBooleanButton rendered="#{sesionActual.tienePermiso(7)}" value="#{accionFormativaGestion.accionFormativaSeleccionado.tipoAccionEspecifica}" onLabel="Específica" offLabel="Genérica" styleClass="separador" id="tipoaccion">
+                            <p:ajax event="change" update="tipoaccion" process="@this" /> 
+                        </p:selectBooleanButton>
+                        <p:outputLabel rendered="#{not sesionActual.tienePermiso(7)}" styleClass="valor separador" value="#{accionFormativaGestion.accionFormativaSeleccionado.tipoAccionEspecifica?'Específica':'Genérica'}"/>
+
+                    </div>
+                    <div>
+                        <h:outputLabel value=" Nivel formación: "  styleClass="separador"/>  
+                        <p:selectBooleanButton value="#{accionFormativaGestion.accionFormativaSeleccionado.nivelFormacionSuperior}" onLabel="Superior" offLabel="Básica" onIcon="ui-icon-check" styleClass="separador" id="nivform" rendered="#{sesionActual.tienePermiso(7)}">
+                            <p:ajax event="change" update="nivform" process="@this" /> 
+                        </p:selectBooleanButton>
+                        <p:outputLabel rendered="#{not sesionActual.tienePermiso(7)}" styleClass="valor separador" value="#{accionFormativaGestion.accionFormativaSeleccionado.nivelFormacionSuperior?'Superior':'Básica'}"/>
+                    </div>
+                </div>
+                <div>
+                    <h:outputLabel value="Referencia:" styleClass="separador"/>
+                    <p:spinner min="0" id="ID_af" value="#{accionFormativaGestion.accionFormativaSeleccionado.id}" readonly="#{not accionFormativaGestion.modoAlta}" rendered="#{sesionActual.tienePermiso(7)}">
+                        <f:ajax event="change" render="ID_af"/> 
+                    </p:spinner>
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(7)}" styleClass="valor" value="#{accionFormativaGestion.accionFormativaSeleccionado.id}"/>
+                </div> 
+                <div>
+                    <h:outputLabel value="Nombre:"  styleClass="separador"/>
+                    <p:inputText id="nombre_af"  size="90" required="true" styleClass="valor" value="#{accionFormativaGestion.accionFormativaSeleccionado.nombre}" rendered="#{sesionActual.tienePermiso(7)}">
+                        <f:ajax event="change" render="nombre_af"/> 
+                    </p:inputText>
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(7)}" styleClass="valor" value="#{accionFormativaGestion.accionFormativaSeleccionado.nombre}"/>
+                </div>
+                <div>
+                    <h:outputLabel value="Modalidad: "  styleClass="separador"/>  
+                    <p:selectOneMenu style="margin-top: 5px" value="#{accionFormativaGestion.accionFormativaSeleccionado.modalidad}" rendered="#{sesionActual.tienePermiso(7)}">    
+                        <f:selectItems value="#{accionFormativaGestion.accionesModalidad}" var="modalidades" itemLabel="#{modalidades.nombre}" itemValue="#{modalidades}" /> 
+                        <f:ajax event="change" render="campo_principal"/> 
+                    </p:selectOneMenu>
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(7)}" styleClass="valor" value="#{accionFormativaGestion.accionFormativaSeleccionado.modalidad.nombre}"/>
+                </div>
+                <div>
+                    <h:outputLabel value="Familia: " styleClass="separador"/>
+                    <p:selectOneMenu value="#{accionFormativaGestion.accionFormativaSeleccionado.accionFormativaGrupo}" rendered="#{sesionActual.tienePermiso(7)}">    
+                        <f:selectItems value="#{accionFormativaGestion.gruposAF}" var="gruposAF" itemLabel="(#{gruposAF.id}) #{gruposAF.nombre}" itemValue="#{gruposAF}" /> 
+                    </p:selectOneMenu>
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(7)}" styleClass="valor" value="(#{accionFormativaGestion.accionFormativaSeleccionado.accionFormativaGrupo.id}) #{accionFormativaGestion.accionFormativaSeleccionado.accionFormativaGrupo.nombre}"/>
+                </div>
+                <div>
+                    <h:outputLabel value="Grupo Fund. Tirpartita: " styleClass="separador"/>
+                    <p:outputLabel styleClass="valor" id="valorGrupo" value="(#{accionFormativaGestion.accionFormativaSeleccionado.accionFormativaGrupoFundacion.id}) #{accionFormativaGestion.accionFormativaSeleccionado.accionFormativaGrupoFundacion.nombre}"/>
+                    <p:commandButton icon="ui-icon-search" rendered="#{sesionActual.tienePermiso(7)}" title="Asociar Grupo Fundación Tripartita" type="button" onclick="dlgGrupoFund.show()" styleClass="separador" />
+                </div>
+                <br/>
+                <div style="margin: auto; width: 700px;">
+                    <h:outputLabel value="Observaciones:"/>
+                    <p:editor style="margin-left: 30px;" width="700" required="false" id="editorOtracosa" value="#{accionFormativaGestion.accionFormativaSeleccionado.observaciones}" styleClass="noTransp"  disabled="#{not sesionActual.tienePermiso(7)}"/>  
+                </div>
+            </p:fieldset>
+            <p:fieldset collapsed="#{accionFormativaGestion.borrado}" legend="Datos CNCP" styleClass="campoRellena" id="datosAccionFormativaCNCP" rendered="false" >
+                <h:outputLabel id="texto_cncp" value="Convenio Colectivo/Certificado/Unidad de Competencia: " style="width: auto; margin-right: 5px;"/>
+                <p:outputLabel value="#{accionFormativaGestion.accionFormativaSeleccionado.cncp.certificado} / #{accionFormativaGestion.accionFormativaSeleccionado.cncp.realDecreto} / #{accionFormativaGestion.accionFormativaSeleccionado.cncp.unidadCompetencia}"/>
+            </p:fieldset>
+            <p:fieldset collapsed="#{accionFormativaGestion.borrado}" rendered="#{accionFormativaGestion.accionFormativaSeleccionado.modalidad.id eq 10}" legend="Datos de Acceso de Control a Plataforma de Temeformación" styleClass="campoRellena" id="auxteleform">
+            <div>
+                    <h:outputLabel value="URL:"  styleClass="separador"/>
+                    <p:inputText label="URL Plataforma Teleformación" id="auxurl"  size="90" required="true" styleClass="valor" value="#{accionFormativaGestion.url}" rendered="#{sesionActual.tienePermiso(7)}">
+                        <f:ajax event="change" render="auxurl"/> 
+                    </p:inputText>
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(7)}" styleClass="valor" value="#{accionFormativaGestion.url}"/>
+                </div>
+                <div>
+                    <h:outputLabel value="Usuario:"  styleClass="separador"/>
+                    <p:inputText label="Usuario Plataforma Teleformación" id="auxuser"  size="90" required="true" styleClass="valor" value="#{accionFormativaGestion.user}" rendered="#{sesionActual.tienePermiso(7)}">
+                        <f:ajax event="change" render="auxuser"/> 
+                    </p:inputText>
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(7)}" styleClass="valor" value="#{accionFormativaGestion.user}"/>
+                </div>
+                <div>
+                    <h:outputLabel value="Contraseña:"  styleClass="separador"/>
+                    <p:inputText label="Contraseña Plataforma Teleformación" id="auxpass"  size="90" required="true" styleClass="valor" value="#{accionFormativaGestion.pass}" rendered="#{sesionActual.tienePermiso(7)}">
+                        <f:ajax event="change" render="auxpass"/> 
+                    </p:inputText>
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(7)}" styleClass="valor" value="#{accionFormativaGestion.pass}"/>
+                </div>
+            </p:fieldset>
+            <p:fieldset collapsed="#{accionFormativaGestion.borrado}" legend="Contenidos y Objetivos" styleClass="campoRellena" id="datosObj">
+                <div style="margin: auto; width: 700px;">
+                    <h:outputText value="Objetivos: " styleClass="separador" />
+                    <p:inputTextarea required="false"  style="margin-left: 30px; width: 700px; height: 250px;" id="editorObjetivos" value="#{accionFormativaGestion.accionFormativaSeleccionado.objetivos}" readonly="#{not sesionActual.tienePermiso(7)}"/>  
+                </div>
+                <br/>
+                <div style="margin: auto; width: 700px;">
+                    <h:outputText styleClass="separador" value="Contenidos: "/>
+                    <p:inputTextarea style="margin-left: 30px; width: 700px; height: 250px;" required="true" id="editorContenidoYObjetivos" value="#{accionFormativaGestion.accionFormativaSeleccionado.contenidos}" readonly="#{not sesionActual.tienePermiso(7)}"/>  
+                </div>
+            </p:fieldset>
+            <p:fieldset collapsed="#{accionFormativaGestion.borrado}" legend="Datos Modalidad Mixta" styleClass="campoRellena" id="datosMixta2" rendered="#{accionFormativaGestion.accionFormativaSeleccionado.modalidad.id eq 9}" toggleable="true">
+                <div style="float: right">
+                    <div style="margin-right: 200px">
+                        <p>
+                            <h:outputLabel value="Horas Presenciales:" styleClass="separador"/>
+                            <p:spinner min="0" id="HP_af" value="#{accionFormativaGestion.accionFormativaSeleccionado.accionFormativaExtra.mixtaHpr}" rendered="#{sesionActual.tienePermiso(7)}">
+                                <f:ajax event="change" render="HP_af"/> 
+                            </p:spinner>
+                            <p:outputLabel rendered="#{not sesionActual.tienePermiso(7)}" styleClass="valor" value="#{accionFormativaGestion.accionFormativaSeleccionado.accionFormativaExtra.mixtaHpr}"/>
+                        </p>
+                        <p>
+                            <h:outputLabel value="Horas a Distancia:  " styleClass="separador"/>
+                            <p:spinner min="0" id="HD_af" value="#{accionFormativaGestion.accionFormativaSeleccionado.accionFormativaExtra.mixtaHdi}" rendered="#{sesionActual.tienePermiso(7)}">
+                                <f:ajax event="change" render="HD_af"/> 
+                            </p:spinner>
+                            <p:outputLabel rendered="#{not sesionActual.tienePermiso(7)}" styleClass="valor" value="#{accionFormativaGestion.accionFormativaSeleccionado.accionFormativaExtra.mixtaHdi}"/>
+                        </p>
+                        <p>
+                            <h:outputLabel value="Horas de Teleform.:  " styleClass="separador"/>
+                            <p:spinner min="0" id="HT_af" value="#{accionFormativaGestion.accionFormativaSeleccionado.accionFormativaExtra.mixtaHte}" rendered="#{sesionActual.tienePermiso(7)}">
+                                <f:ajax event="change" render="HT_af"/> 
+                            </p:spinner>
+                            <p:outputLabel rendered="#{not sesionActual.tienePermiso(7)}" styleClass="valor" value="#{accionFormativaGestion.accionFormativaSeleccionado.accionFormativaExtra.mixtaHte}"/>
+                        </p>
+                    </div>
+                </div>
+                <div>
+                    <h:outputLabel value="Tecnología" styleClass="separador"/>
+                    <p:spinner min="0" id="Tecn_af" value="#{accionFormativaGestion.accionFormativaSeleccionado.accionFormativaExtra.modTecnologia}" rendered="#{sesionActual.tienePermiso(7)}">
+                        <f:ajax event="change" render="Tecn_af"/> 
+                    </p:spinner>
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(7)}" styleClass="valor" value="#{accionFormativaGestion.accionFormativaSeleccionado.accionFormativaExtra.modTecnologia}"/>
+                </div>
+                <div>
+                    <h:outputLabel value="Prev. Riesgos" styleClass="separador"/>
+                    <p:spinner min="0" id="PR_af" value="#{accionFormativaGestion.accionFormativaSeleccionado.accionFormativaExtra.modPrevRiesgos}" rendered="#{sesionActual.tienePermiso(7)}">
+                        <f:ajax event="change" render="PR_af"/> 
+                    </p:spinner>
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(7)}" styleClass="valor" value="#{accionFormativaGestion.accionFormativaSeleccionado.accionFormativaExtra.modPrevRiesgos}"/>
+                </div>
+
+                <div>
+                    <h:outputLabel value="Promoción:" styleClass="separador"/>
+                    <p:spinner min="0" id="Pro_af" value="#{accionFormativaGestion.accionFormativaSeleccionado.accionFormativaExtra.modPromocion}" rendered="#{sesionActual.tienePermiso(7)}">
+                        <f:ajax event="change" render="Pro_af"/> 
+                    </p:spinner>
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(7)}" styleClass="valor" value="#{accionFormativaGestion.accionFormativaSeleccionado.accionFormativaExtra.modPromocion}"/>
+                </div>
+                <div>
+                    <h:outputLabel value="Medio Ambiente:" styleClass="separador"/>
+                    <p:spinner min="0" id="SMA_af" value="#{accionFormativaGestion.accionFormativaSeleccionado.accionFormativaExtra.modSensMedAmb}" rendered="#{sesionActual.tienePermiso(7)}">
+                        <f:ajax event="change" render="SMA_af"/> 
+                    </p:spinner>
+                    <p:outputLabel rendered="#{not sesionActual.tienePermiso(7)}" styleClass="valor" value="#{accionFormativaGestion.accionFormativaSeleccionado.accionFormativaExtra.modSensMedAmb}"/>
+
+                </div>
+
+            </p:fieldset>
+            <p:fieldset collapsed="#{accionFormativaGestion.borrado}" legend="Proveedores de Tutorías" styleClass="campoRellena" id="Proveedores">
+                <p:dataTable  filterEvent="change" var="prov" value="#{accionFormativaGestion.accionFormativaSeleccionado.proveedorList}" style="width: 600px; margin: 10px auto;"
+                              emptyMessage="La acción formativa no tiene proveedores asociados"
+                              id="tabla_proveedores_asociado"
+                              >
+                    <f:facet name="header">  
+                        Proveedores de Tutorías
+                        <p:commandButton icon="ui-icon-plus" style="width:16px; height: 16px;" onclick="dlgAniadirProveedor.show();" rendered="#{sesionActual.tienePermiso(7)}" />
+                    </f:facet>  
+                    <p:column headerText="NIF">
+                        <h:outputText value="#{prov.nif}"/>
+                    </p:column>
+                    <p:column headerText="Razón Social">
+                        <h:outputText value="#{prov.empresa.razonSocial}"/>
+                    </p:column> 
+
+                    <p:column style="width:80px;">  
+                        <p:button icon="ui-icon-search" href="../empresa/empresa.xhtml?empresa=#{prov.nif}" />
+                        <p:commandButton icon="ui-icon-trash" onclick="if (!confirm('¿Seguro que desea borrar la asociación del proveedor de tutorías con la acción formativa seleccionada?')) {
+                                return false;
+                            }" rendered="#{sesionActual.tienePermiso(7)}" 
+                                         update="tabla_proveedores_asociado :formulario_principal:messages :formulario_principal:growl" process="@this"
+                                         >
+                            <f:setPropertyActionListener value="#{prov}"  
+                                                         target="#{accionFormativaGestion.proveedorSeleccionadaBorrar}" /> 
+                        </p:commandButton>
+                    </p:column> 
+                </p:dataTable>
+            </p:fieldset>
+            <p:commandButton disabled="#{accionFormativaGestion.borrado}" actionListener="#{accionFormativaGestion.guarda}" id="botonGuarda" value="Guardar" icon="ui-icon-check" update="messages growl" styleClass="botonAplicar" rendered="#{sesionActual.tienePermiso(7)}"/> 
+            <p:commandButton value="#{accionFormativaGestion.vieneDesdeMatricula?'Volver a Matrícula':'Salir'}" icon="#{accionFormativaGestion.vieneDesdeMatricula?'ui-icon ui-icon-arrowreturnthick-1-w':'ui-icon ui-icon-arrowreturn-1-w'}"
+                             immediate="#{accionFormativaGestion.vieneDesdeMatricula}"
+                             onclick="#{accionFormativaGestion.vieneDesdeMatricula?validarVista.volverMatricula(accionFormativaGestion.matID):'confirmation.show()'}" styleClass="botonAplicar"/>
+            <p:commandButton id="botonBorrado" disabled="#{accionFormativaGestion.borrado or accionFormativaGestion.modoAlta}" style="float: left; " value="Eliminar"  icon="ui-icon-trash" onclick="confirmationEliminar.show()" styleClass="botonAplicar bg-red" rendered="#{sesionActual.tienePermiso(9)}"/>  
+            <p:commandButton actionListener="#{accionFormativaGestion.elimina}" update="messages growl botonGuarda botonBorrado formulario_principal" styleClass="boton_borrar_objeto" rendered="#{sesionActual.tienePermiso(9)}"/> 
+
+        </ui:define>
+        <ui:define name="dialogos">
+            <p:dialog header="Añadir CNCP" widgetVar="dlgNuevoCNCP" resizable="true" rendered="#{accionFormativaGestion.accionFormativaSeleccionado.cncp ne null}">
+                <h:form id="aniadir_cncp_accion_formativa">
+                    <p:outputLabel value="Certificado: "/>
+                    <p:inputText value=""/>
+                    <div></div>
+                    <p:outputLabel value="Real Decreto: "/>
+                    <p:inputText value=""/>
+                    <div></div>
+                    <p:outputLabel value="Unidad Competencia: "/>
+                    <p:inputText value=""/>
+                    <div></div>
+                    <p:commandButton  onclick="dlgNuevoCNCP.close()"  value="Guardar" icon="ui-icon-check" update=":formulario_principal:messages :formulario_principal:growl" styleClass="botonAplicar" immediate="true"/> 
+                </h:form>
+            </p:dialog>
+            <p:dialog header="Seleccionar CNCP" widgetVar="dlgCncp" resizable="true">   
+                <p:commandButton value="Crear nuevo convenio" icon="ui-icon-plus" title="Nuevo Convenio Colectivo" type="button" onclick="dlgNuevoCNCP.show()" style="top: 0px;left: 6px;" />
+                <h:form id="form_cncp">
+                    <p:dataTable  filterEvent="change" 
+                                  id="cncp_am"
+                                  emptyMessage="No existen CNCP en el sistema"
+                                  style="width:500px; margin: 5px auto;"
+                                  var="cncp"
+                                  value="#{accionFormativaGestion.accionFormativaCncp}"
+                                  paginator="true"
+                                  rows="5" 
+                                  paginatorTemplate="{FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                                  rowsPerPageTemplate="5,10,15,30"
+                                  >
+                        <f:facet name="header">  
+                            CNCP
+                        </f:facet>
+                        <p:column headerText="Certificado" filterBy="#{cncp.certificado}" 
+                                  filterMatchMode="exact"
+                                  sortBy="#{cncp.certificado}"
+                                  >
+                            <h:outputText value="#{cncp.certificado}"/>
+                        </p:column>
+                        <p:column headerText="Real Decreto" filterBy="#{cncp.realDecreto}" 
+                                  filterMatchMode="contains"
+                                  sortBy="#{cncp.realDecreto}"
+                                  >
+                            <h:outputText value="#{cncp.realDecreto}"/>
+                        </p:column>
+                        <p:column headerText="Unidad de competencia" filterBy="#{cncp.unidadCompetencia}" 
+                                  filterMatchMode="contains"
+                                  sortBy="#{cncp.unidadCompetencia}"
+                                  >
+                            <h:outputText value="#{cncp.unidadCompetencia}"/>
+                        </p:column>
+                        <p:column style="width:10px;">  
+                            <p:commandButton id="select_cncp" onclick="dlgCncp.close()" icon="ui-icon-check" title="Seleccionar" ajax="true" update=":formulario_principal:texto_cncp" immediate="true">  
+                                <f:setPropertyActionListener id="cncpAccion" value="#{cncp}" target="#{accionFormativaGestion.accionFormativaSeleccionado.cncp}" />  
+                            </p:commandButton>  
+                        </p:column>
+                    </p:dataTable>
+                </h:form>
+            </p:dialog>
+            <p:dialog header="Seleccionar Proveedores" widgetVar="dlgAniadirProveedor" resizable="true" rendered="#{sesionActual.tienePermiso(7)}">   
+                <h:form id="form_proovedor">
+                    <p:dataTable  filterEvent="change" var="pro" value="#{accionFormativaGestion.proveedores}" 
+                                  emptyMessage="No existen proveedores en el sistema"
+                                  style="width:500px; margin: 5px auto;"
+                                  paginator="true"
+                                  rows="5" 
+                                  paginatorTemplate="{FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                                  rowsPerPageTemplate="5,10,15,30"
+                                  >
+                        <f:facet name="header">  
+                            Proveedores
+                        </f:facet>
+                        <p:column headerText="NIF" filterBy="#{pro.nif}" 
+                                  filterMatchMode="contains"   
+                                  sortBy="#{pro.nif}"
+                                  >
+                            <h:outputText value="#{pro.nif}"/>
+                        </p:column>
+                        <p:column headerText="Razón Social" filterBy="#{pro.empresa.razonSocial}" 
+                                  filterMatchMode="contains"
+                                  sortBy="#{pro.empresa.razonSocial}"
+                                  >
+                            <h:outputText value="#{pro.empresa.razonSocial}"/>
+                        </p:column>
+                        <p:column>
+                            <p:commandButton id="select_proveedor" onclick="dlgAniadirProveedor.close()" icon="ui-icon-check" title="Seleccionar" ajax="true" update=":formulario_principal:tabla_proveedores_asociado" >  
+                                <f:setPropertyActionListener value="#{pro}" target="#{accionFormativaGestion.aniadirProveedor}" />  
+                            </p:commandButton> 
+                        </p:column>
+                    </p:dataTable>
+                    <br></br>
+                </h:form>
+            </p:dialog> 
+            <p:dialog header="Asociar Grupo Fundación Tripartita" widgetVar="dlgGrupoFund" resizable="true" rendered="#{sesionActual.tienePermiso(7)}">
+                <h:form id="aniadir_grupo">
+                    <p:dataTable  filterEvent="change" var="grupo" value="#{accionFormativaGestion.gruposFundacion}" filteredValue="#{accionFormativaGestion.gruposFundacionFiltrados}"
+                                  emptyMessage="No existen grupos con los criterios seleccionados."
+                                  paginator="true"
+                                  rows="5" 
+                                  paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                                  currentPageReportTemplate="{totalRecords} Filas (página {currentPage} de {totalPages})"
+                                  rowsPerPageTemplate="5,10,15,30"
+                                  paginatorPosition="top"
+                                  widgetVar="tablaGrupo"
+                                  >
+                        <p:column id="g0" filterBy="#{grupo.id}" sortBy="#{grupo.id}"
+                                  headerText="ID"  
+                                  filterMatchMode="contains" >  
+                            <h:outputText value="#{grupo.id}" /> 
+                        </p:column>
+                        <p:column id="g1" filterBy="#{grupo.nombre}" sortBy="#{grupo.nombre}"
+                                  headerText="Nombre"  
+                                  filterMatchMode="contains" >  
+                            <h:outputText value="#{grupo.nombre}" /> 
+                        </p:column>
+                        <p:column style="width:10px;">  
+                            <p:commandButton id="select_grupo" onclick="dlgGrupo.close()" icon="ui-icon-check" title="Seleccionar" ajax="true" update=":formulario_principal:valorGrupo">  
+                                <f:setPropertyActionListener value="#{grupo}" target="#{accionFormativaGestion.accionFormativaSeleccionado.accionFormativaGrupoFundacion}" /> 
+                            </p:commandButton>  
+                        </p:column>
+                    </p:dataTable>
+                </h:form>
+            </p:dialog>
+
+        </ui:define>
+    </ui:composition>
+</html>

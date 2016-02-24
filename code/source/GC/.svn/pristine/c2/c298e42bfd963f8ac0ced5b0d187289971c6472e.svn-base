@@ -1,0 +1,121 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package datos;
+
+import java.io.Serializable;
+
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
+import javax.xml.bind.annotation.XmlRootElement;
+
+/**
+ *
+ * @author sergio
+ */
+@Entity
+@Table(name = "LIQUIDACION_PERFIL_LINEA",  schema = "public")
+@XmlRootElement
+@NamedQueries({
+    @NamedQuery(name = "LiquidacionPerfilLinea.findAll", query = "SELECT l FROM LiquidacionPerfilLinea l"),
+    @NamedQuery(name = "LiquidacionPerfilLinea.findByLiquidacionPerfil", query = "SELECT l FROM LiquidacionPerfilLinea l WHERE l.liquidacionPerfilLineaPK.liquidacionPerfil = :liquidacionPerfil"),
+    @NamedQuery(name = "LiquidacionPerfilLinea.findByComercial", query = "SELECT l FROM LiquidacionPerfilLinea l WHERE l.liquidacionPerfilLineaPK.comercial = :comercial"),
+    @NamedQuery(name = "LiquidacionPerfilLinea.findByPorcentaje", query = "SELECT l FROM LiquidacionPerfilLinea l WHERE l.porcentaje = :porcentaje")})
+public class LiquidacionPerfilLinea implements Serializable {
+    private static final long serialVersionUID = 1L;
+    @EmbeddedId
+    protected LiquidacionPerfilLineaPK liquidacionPerfilLineaPK;
+    @Basic(optional = false)
+    @NotNull
+    @Column(nullable = false)
+    private Double porcentaje;
+    @JoinColumn(name = "LIQUIDACION_PERFIL", referencedColumnName = "ID", nullable = false, insertable = false, updatable = false)
+    @ManyToOne(optional = false)
+    private LiquidacionPerfil liquidacionPerfil1;
+    @JoinColumn(name = "COMERCIAL", referencedColumnName = "ID", nullable = false, insertable = false, updatable = false)
+    @ManyToOne(optional = false)
+    private Comercial comercial1;
+
+    public LiquidacionPerfilLinea() {
+    }
+
+    public LiquidacionPerfilLinea(LiquidacionPerfilLineaPK liquidacionPerfilLineaPK) {
+        this.liquidacionPerfilLineaPK = liquidacionPerfilLineaPK;
+    }
+
+    public LiquidacionPerfilLinea(LiquidacionPerfilLineaPK liquidacionPerfilLineaPK, Double porcentaje) {
+        this.liquidacionPerfilLineaPK = liquidacionPerfilLineaPK;
+        this.porcentaje = porcentaje;
+    }
+
+    public LiquidacionPerfilLinea(int liquidacionPerfil, int comercial) {
+        this.liquidacionPerfilLineaPK = new LiquidacionPerfilLineaPK(liquidacionPerfil, comercial);
+    }
+
+    public LiquidacionPerfilLineaPK getLiquidacionPerfilLineaPK() {
+        return liquidacionPerfilLineaPK;
+    }
+
+    public void setLiquidacionPerfilLineaPK(LiquidacionPerfilLineaPK liquidacionPerfilLineaPK) {
+        this.liquidacionPerfilLineaPK = liquidacionPerfilLineaPK;
+    }
+
+    public Double getPorcentaje() {
+        return porcentaje;
+    }
+
+    public void setPorcentaje(Double porcentaje) {
+        this.porcentaje = porcentaje;
+    }
+
+    public LiquidacionPerfil getLiquidacionPerfil1() {
+        return liquidacionPerfil1;
+    }
+
+    public void setLiquidacionPerfil1(LiquidacionPerfil liquidacionPerfil1) {
+        this.liquidacionPerfil1 = liquidacionPerfil1;
+    }
+
+    public Comercial getComercial1() {
+        return comercial1;
+    }
+
+    public void setComercial1(Comercial comercial1) {
+        this.comercial1 = comercial1;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (liquidacionPerfilLineaPK != null ? liquidacionPerfilLineaPK.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (!(object instanceof LiquidacionPerfilLinea)) {
+            return false;
+        }
+        LiquidacionPerfilLinea other = (LiquidacionPerfilLinea) object;
+        if ((this.liquidacionPerfilLineaPK == null && other.liquidacionPerfilLineaPK != null) || (this.liquidacionPerfilLineaPK != null && !this.liquidacionPerfilLineaPK.equals(other.liquidacionPerfilLineaPK))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "datos.LiquidacionPerfilLinea[ liquidacionPerfilLineaPK=" + liquidacionPerfilLineaPK + " ]";
+    }
+    
+}

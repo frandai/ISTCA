@@ -1,0 +1,395 @@
+<?xml version='1.0' encoding='UTF-8' ?> 
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:c="http://java.sun.com/jsp/jstl/core"
+      xmlns:f="http://java.sun.com/jsf/core">
+    <h:head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title><ui:insert name="title">Default Title</ui:insert></title>
+        <h:outputStylesheet library="css" name="default.css" />
+        <!--Idioma español de elementos de mi amigo Primefaces-->
+        <script type="text/javascript">
+            /* <![CDATA[ */
+
+
+            var lanzaProc;
+
+            function validaTodasPag() {
+                lanzaProc = true;
+                if (!confirm('Atención: este proceso puede tardar unos minutos, si el número de registros es mayor que 500. ¿Seguro que desea lanzar el proceso? (Si lo lanza, por favor sea paciente).')) {
+                    lanzaProc = false;
+                }
+            }
+
+            function confirmaProc() {
+                lanzaProc = true;
+                if (!confirm('¿Seguro que desea lanzar el proceso?')) {
+                    lanzaProc = false;
+                }
+            }
+
+            //Función para desactivar enter.
+            function stopRKey(evt) {
+                var evt = (evt) ? evt : ((event) ? event : null);
+                var node = (evt.target) ? evt.target : ((evt.srcElement) ? evt.srcElement : null);
+                if ((evt.keyCode == 13) && (node.type != "textarea")) {
+                    return false;
+                }
+            }
+
+            document.onkeypress = stopRKey;
+            //Mi amigo primefaces y calendar habla español
+            PrimeFaces.locales['es'] = {
+                closeText: 'Cerrar',
+                prevText: 'Anterior',
+                nextText: 'Siguiente',
+                monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+                monthNamesShort: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+                dayNames: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+                dayNamesShort: ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'],
+                dayNamesMin: ['D', 'L', 'M', 'X', 'J', 'V', 'S'],
+                weekHeader: 'Semana',
+                firstDay: 1,
+                isRTL: false,
+                showMonthAfterYear: false,
+                yearSuffix: '',
+                timeOnlyTitle: 'Sólo hora',
+                timeText: 'Tiempo',
+                hourText: 'Hora',
+                minuteText: 'Minuto',
+                secondText: 'Segundo',
+                currentText: 'Fecha actual',
+                ampm: false,
+                month: 'Mes',
+                week: 'Semana',
+                day: 'Día',
+                allDayText: 'Todo el día'
+            };
+            function isNumber(n) {
+                return (!isNaN(parseFloat(n)) && isFinite(n));
+            }
+            function aniadeNSS(nss, x1) {
+                if (isNumber(nss)) {
+                    var NSS1 = nss;
+                    if (NSS1.length == 9) {
+                        NSS1 = "0" + NSS1;
+                    }
+                    var a = NSS1.substr(0, 2);
+                    var b = NSS1.substr(2, 8);
+                    if ((b * 1) < 10000000) {
+                        var d = (b * 1) + (a * 10000000);
+                    } else {
+                        var d = (a + "" + b);
+                    }
+                    return nss + ((d % 97) > 9 ? (d % 97) : '0' + (d % 97));
+                }
+                alert("No se puede calcular el código de control del NSS escrito.");
+                return x1;
+            }
+            function calendario() {
+                $.datepicker.regional['es'] = {
+                    closeText: 'Cerrar',
+                    prevText: '&#x3c;Ant',
+                    nextText: 'Sig&#x3e;',
+                    currentText: 'Hoy',
+                    monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+                    monthNamesShort: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+                        'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+                    dayNames: ['Domingo', 'Lunes', 'Martes', 'Mi&eacute;rcoles', 'Jueves', 'Viernes', 'S&aacute;bado'],
+                    dayNamesShort: ['Dom', 'Lun', 'Mar', 'Mi&eacute;', 'Juv', 'Vie', 'S&aacute;b'],
+                    dayNamesMin: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'S&aacute;'],
+                    weekHeader: 'Sm',
+                    dateFormat: 'dd/mm/yy',
+                    firstDay: 1,
+                    isRTL: false,
+                    showMonthAfterYear: false,
+                    yearSuffix: ''};
+                $.datepicker.setDefaults($.datepicker.regional['es']);
+                $('.calendarFilter').datepicker({dateFormat: 'dd/mm/yy', onSelect: function()
+                    {
+                        $(this).keyup();
+                        $(this).change();
+                    }});
+
+                //Evitar dobles click
+                $('form').submit(function() {
+                    $(':submit', this).click(function() {
+                        return false;
+                    });
+                });
+            }
+            $(function() {
+                calendario();
+                setInterval('calendario()', 1500);
+            });
+
+            function borraCeros(a) {
+                if (a.val() == '000000000') {
+                    a.val('');
+                }
+            }
+            var tout;
+            function muestraCarga() {
+                tout = window.setTimeout("ocult()", 2000);
+            }
+            function ocult() {
+                $(".cargando_div_nada").show();
+                $(".cargando_div_todo").css("opacity", "0.3");
+                $(".cargando_div_todo_2").css("opacity", "1");
+
+            }
+            function ocultaCarga() {
+                $(".cargando_div_todo").css("opacity", "0.0");
+                $(".cargando_div_todo_2").css("opacity", "0.0");
+                $(".cargando_div_nada").hide();
+                window.clearTimeout(tout);
+
+            }
+            /* ]]> */
+        </script>
+    </h:head>
+
+    <h:body>
+
+        <h:form id="formuario_superior" style="min-width: 1280px;"> 
+            <h1 style="margin: 10px;">
+                <ui:insert name="title">Default Title</ui:insert>
+
+                <div style="float:right; margin: -5px; ">
+
+                    <c:if test="#{not sesionActual.noUsuarios}">
+                        <span class="valor" style="font-size: 12px;font-family: Arial,sans-serif; margin-right: 5px;">Tema elegido:</span>
+                        <p:themeSwitcher value="#{sesionActual.theme}" style="width:165px;vertical-align: middle;" effect="fade" id="statefulSwitcher">  
+                            <f:selectItems value="#{sesionActual.themes}"  />  
+                            <p:ajax listener="#{sesionActual.guardaTema}" />  
+                        </p:themeSwitcher> 
+                        <span style="font-size: 12px;font-family: Arial,sans-serif; margin: 0px 50px;"><span class="valor">Usuario Conectado: </span>#{sesionActual.usuario_conectado.usuario}</span>
+                        <p:commandButton value="Cerrar Sesión" icon="ui-icon-extlink" actionListener="#{sesionActual.salir}" ajax="false"/>
+                    </c:if>
+                </div>
+            </h1>
+            <p:menubar  style="min-width: 1280px;">
+
+                <p:menuitem style="margin-right:30px;" icon="ui-icon-help" onclick="dlgAyuda.show()" update=":formulario_principal:texto_ayuda" title="Ayuda de la Página" actionListener="#{sesionActual.cargaAyuda}"/>
+                <p:menuitem value="Empresas" url="/faces/JSF/vista/empresa/lista.xhtml" 
+                            rendered="#{not sesionActual.noUsuarios and (sesionActual.tienePermiso(1) or sesionActual.tienePermiso(2) or sesionActual.tienePermiso(3) or sesionActual.tienePermiso(23))}"
+                            />
+                <p:menuitem value="Personas" url="/faces/JSF/vista/persona/lista.xhtml"
+                            rendered="#{not sesionActual.noUsuarios and (sesionActual.tienePermiso(4) or sesionActual.tienePermiso(5) or sesionActual.tienePermiso(6) or sesionActual.tienePermiso(24))}"
+                            />
+                <p:menuitem value="Acciones Formativas" url="/faces/JSF/vista/accionFormativa/lista.xhtml"
+                            rendered="#{sesionActual.tienePermiso(7) or sesionActual.tienePermiso(8) or sesionActual.tienePermiso(9)}"
+                            /> 
+                <p:menuitem value="Grupos" url="/faces/JSF/vista/grupo/lista.xhtml"
+                            rendered="#{sesionActual.tienePermiso(10) or sesionActual.tienePermiso(11) or sesionActual.tienePermiso(12)}"
+                            /> 
+                <p:menuitem value="Matrículas" url="/faces/JSF/vista/matricula/lista.xhtml"
+                            rendered="#{sesionActual.tienePermiso(13) or sesionActual.tienePermiso(14) or sesionActual.tienePermiso(15) or sesionActual.tienePermiso(22)}"
+                            />
+                <p:menuitem value="Facturas" url="/faces/JSF/vista/factura/lista.xhtml"
+                            rendered="#{sesionActual.tienePermiso(25)}"
+                            />
+                <p:menuitem value="Usuarios" url="/faces/JSF/vista/usuario/lista.xhtml"
+                            rendered="#{not sesionActual.noUsuarios and (sesionActual.tienePermiso(16) or sesionActual.tienePermiso(17) or sesionActual.tienePermiso(18))}" />
+                <p:menuitem value="Usuario" url="/faces/JSF/vista/usuario/mi_usuario.xhtml"
+                            rendered="#{not sesionActual.noUsuarios and not (sesionActual.tienePermiso(16) or sesionActual.tienePermiso(17) or sesionActual.tienePermiso(18))}" />
+                <p:menuitem value="Calendario" url="/faces/JSF/vista/calendario/calendario.xhtml"
+                            rendered="#{sesionActual.tienePermiso(19)}"
+                            />
+                <p:menuitem value="Configuración del Sistema" url="/faces/JSF/vista/configuracion_sistema.xhtml"
+                            rendered="#{sesionActual.tienePermiso(27)}"
+                            />
+            </p:menubar> 
+        </h:form>
+        <h:form id="formulario_principal"  style="min-width: 1280px;"> 
+            <!-- FUNICONALIDAD PUSH -->
+            <!--p:socket onMessage="handleMessage" channel="/notifications" />
+            <script type="text/javascript">
+                function handleMessage(facesmessage) {
+                    facesmessage.severity = 'info';
+
+                    growl.show([facesmessage]);
+                }
+            </script-->
+
+            <p:growl id="growl" sticky="true" widgetVar="growl"/> 
+            <p:fieldset id="campo_principal" style="margin: 10px;">
+                <p:messages id="messages" /> 
+                <ui:insert name="body">
+
+                    Default Body
+
+                </ui:insert>
+            </p:fieldset>
+            <p:dialog widgetVar="dlgAyuda" style="width: 700px;" header="Ayuda de Página" visible="#{sesionActual.verAyuda()}">
+                <p:editor style="min-width: 700px;" controls=""  value="#{sesionActual.textoAyuda}" id="texto_ayuda" disabled="true" styleClass="editorAyuda noTransp" height="700"/>
+            </p:dialog>
+            <p:confirmDialog id="confirmDialog" message="¿Está seguro?"  
+                             widgetVar="confirmation">  
+                <div style="margin-left: 150px;">
+                    <p:button value="Salir" icon="ui-icon-check" href="lista.xhtml"  styleClass="botonAplicar botonAplicarSalir"/>
+                    <p:commandButton value="Cancelar"  icon="ui-icon-close" oncomplete="confirmation.hide()"  styleClass="botonAplicar"/>  
+                </div>
+            </p:confirmDialog>  
+            <p:confirmDialog id="confirmDialog_eliminar" message="¿Está seguro? ¡Esto eliminará el registro y todos los registros dependientes de este!"  
+                             widgetVar="confirmationEliminar">  
+                <div style="margin-left: 150px;">
+                    <p:commandButton value="Eliminar"  icon="ui-icon-check" oncomplete="confirmationEliminar.hide()"  styleClass="botonAplicar" onclick="$('.boton_borrar_objeto').click();" />  
+                    <p:commandButton value="Cancelar"  icon="ui-icon-close" oncomplete="confirmationEliminar.hide()"  styleClass="botonAplicar"/>  
+                </div>
+            </p:confirmDialog>
+            <p:confirmDialog
+                rendered="#{sesionActual.tienePermiso(20)}"
+                id="confirmDialog_eliminar_evento" message="¿Está seguro? ¡Esto eliminará el registro y todos los registros dependientes de este!"  
+                widgetVar="confirmationEliminarevento">  
+                <div style="margin-left: 150px;">
+                    <p:commandButton value="Eliminar"  icon="ui-icon-check" oncomplete="confirmationEliminarevento.hide()"  styleClass="botonAplicar" actionListener="#{controlCalendario.elimina}" ajax="false"  />  
+                    <p:commandButton value="Cancelar"  icon="ui-icon-close" oncomplete="confirmationEliminarevento.hide()"  styleClass="botonAplicar"/>  
+                </div>
+            </p:confirmDialog>
+        </h:form>
+        <p:ajaxStatus>  
+            <f:facet name="start">  
+                <div style="color:black;padding:5px 30px;position:fixed;right:50px;bottom:50px;background-color: white;border: solid 1px black;-webkit-border-radius: 10px;
+                     -moz-border-radius: 10px;
+                     border-radius: 10px; z-index: 1000;" >
+                    Cargando <img src="#{request.contextPath}/img/l.gif" height="20px;"/>
+                </div>  
+                <div class="cargando_div_todo" style="color:black;left: 0%; top: 0%; background-color:#2d5972;position:fixed;
+                     width: 100%;
+                     height: 100%; vertical-align: middle;text-align: center; opacity: 0.0;
+                     "
+                     onmousemove="muestraCarga()"
+                     > 
+                </div>
+                <div class="cargando_div_todo_2" style="position:fixed;top: 40%; width: 100%; z-index: 1000;height: 400px; opacity: 0.0;" >
+                    <div style="color:black;padding:5px 30px; margin: auto; background-color: white;border: solid 1px black;-webkit-border-radius: 10px;
+                         -moz-border-radius: 10px;
+                         border-radius: 10px;
+                         width: 450px;
+                         text-align: center;
+                         ">
+                        Ha lanzado un proceso de carga lenta. Por favor, espere.<br/>
+                        Si este proceso no finaliza, póngase en contacto con su administrador.
+                    </div>
+                </div> 
+
+            </f:facet>  
+            <f:facet name="complete">  
+                <div class="cargando_div_nada" style="color:black;left: 0%; top: 0%; background-color:gray;position:fixed;
+                     width: 100%;
+                     height: 100%; vertical-align: middle;text-align: center; opacity: 0.0;
+                     "
+
+                     onmousemove="ocultaCarga()"
+                     > </div>
+            </f:facet>  
+        </p:ajaxStatus>  
+
+        <ui:insert name="dialogos">
+        </ui:insert>
+
+        <!--Diálogo de eventos de calendario -->
+        <h:form id="detalles_de_evento">
+            <p:dialog header="Detalles de Evento" widgetVar="dlgDetalleEvento" resizable="true">
+                <c:if test="#{controlCalendario.event.estado eq 'G'}">
+                    <p>Un evento en estado '#{controlCalendario.event.estadoLargo}' no puede editarse.</p>
+                </c:if>
+                <c:if test="#{controlCalendario.event.estado ne 'G'}">
+                    <p:inputText style="width: 0px; height: 0px;position: absolute;left: -10px; top: -10px;"/>
+                    <p>Descripción: <p:outputLabel value="#{controlCalendario.event.descripcion}" rendered="#{controlCalendario.event.tipo.id ne 8}" styleClass="valor"/>
+                        <p:inputText size="30" value="#{controlCalendario.event.descripcion}" rendered="#{controlCalendario.event.tipo.id eq 8}" styleClass="valor"/>
+                    </p>
+                    <c:if test="#{controlCalendario.event.tipo.id ne 8}">
+                        <p>Estado: <p:outputLabel value="
+                                                  #{controlCalendario.event.estadoLargo}
+                                                  " styleClass="valor"/></p>
+                        <p>Tipo: <p:outputLabel value="
+                                                #{controlCalendario.event.tipo.nombre}
+                                                " styleClass="valor"/></p>
+                        <p>Empresa Asociada: <a href="../empresa/empresa.xhtml?empresa=#{controlCalendario.event.matricula.empresaMatriculaCcc.empresaMatricula.empresa.nif}" target="_blank"><p:outputLabel value="
+                                                                                                                                                                                                        #{controlCalendario.event.matricula.empresaMatriculaCcc.empresaMatricula.empresa.razonSocial} (#{controlCalendario.event.matricula.empresaMatriculaCcc.empresaMatricula.empresa.nif}) (#{controlCalendario.event.matricula.empresaMatriculaCcc.empresaMatricula.empresa.email})
+                                                                                                                                                                                                        " styleClass="valor"/></a>
+                            <p:dataList value="#{controlCalendario.event.matricula.empresaMatriculaCcc.empresaMatricula.empresa.empresaTelefonoList}" var="tel" styleClass="listaTabla listaVaz">
+                                - #{tel.empresaTelefonoPK.numero} 
+                            </p:dataList>
+                            <br/>
+                        </p>
+                        <p>Alumno Asociado: <a href="../persona/persona.xhtml?persona=#{controlCalendario.event.matricula.alumno.nif}" target="_blank"><p:outputLabel value="
+                                                                                                                                                                      #{controlCalendario.event.matricula.alumno.persona.nombre} #{controlCalendario.event.matricula.alumno.persona.apellido1} #{controlCalendario.event.matricula.alumno.persona.apellido2} (#{controlCalendario.event.matricula.alumno.persona.nif}) (#{controlCalendario.event.matricula.alumno.persona.email})
+                                                                                                                                                                      " styleClass="valor"/></a></p>
+
+                        <p:dataList value="#{controlCalendario.event.matricula.alumno.persona.personaTelefonoList}" var="telp" styleClass="listaTabla listaVaz">
+                            - #{telp.personaTelefonoPK.numero} 
+                        </p:dataList>
+                        <br/>
+                        <p>Curso Asociado: <a href="../grupo/grupo.xhtml?grupo=#{controlCalendario.event.matricula.grupo.grupoPK.id}&amp;accionformativa=#{controlCalendario.event.matricula.grupo.accionFormativa1.id}" target="_blank"><p:outputLabel value="
+                                                                                                                                                                                                        #{controlCalendario.event.matricula.grupo.accionFormativa1.nombre} (#{controlCalendario.event.matricula.grupo.accionFormativa1.id}-#{controlCalendario.event.matricula.grupo.grupoPK.id})" styleClass="valor"/>&nbsp;&nbsp;&nbsp;
+                                <p:outputLabel style="display: inline-block;" value="( #{Fecha.getFechaDiaMesAnio(controlCalendario.event.matricula.grupo.FInicio)} - #{Fecha.getFechaDiaMesAnio(controlCalendario.event.matricula.grupo.FFin)} )" styleClass="valor"/></a>
+                        </p>
+                        <p>Matrícula: <a href="../matricula/matricula.xhtml?matricula=#{controlCalendario.event.matricula.id}" target="_blank"><p:outputLabel value="#{controlCalendario.event.matricula.id}" styleClass="valor"/> - <p:outputLabel value="#{controlCalendario.event.matricula.precio} €" styleClass="valor"/></a></p>
+
+                        <p>F. Inicio: <p:outputLabel value="
+                                                     #{Fecha.getFechaDiaMesAnio(controlCalendario.event.fechaCreacion)}
+                                                     " styleClass="valor"/>
+                            <span>&nbsp;</span>- F. Realiz.:&nbsp;<p:calendar rendered="#{sesionActual.tienePermiso(26)}" id="calRealizEvento" value="#{controlCalendario.event.fechaRealizacion}" styleClass="valor"
+                                                                              mindate="#{controlCalendario.event.fechaCreacion}"
+                                                                              navigator="true"
+                                                                              readonly="#{controlCalendario.event.estado eq 'R' or controlCalendario.event.estado eq 'RV'}"
+                                                                              >
+                                <f:ajax event="dateSelect" render="calRealizEvento"/> 
+                            </p:calendar>
+                            <p:outputLabel rendered="#{not sesionActual.tienePermiso(26)}" styleClass="valor" value="#{controlCalendario.event.fechaRealizacion eq null? ' --- ':Fecha.getFechaDiaMesAnio(controlCalendario.event.fechaRealizacion)}"/>
+                            <p:outputLabel value="&nbsp;- F. Venc.:" rendered="#{controlCalendario.event.fechaVencimiento ne null}"/><p:calendar rendered="#{sesionActual.tienePermiso(26) and controlCalendario.event.fechaVencimiento ne null}" id="calVencEvento" value="#{controlCalendario.event.fechaVencimiento}" styleClass="valor"
+                                                                                                                                                 mindate="#{controlCalendario.event.fechaCreacion}"
+                                                                                                                                                 navigator="true"
+                                                                                                                                                 >
+                                <f:ajax event="dateSelect" render="calVencEvento"/> 
+                            </p:calendar><p:outputLabel rendered="#{not sesionActual.tienePermiso(26)}" value="
+                                                        #{Fecha.getFechaDiaMesAnio(controlCalendario.event.fechaVencimiento)}
+                                                        " styleClass="valor"/>
+                        </p>
+                    </c:if>
+                    <c:if test="#{controlCalendario.event.tipo.id eq 8}">
+                        <p>Fecha: <p:outputLabel value="
+                                                 #{Fecha.getFechaDiaMesAnio(controlCalendario.event.fechaCreacion)} 
+                                                 " styleClass="valor"/>
+                        </p>
+                    </c:if>
+
+                    <span>Observaciones:</span>
+                    <p:editor id="editObsEvento" value="#{controlCalendario.event.observaciones}" styleClass="noTransp"  disabled="#{not sesionActual.tienePermiso(26)}"/>
+                    <p:commandButton styleClass="botonAplicar" value="Guardar" ajax="false" actionListener="#{controlCalendario.guardarEvento}"
+                                     rendered="#{sesionActual.tienePermiso(26)}"
+                                     />
+                    <p:commandButton styleClass="botonAplicar" value="Nuevo Evento" onclick="dlgDetalleNuevoEvento.show();"
+                                     rendered="#{controlCalendario.event.tipo.id eq 1 and sesionActual.tienePermiso(26)}"
+                                     />
+                </c:if>
+                <p:commandButton id="botonBorrado" style="float: left; " value="Eliminar" 
+                                 rendered="#{sesionActual.tienePermiso(20)}"
+                                 icon="ui-icon-trash" onclick="confirmationEliminarevento.show()" styleClass="botonAplicar bg-red"/>  
+
+            </p:dialog>
+            <p:confirmDialog 
+                rendered="#{sesionActual.tienePermiso(26)}"
+                header="Nuevo Evento" widgetVar="dlgDetalleNuevoEvento" message="Introduzca Fechas del Nuevo Evento:" >
+
+                <p>Creación: <p:calendar id="calNuevoEvento" navigator="true" value="#{controlCalendario.fechaNuevoEvento}" required="true">
+                        <f:ajax event="dateSelect" render="calNuevoEvento"/> 
+                    </p:calendar></p>
+                <p>Vencimiento: <p:calendar id="calNuevoEvento2" navigator="true" value="#{controlCalendario.fechaNuevoEventoVenc}" >
+                        <f:ajax event="dateSelect" render="calNuevoEvento2"/> 
+                    </p:calendar></p>
+                <p:commandButton actionListener="#{controlCalendario.nuevoEvento}" styleClass="botonAplicar" value="Guardar" style="margin: 0px 10px;" ajax="false"/>
+            </p:confirmDialog>
+        </h:form>
+        <!--fin dialogo eventos de calendario -->
+        <p style="text-align: center;font-family: Arial,sans-serif;font-size: 11px;">Resolución Recomendada: 1440 x 900. Navegador Recomendado: <a href="https://www.google.com/intl/es/chrome/browser/?hl=es">Google Chrome</a>.</p>
+    </h:body>
+
+</html>

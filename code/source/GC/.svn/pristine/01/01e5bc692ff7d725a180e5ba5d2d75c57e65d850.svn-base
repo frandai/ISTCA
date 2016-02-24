@@ -1,0 +1,208 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package datos;
+
+import java.io.Serializable;
+import java.util.List;
+import javax.persistence.Basic;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
+
+/**
+ *
+ * @author sergio
+ */
+@Entity
+@Table(schema = "public")
+@XmlRootElement
+@NamedQueries({
+    @NamedQuery(name = "Comercial.findAll", query = "SELECT c FROM Comercial c"),
+    @NamedQuery(name = "Comercial.findById", query = "SELECT c FROM Comercial c WHERE c.id = :id")})
+public class Comercial implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Basic(optional = false)
+    @Column(nullable = false)
+    private Integer id;
+    @OneToMany(mappedBy = "comercial")
+    private List<Persona> personaList;
+    @OneToMany(mappedBy = "comercial")
+    private List<Empresa> empresaList;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "comercial1")
+    private List<LiquidacionPerfilLinea> liquidacionPerfilLineaList;
+    @JoinColumn(name = "COMERCIAL_TIPO", referencedColumnName = "ID", nullable = false)
+    @ManyToOne(optional = false)
+    private ComercialTipo comercialTipo;
+    @OneToMany(mappedBy = "comercialSuperior")
+    private List<Comercial> comercialList;
+    @JoinColumn(name = "COMERCIAL_SUPERIOR", referencedColumnName = "ID")
+    @ManyToOne
+    private Comercial comercialSuperior;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "comercial1")
+    private List<MatriculaComercial> matriculaComercialList;
+
+    public Comercial() {
+    }
+
+    public Comercial(Integer id) {
+        this.id = id;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    @XmlTransient
+    public List<Persona> getPersonaList() {
+        return personaList;
+    }
+
+    public void setPersonaList(List<Persona> personaList) {
+        this.personaList = personaList;
+    }
+
+    @XmlTransient
+    public List<Empresa> getEmpresaList() {
+        return empresaList;
+    }
+
+    public void setEmpresaList(List<Empresa> empresaList) {
+        this.empresaList = empresaList;
+    }
+
+    @XmlTransient
+    public List<LiquidacionPerfilLinea> getLiquidacionPerfilLineaList() {
+        return liquidacionPerfilLineaList;
+    }
+
+    public void setLiquidacionPerfilLineaList(List<LiquidacionPerfilLinea> liquidacionPerfilLineaList) {
+        this.liquidacionPerfilLineaList = liquidacionPerfilLineaList;
+    }
+
+    public ComercialTipo getComercialTipo() {
+        return comercialTipo;
+    }
+
+    public void setComercialTipo(ComercialTipo comercialTipo) {
+        this.comercialTipo = comercialTipo;
+    }
+
+    @XmlTransient
+    public List<Comercial> getComercialList() {
+        return comercialList;
+    }
+
+    public void setComercialList(List<Comercial> comercialList) {
+        this.comercialList = comercialList;
+    }
+
+    public Comercial getComercialSuperior() {
+        return comercialSuperior;
+    }
+
+    public void setComercialSuperior(Comercial comercialSuperior) {
+        this.comercialSuperior = comercialSuperior;
+    }
+
+    @XmlTransient
+    public List<MatriculaComercial> getMatriculaComercialList() {
+        return matriculaComercialList;
+    }
+
+    public void setMatriculaComercialList(List<MatriculaComercial> matriculaComercialList) {
+        this.matriculaComercialList = matriculaComercialList;
+    }
+
+    public String getNombreSuperior() {
+        if (comercialSuperior == null) {
+            return "No Asignado";
+        } else {
+            if (comercialSuperior.getPersonaList() != null && !comercialSuperior.getPersonaList().isEmpty()) {
+                return comercialSuperior.getPersonaList().get(0).getNombre() + " "
+                        + comercialSuperior.getPersonaList().get(0).getApellido1() + " "
+                        + comercialSuperior.getPersonaList().get(0).getApellido2() + " ("
+                        + comercialSuperior.getPersonaList().get(0).getNif() + ")";
+            } else {
+                try {
+                    return comercialSuperior.getEmpresaList().get(0).getRazonSocial() + " ("
+                            + comercialSuperior.getEmpresaList().get(0).getNif() + ")";
+                } catch (Exception e) {
+                    return "No Asignado";
+                }
+            }
+        }
+    }
+
+    public String getNombre() {
+        try {
+            if (this.getPersonaList() != null && !this.getPersonaList().isEmpty()) {
+                return this.getPersonaList().get(0).getNombre() + " "
+                        + this.getPersonaList().get(0).getApellido1() + " "
+                        + this.getPersonaList().get(0).getApellido2() + " ("
+                        + this.getPersonaList().get(0).getNif() + ")";
+            } else {
+                return this.getEmpresaList().get(0).getRazonSocial() + " ("
+                        + this.getEmpresaList().get(0).getNif() + ")";
+            }
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (id != null ? id.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (!(object instanceof Comercial)) {
+            return false;
+        }
+        Comercial other = (Comercial) object;
+        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "datos.Comercial[ id=" + id + " ]";
+    }
+
+    public String getNombreNifComercial() {
+        String com = "";
+        if(this.getPersonaList()!=null && !this.getPersonaList().isEmpty()){
+            com = this.getPersonaList().get(0).getNombreApellidos()+" ("+this.getPersonaList().get(0).getNif()+")";
+        } else if(this.getEmpresaList()!=null && !this.getEmpresaList().isEmpty()){
+            com = this.getEmpresaList().get(0).getRazonSocial()+" ("+this.getEmpresaList().get(0).getNif()+")";
+        } 
+        
+        return com;
+    }
+}

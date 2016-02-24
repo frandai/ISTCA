@@ -1,0 +1,53 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package bean;
+
+import datos.FormaPago;
+import java.util.List;
+import javax.ejb.Stateless;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
+/**
+ *
+ * @author sergio
+ */
+@Stateless
+public class FormaPagoFacade extends AbstractFacade<FormaPago> {
+    @PersistenceContext(unitName = "GC_DAIPU")
+    private EntityManager em;
+
+    @Override
+    protected EntityManager getEntityManager() {
+        return em;
+    }
+
+    public FormaPagoFacade() {
+        super(FormaPago.class);
+    }
+/**
+ * Edición de búsqueda de formas de pago: se devuelve en el listado la forma de pago
+ * con ID = 2 como primera opción (es la opción más usasda).
+ * 
+ * @return 
+ */
+    @Override
+    public List<FormaPago> findAll() {
+        List<FormaPago> f = super.findAll();
+        int n = 0;
+        for (int i = 0; i < f.size(); i++) {
+            if(f.get(i).getId() == 2){
+                n = i;
+            }
+        }
+        f.add(f.get(0));
+        f.set(0, f.get(n));
+        f.remove(n);
+        return f;
+    }
+    
+    
+    
+}

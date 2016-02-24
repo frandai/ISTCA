@@ -1,0 +1,261 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package bean;
+
+import datos.Persona_;
+import datosVista.Empresavista_;
+import datosVista.Matriculavista_;
+import datosVista.Personavista_;
+import datosVistaFacade.EmpresavistaFacade;
+import datosVistaFacade.PersonavistaFacade;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import javax.faces.application.FacesMessage;
+import javax.persistence.EntityManager;
+import javax.persistence.Query;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import org.primefaces.model.SortOrder;
+import vista.UtilidadesVista;
+
+/**
+ *
+ *
+ */
+public abstract class AbstractFacade<T> {
+
+    private Class<T> entityClass;
+    protected boolean sortOrderUsed = false;
+
+    public AbstractFacade(Class<T> entityClass) {
+        this.entityClass = entityClass;
+    }
+
+    protected abstract EntityManager getEntityManager();
+
+    public T create(T entity) {
+        getEntityManager().persist(entity);
+        return getEntityManager().merge(entity);
+    }
+
+    public T edit(T entity) {
+        return getEntityManager().merge(entity);
+    }
+
+    public void remove(T entity) {
+        getEntityManager().remove(getEntityManager().merge(entity));
+    }
+
+    public T find(Object id) {
+        return getEntityManager().find(entityClass, id);
+    }
+
+    public List<T> findAll() {
+        javax.persistence.criteria.CriteriaQuery cq = getEntityManager().getCriteriaBuilder().createQuery();
+        cq.select(cq.from(entityClass));
+        return getEntityManager().createQuery(cq).getResultList();
+    }
+
+    public List<T> findListNamedQuery(String consulta, String parametro, Object valor) {
+        Query query;
+        query = getEntityManager().createNamedQuery(consulta, entityClass);
+        if (parametro != null) {
+            query.setParameter(parametro, valor);
+        }
+        return query.getResultList();
+    }
+
+    public T findNamedQuery(String consulta, String parametro, Object valor) throws javax.persistence.NoResultException {
+        Query query;
+        query = getEntityManager().createNamedQuery(consulta, entityClass);
+        if (parametro != null) {
+            query.setParameter(parametro, valor);
+        }
+
+        try {
+            return (T) query.getSingleResult();
+        } catch (javax.persistence.NoResultException e) {
+        } catch (javax.ejb.EJBException e) {
+        }
+        return null;
+    }
+
+    public List<T> findRange(int[] range) {
+        javax.persistence.criteria.CriteriaQuery cq = getEntityManager().getCriteriaBuilder().createQuery();
+        cq.select(cq.from(entityClass));
+        javax.persistence.Query q = getEntityManager().createQuery(cq);
+        q.setMaxResults(range[1] - range[0]);
+        q.setFirstResult(range[0]);
+        return q.getResultList();
+    }
+
+    public int count() {
+        return count(null, "");
+    }
+
+    public int count(Map<String, String> filters) {
+        return count(filters, "");
+    }
+
+    /**
+     * Se encarga de contar de forma "Lazy" los datos de las tablas.
+     *
+     * @param filters
+     * @param nif_ec_filtrar
+     * @return
+     */
+    public int count(Map<String, String> filters, String nif_ec_filtrar) {
+
+        Set<Map.Entry<String, String>> error_filter = new HashSet<Map.Entry<String, String>>();
+        javax.persistence.criteria.CriteriaQuery cq = getEntityManager().getCriteriaBuilder().createQuery();
+        Root rt = cq.from(entityClass);
+        cq.select(getEntityManager().getCriteriaBuilder().count(rt));
+        javax.persistence.criteria.CriteriaBuilder builder =
+                getEntityManager().getCriteriaBuilder();
+
+        if (filters != null) {
+            Set<Map.Entry<String, String>> entries = filters.entrySet();
+            ArrayList<Predicate> predicatesList =
+                    new ArrayList<Predicate>(entries.size());
+            for (Map.Entry<String, String> filter : entries) {
+                try {
+                    Predicate p = null;
+                    if (filter.getValue().contains("~~")) {
+                        for (String value : filter.getValue().split("~~")) {
+                            if (p == null) {
+                                p = builder.like(builder.upper(builder.concat(rt.get(filter.getKey()), "")),
+                                        "%" + value + "%");
+                            } else {
+                                p = builder.or(p, builder.like(builder.upper(builder.concat(rt.get(filter.getKey()), "")),
+                                        "%" + value + "%"));
+                            }
+                        }
+                    } else {
+                        p = builder.like(builder.upper(builder.concat(rt.get(filter.getKey()), "")),
+                                "%" + filter.getValue().toUpperCase() + "%");
+                    }
+                    if (p != null) {
+                        predicatesList.add(p);
+                    }
+                } catch (Exception e) {
+                    error_filter.add(filter);
+                }
+            }
+            if (!nif_ec_filtrar.equals("") && this.getClass().equals(EmpresavistaFacade.class)) {
+                predicatesList.add(builder.like(builder.upper(builder.concat(rt.get(Empresavista_.ecSuperior), "")),
+                        "%~~(" + nif_ec_filtrar + ")~~%"));
+            }
+            if (!nif_ec_filtrar.equals("") && this.getClass().equals(PersonavistaFacade.class)) {
+                predicatesList.add(builder.like(builder.upper(builder.concat(rt.get(Personavista_.ecSuperior), "")),
+                        "%~~(" + nif_ec_filtrar + ")~~%"));
+            }
+            cq.where(predicatesList.<Predicate>toArray(
+                    new Predicate[predicatesList.size()]));
+        }
+        javax.persistence.Query q = getEntityManager().createQuery(cq);
+        for (Map.Entry<String, String> entry : error_filter) {
+            System.out.println("ERROR: " + entry.getKey() + " - " + entry.getValue());
+        }
+
+        return ((Long) q.getSingleResult()).intValue();
+    }
+
+    public List<T> load(int first, int count, String sortField,
+            SortOrder sortOrder, Map<String, String> filters) {
+        return load(first, count, sortField, sortOrder, filters, "");
+    }
+
+    /**
+     * Se encarga de cargar de forma "Lazy" los datos de las tablas.
+     *
+     * @param first
+     * @param count
+     * @param sortField
+     * @param sortOrder
+     * @param filters
+     * @param nif_ec_filtrar
+     * @return
+     *
+     */
+    public List<T> load(int first, int count, String sortField,
+            SortOrder sortOrder, Map<String, String> filters, String nif_ec_filtrar) {
+        Set<Map.Entry<String, String>> error_filter = new HashSet<Map.Entry<String, String>>();
+        javax.persistence.criteria.CriteriaBuilder builder =
+                getEntityManager().getCriteriaBuilder();
+        javax.persistence.criteria.CriteriaQuery cq = builder.createQuery();
+        Root root = cq.from(entityClass);
+        cq.select(root);
+        if (sortField != null) {
+            try {
+                if (sortOrder == SortOrder.ASCENDING) {
+                    cq.orderBy(builder.asc(root.get(sortField)));
+                } else if (sortOrder == SortOrder.DESCENDING) {
+                    cq.orderBy(builder.desc(root.get(sortField)));
+                }
+                sortOrderUsed = true;
+            } catch (Exception e) {
+            }
+        }
+        if (filters != null) {
+            Set<Map.Entry<String, String>> entries = filters.entrySet();
+            ArrayList<Predicate> predicatesList =
+                    new ArrayList<Predicate>(entries.size());
+            for (Map.Entry<String, String> filter : entries) {
+                try {
+                    Predicate p = null;
+                    if (filter.getValue().contains("~~")) {
+                        for (String value : filter.getValue().split("~~")) {
+                            if (p == null) {
+                                p = builder.like(builder.upper(builder.concat(root.get(filter.getKey()), "")),
+                                        "%" + value + "%");
+                            } else {
+                                p = builder.or(p, builder.like(builder.upper(builder.concat(root.get(filter.getKey()), "")),
+                                        "%" + value + "%"));
+                            }
+                        }
+                    } else if (filter.getValue().contains("<>")) {
+                        String[] val = filter.getValue().split("<>");
+                        if (val.length == 2) {
+                            try {
+                                double v1 = Double.parseDouble(val[0]);
+                                double v2 = Double.parseDouble(val[1]);
+                                p = builder.between(root.get(filter.getKey()), v1, v2);
+                            } catch (Exception e) {
+                            }
+                        }
+                    } else {
+                        p = builder.like(builder.upper(builder.concat(root.get(filter.getKey()), "")),
+                                "%" + filter.getValue().toUpperCase() + "%");
+                    }
+                    if (p != null) {
+                        predicatesList.add(p);
+                    }
+                } catch (Exception e) {
+                    error_filter.add(filter);
+                }
+            }
+            if (!nif_ec_filtrar.equals("") && this.getClass().equals(EmpresavistaFacade.class)) {
+                predicatesList.add(builder.like(builder.upper(builder.concat(root.get(Empresavista_.ecSuperior), "")),
+                        "%~~(" + nif_ec_filtrar + ")~~%"));
+            }
+            if (!nif_ec_filtrar.equals("") && this.getClass().equals(PersonavistaFacade.class)) {
+                predicatesList.add(builder.like(builder.upper(builder.concat(root.get(Personavista_.ecSuperior), "")),
+                        "%~~(" + nif_ec_filtrar + ")~~%"));
+            }
+            cq.where(predicatesList.<Predicate>toArray(
+                    new Predicate[predicatesList.size()]));
+        }
+        javax.persistence.Query q = getEntityManager().createQuery(cq);
+        q.setFirstResult(first);
+        q.setMaxResults(count);
+        for (Map.Entry<String, String> entry : error_filter) {
+            System.out.println("ERROR: " + entry.getKey() + " - " + entry.getValue());
+        }
+        return q.getResultList();
+    }
+}

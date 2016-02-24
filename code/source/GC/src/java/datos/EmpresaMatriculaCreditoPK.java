@@ -1,0 +1,87 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package datos;
+
+import java.io.Serializable;
+import java.util.Date;
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.Embeddable;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
+/**
+ *
+ *
+ */
+@Embeddable
+public class EmpresaMatriculaCreditoPK implements Serializable {
+    @Basic(optional = false)
+    @NotNull
+    @Size(min = 1, max = 2147483647)
+    @Column(name = "nif")
+    private String nif;
+    @Basic(optional = false)
+    @NotNull
+    @Column(name = "fecha")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date fecha;
+
+    public EmpresaMatriculaCreditoPK() {
+    }
+
+    public EmpresaMatriculaCreditoPK(String nif, Date fecha) {
+        this.nif = nif;
+        this.fecha = fecha;
+    }
+
+    public String getNif() {
+        return nif;
+    }
+
+    public void setNif(String nif) {
+        this.nif = nif;
+    }
+
+    public Date getFecha() {
+        return fecha;
+    }
+
+    public void setFecha(Date fecha) {
+        this.fecha = fecha;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (nif != null ? nif.hashCode() : 0);
+        hash += (fecha != null ? fecha.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (!(object instanceof EmpresaMatriculaCreditoPK)) {
+            return false;
+        }
+        EmpresaMatriculaCreditoPK other = (EmpresaMatriculaCreditoPK) object;
+        if ((this.nif == null && other.nif != null) || (this.nif != null && !this.nif.equals(other.nif))) {
+            return false;
+        }
+        if ((this.fecha == null && other.fecha != null) || (this.fecha != null && !this.fecha.equals(other.fecha))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "datos.EmpresaMatriculaCreditoPK[ nif=" + nif + ", fecha=" + fecha + " ]";
+    }
+    
+}

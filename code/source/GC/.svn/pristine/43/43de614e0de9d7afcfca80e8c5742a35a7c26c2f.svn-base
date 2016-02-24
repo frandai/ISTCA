@@ -1,0 +1,558 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package migracion;
+
+import java.io.IOException;
+import java.sql.*;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.sql.DataSource;
+
+public class bd {
+    
+    /*
+     * VARIABLES DE USUARIOS:
+     * 
+     * AQUÍ SE DEFINIRÁ EL USUARIO QUE USA EL PROYECTO. DEFINIRÁ LAS RUTAS DE SU PROYECTO.
+     * 
+     * USUARIOS DISPONIBLES:
+     * 
+     * RAFA
+     * JAVI
+     * FRAN
+     * PRUEBAS
+     * REAL
+     * PREPRODUCCION
+     *
+     *
+     * 
+    */
+    public static String usuario = "REAL";
+    //VARIABLE PARA ESPECIFICAR SI DESARROLLAMOS DESDE WINDOWS
+    public static boolean desde_windows = false;
+    //Variable para concretar sobre que base de datos estamos trabajando, está se asignará al 'catalog' de las entidades
+    public static final String nombre_base_datos = "grupoiwi";
+    /**
+     * Bases de datos:
+     * 
+     * grupoiwi
+     * preproduccion
+     */
+
+    /**
+     * Crea una instancia de la clase bd
+     */
+    String cadena_conexion;
+    String base_datos;
+    Connection conn = null;
+    Connection conn_statement = null; //conexion utilizada para los métodos que devuelven un statement
+
+    public static String urlConexion = "jdbc:postgresql://grupoiwi.com:5432/grupoiwi";
+    public static String urlConexionBD = "jdbc:postgresql://grupoiwi.com" +":5432/";
+    public static String usuarioConexion = "postgres";
+    public static String passConexion = "War9de9far";
+
+    public bd() {
+        /*        try{
+        Class.forName("org.postgresql.Driver");
+        String url = "jdbc:postgresql://grupoiwi001:5432/grupoiwi";
+        //String url = "jdbc:postgresql://82.223.162.11:5432/grupoiwi";
+        Properties props = new Properties();
+        props.setProperty("user", "postgres");
+        // pass servidor local
+        props.setProperty("password", "grupoiwi");
+        //props.setProperty("password","ac3lah7c");
+        // pass servidor
+        //props.setProperty("password", "postgres");
+        conn = DriverManager.getConnection(url, props);
+        }
+        catch(ClassNotFoundException ex){
+        conn = null;
+        }
+        catch(SQLException e){
+        conn = null;
+        }
+         */
+    }
+
+    /**
+     * Devuelve el resultado (Resultset) de una consulta pasada como String
+     * @param consulta String
+     * @return ResultSet
+     * @throws ClassNotFoundException
+     * @throws SQLException
+     */
+    public ResultSet consulta(String consulta) throws ClassNotFoundException,
+            SQLException {
+
+        //Mostramos la consulta por consola
+
+//        HttpServletRequest req = e.getPage().getRequest();
+//    HttpSession sess = req.getSession();
+//    ServletContext ctx = sess.getServletContext();
+
+        System.out.println("@@@ [CONSULTA] BD[" + this.urlConexion + "] @@@: " + consulta);
+        System.out.flush();
+        Class.forName("org.postgresql.Driver");
+
+        Properties props = new Properties();
+        props.setProperty("user", usuarioConexion);
+        props.setProperty("password", passConexion);
+        Connection conn2 = DriverManager.getConnection(urlConexion, usuarioConexion, passConexion);
+
+
+        Statement st = conn2.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+
+
+        ResultSet rs = st.executeQuery(consulta);
+        if (rs.wasNull()) {
+            conn2.close();
+            return null;
+        } else {
+            conn2.close();
+            return rs;
+        }
+
+    }
+
+    public ResultSet consulta(String consulta, boolean utf8) throws ClassNotFoundException,
+            SQLException {
+        //Mostramos la consulta por consola
+        System.out.println("---" + consulta);
+        System.out.flush();
+        Class.forName("org.postgresql.Driver");
+
+        Properties props = new Properties();
+        props.setProperty("user", usuarioConexion);
+        props.setProperty("password", passConexion);
+        Connection conn2 = DriverManager.getConnection(urlConexion, props);
+
+
+        Statement st = conn2.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+
+
+        ResultSet rs = st.executeQuery(consulta);
+        if (rs.wasNull()) {
+            conn2.close();
+            return null;
+        } else {
+            conn2.close();
+            return rs;
+        }
+
+    }
+
+    public void abrir_conexion(String bd) {
+        try {
+            Class.forName("org.postgresql.Driver");
+            Properties props = new Properties();
+            props.setProperty("user", usuarioConexion);
+            props.setProperty("password", passConexion);
+            conn_statement = DriverManager.getConnection(urlConexionBD + bd, props);
+        } catch (ClassNotFoundException ex) {
+            conn_statement = null;
+        } catch (SQLException e) {
+            conn_statement = null;
+        }
+    }
+
+    public Statement crear_statement() {
+        Statement st = null;
+        try {
+            st = conn_statement.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+        } catch (SQLException ex) {
+            return null;
+        }
+
+        return st;
+    }
+
+    public ResultSet consulta(String consulta, String bd) throws ClassNotFoundException,
+            SQLException {
+        //Mostramos la consulta por consola
+        System.out.println("---" + consulta);
+        System.out.flush();
+        Class.forName("org.postgresql.Driver");
+
+        Properties props = new Properties();
+        props.setProperty("user", usuarioConexion);
+        props.setProperty("password", passConexion);
+        Connection conn2 = DriverManager.getConnection(urlConexionBD + bd, props);
+
+        Statement st = conn2.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+
+
+        ResultSet rs = st.executeQuery(consulta);
+        if (rs.wasNull()) {
+            conn2.close();
+            return null;
+        } else {
+            conn2.close();
+            return rs;
+        }
+
+    }
+
+    public void insertar(String consulta, String user) throws
+            ClassNotFoundException,
+            SQLException {
+
+        Class.forName("org.postgresql.Driver");
+        Properties props = new Properties();
+        props.setProperty("user", usuarioConexion);
+        props.setProperty("password", passConexion);
+        conn = DriverManager.getConnection(urlConexion, props);
+
+
+        String error = "", fichero = "", tipo = "ACTUALIZACION";
+
+        if (consulta.toLowerCase().contains("insert")) {
+            tipo = "INSERCION";
+        } else if (consulta.toLowerCase().contains("delete")) {
+            tipo = "BORRADO";
+        }
+        //Mostramos la consulta por consola
+        System.out.println("@@@ [" + tipo + "] [Usuario: " + user + "]  BD[" + this.urlConexion + "]  @@@: " + consulta);
+        Statement st = conn.createStatement();
+
+        try {
+            st.executeUpdate(consulta);
+
+
+            st.close();
+            conn.close();
+        } catch (Exception ex) {
+            error = ex.toString();
+            fichero = "LogError.txt";
+            if (error.contains("duplicate key")) {
+                fichero = "LogDuplicateKey.txt";
+            }
+
+            System.out.println("Error insertando en base de datos (bd.java): " + ex.toString());
+            ex.printStackTrace(System.out);
+
+            st.close();
+            conn.close();
+        }
+    }
+
+    public boolean insertar_comprobando(java.lang.String consulta, java.lang.String user) throws
+            ClassNotFoundException,
+            SQLException {
+
+        Class.forName("org.postgresql.Driver");
+        Properties props = new Properties();
+        props.setProperty("user", usuarioConexion);
+        props.setProperty("password", passConexion);
+        conn = DriverManager.getConnection(urlConexion, props);
+
+        String error = "", fichero = "", tipo = "ACTUALIZACION";
+
+        if (consulta.toLowerCase().contains("insert")) {
+            tipo = "INSERCION";
+        } else if (consulta.toLowerCase().contains("delete")) {
+            tipo = "BORRADO";
+        }
+
+        //Mostramos la consulta por consola
+        System.out.println("@@@ [" + tipo + "] [Usuario: " + user + "] @@@: " + consulta);
+        Statement st = conn.createStatement();
+
+        try {
+            st.executeUpdate(consulta);
+
+            fichero = "Log.txt";
+          
+            st.close();
+            conn.close();
+
+            return true;
+        } catch (Exception ex) {
+            
+
+            return false;
+        }
+    }
+
+    public void borrado_multiple(String consulta[], String user) throws
+            ClassNotFoundException,
+            SQLException {
+
+        Class.forName("org.postgresql.Driver");
+        Properties props = new Properties();
+        props.setProperty("user", usuarioConexion);
+        props.setProperty("password", passConexion);
+        conn = DriverManager.getConnection(urlConexion, props);
+
+
+        /**
+         * Esto no ser para que está aquí
+
+        bd datos = new bd();
+         */
+        Statement st = null;
+        st = conn.createStatement();
+        for (int i = 0; i < consulta.length; i++) {
+            st.executeUpdate(consulta[i]);
+            System.out.println(consulta[i]);
+
+
+        }
+        st.close();
+        conn.close();
+    }
+
+    public ResultSet consulta_access(String ruta, String cons) throws ClassNotFoundException,
+            SQLException {
+        // Declaramos la conexión, el controlador (driver) y la url donde
+        // se encuentra nuestra base de datos
+        Connection conexion = null;
+        String url = "jdbc:odbc:";
+
+        String driver = "edutedis";
+
+        String usr = "";
+        String pswd = "";
+
+
+        System.out.println(cons);
+        System.out.flush();
+        // Query de consulta de la tabla Agenda ordenada por Id
+        String consultaSQL = cons;
+
+        try {
+            //Instancía de una nueva clase para el puente
+            //sun.jdbc.odbc.JdbcOdbcDriver
+            //El puente sirve entre la aplicación y el driver.
+            Class.forName("sun.jdbc.odbc.JdbcOdbcDriver");
+        } catch (ClassNotFoundException e) {
+            System.out.println("Error al crear el puente JDBC-ODBC");
+        }
+
+        url = url + driver;
+        System.out.println("Estableciendo conexión con " + url);
+        try {
+            //Obtiene la conexión
+            conexion = DriverManager.getConnection(url, usr, pswd);
+            Statement consulta = conexion.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+
+            // Creamos una tabla de resultados con los datos de la consulta
+            ResultSet registros = consulta.executeQuery(consultaSQL);
+
+            //conexion.close();
+            return registros;
+        } catch (SQLException sqle) {
+            sqle.printStackTrace(System.out);
+            System.out.println("No se pudo establecer la conexión");
+            conexion.close();
+            return null;
+        }
+    }
+
+    public String[][] consulta_access_matriz(String ruta, String cons) throws ClassNotFoundException,
+            SQLException {
+        // Declaramos la conexión, el controlador (driver) y la url donde
+        // se encuentra nuestra base de datos
+        Connection conexion = null;
+        String url = "jdbc:odbc:";
+
+        String driver = "edutedis";
+
+        String usr = "";
+        String pswd = "";
+
+
+        System.out.println(cons);
+        System.out.flush();
+        // Query de consulta de la tabla Agenda ordenada por Id
+        String consultaSQL = cons;
+
+        try {
+            //Instancía de una nueva clase para el puente
+            //sun.jdbc.odbc.JdbcOdbcDriver
+            //El puente sirve entre la aplicación y el driver.
+            Class.forName("sun.jdbc.odbc.JdbcOdbcDriver");
+        } catch (ClassNotFoundException e) {
+            System.out.println("Error al crear el puente JDBC-ODBC");
+        }
+
+        url = url + driver;
+        System.out.println("Estableciendo conexión con " + url);
+        try {
+            //Obtiene la conexión
+            conexion = DriverManager.getConnection(url, usr, pswd);
+            Statement consulta = conexion.createStatement();
+
+            // Creamos una tabla de resultados con los datos de la consulta
+            ResultSet rs = consulta.executeQuery(consultaSQL);
+
+            // Se obtienen el número de filas totales
+            /*rs.last();
+            int filas = rs.getRow() + 1; // Los datos más la cabecera
+            rs.beforeFirst();*/
+            int filas = 0;
+            while (rs.next()) {
+                filas++;
+            }
+
+            rs = consulta.executeQuery(consultaSQL);
+
+            // Se obtienen el número de columnas
+            ResultSetMetaData md = rs.getMetaData();
+            int columnas = md.getColumnCount();
+
+            // Se rellena la matriz con los datos del RS
+            filas++;
+            String[][] matrix = new String[filas][columnas];
+
+            for (int i = 0; i < filas; i++) {
+                for (int j = 0; j < columnas; j++) {
+                    if (i == 0) {
+                        matrix[i][j] = md.getColumnName(j + 1);
+                    } else {
+                        matrix[i][j] = rs.getString(j + 1);
+                    }
+                }
+                rs.next();
+            }
+            conexion.close();
+            return matrix;
+        } catch (SQLException sqle) {
+            sqle.printStackTrace(System.out);
+            System.out.println("No se pudo establecer la conexión");
+            conexion.close();
+            return null;
+        }
+    }
+
+    public ResultSet consulta_sqlserver(String cons) throws ClassNotFoundException,
+            SQLException {
+
+        /** Metodo que se conecta a la base de datos de la aplicacion   */
+        final String urlBaseDatos = "jdbc:microsoft:sqlserver://LWWB344.SERVIDORESDNS.NET;databaseName=grupoiwi";
+        //final String urlBaseDatos = "jdbc:microsoft:sqlserver://GRUPOIWI001;databaseName=grupoiwi";
+        final String usuario = "desarrolloiwi";
+        final String password = "desarrolloiwi";
+        final String nombreDriver = "com.microsoft.jdbc.sqlserver.SQLServerDriver";
+        Connection conexion = null;
+        try {
+            // Carga del driver en memoria.
+            try {
+                Class.forName(nombreDriver);
+
+            } catch (ClassNotFoundException exc) {
+
+                exc.printStackTrace();
+
+            }
+            // A esta altura el driver deberýa estar registrado con el driver manager.
+            try {
+                Driver driver = DriverManager.getDriver(urlBaseDatos);
+            } catch (SQLException exc) {
+
+                exc.printStackTrace();
+
+            }
+            // SQL SERVER 2000 esta ahora registrado con el driver manager
+            // Ahora se intentara conseguir una conexion con la base de datos
+            try {
+                conexion = DriverManager.getConnection(urlBaseDatos, usuario, password);
+                //Mostramos la consulta por consola
+                System.out.println(cons);
+                System.out.flush();
+                Statement st = conexion.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+                ResultSet rs = st.executeQuery(cons);
+                conexion.close();
+                return rs;
+            } catch (SQLException exc) {
+
+                exc.printStackTrace();
+                conexion.close();
+            }
+        } finally {
+            // doSomething();
+        }
+        return null;
+    }
+
+    /**
+     * Cierra la conexión con la base de datos.
+     * @return boolean
+     */
+    public boolean cerrar_conexion() {
+        try {
+            conn.close();
+            return true;
+        } catch (SQLException ex) {
+            return false;
+        }
+    }
+
+    public boolean cerrar_conexion_con_statement() {
+
+        try {
+            conn_statement.close();
+            return true;
+        } catch (SQLException ex) {
+            return false;
+        }
+    }
+    /**************************************************************************
+     ****************** METODOS USADOS EN TUS_DATOS_MINIMO ********************
+     **************************************************************************/
+    // Get DataSource
+    /** Origen de Datos */
+    private static DataSource ds = null;
+    private static Connection connection = null;
+
+    /**
+     * Función para obtener conexion con BD.
+     * @return Conexion con la BD.
+     * @throws SQLException Excepcion si no conecta.
+     */
+    /*public static Connection getConexion() throws SQLException {
+    try {
+    if (ds == null){
+    Context ctx = new InitialContext();
+    ds = (DataSource)ctx.lookup("java:comp/env/jdbc/grupoiwi");
+    }
+    } catch (NamingException e) {
+    throw new SQLException("Can't get data source");
+    }
+    if (ds == null) {
+    throw new SQLException("Can't get data source");
+    }
+    //get database connection
+    if (connection == null) {
+    connection = ds.getConnection();
+    }
+
+    if (connection == null) {
+    throw new SQLException("Can't get database connection");
+    }
+    return connection;
+
+    }*/
+    public static Connection getConexion() {
+        try {
+            Class.forName("org.postgresql.Driver");
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(bd.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        Properties props = new Properties();
+        props.setProperty("user", usuarioConexion);
+        props.setProperty("password", passConexion);
+        Connection conn2 = null;
+        try {
+            conn2 = DriverManager.getConnection(urlConexion, usuarioConexion, passConexion);
+        } catch (SQLException ex) {
+            Logger.getLogger(bd.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return conn2;
+    }
+}

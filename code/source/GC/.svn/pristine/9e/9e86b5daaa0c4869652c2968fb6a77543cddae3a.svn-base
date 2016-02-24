@@ -1,0 +1,1169 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package migracion;
+
+import bean.AccionFormativaFacade;
+import bean.AccionFormativaGrupoFacade;
+import bean.AccionFormativaModalidadFacade;
+import bean.ActividadFacade;
+import bean.ComercialFacade;
+import bean.ComercialTipoFacade;
+import bean.DiaSemanaFacade;
+import bean.EmpresaEstadoFacade;
+import bean.EmpresaFacade;
+import bean.FacturaEstadoFacade;
+import bean.FacturaFacade;
+import bean.GrupoFacade;
+import bean.MatriculaFacade;
+import bean.PersonaFacade;
+import bean.ProveedorFacade;
+import bean.TipoViaFacade;
+import datos.AccionFormativa;
+import datos.Actividad;
+import datos.Alumno;
+import datos.AlumnoAreaFuncional;
+import datos.AlumnoCategoriaProfesional;
+import datos.AlumnoGrupoCotizacion;
+import datos.AlumnoNivelEstudio;
+import datos.CColectivo;
+import datos.Comercial;
+import datos.CpLocalidad;
+import datos.DiaSemana;
+import datos.Direccion;
+import datos.Empresa;
+import datos.EmpresaAgrupacion;
+import datos.EmpresaMatricula;
+import datos.EmpresaMatriculaAnio;
+import datos.EmpresaMatriculaAnioPK;
+import datos.EmpresaMatriculaCcc;
+import datos.EmpresaMatriculaCccPK;
+import datos.EmpresaTelefono;
+import datos.EmpresaTelefonoPK;
+import datos.Evento;
+import datos.Factura;
+import datos.FacturaHistoricoEstado;
+import datos.FacturaHistoricoEstadoPK;
+import datos.FormaPago;
+import datos.Grupo;
+import datos.GrupoPK;
+import datos.Horario;
+import datos.Iva;
+import datos.Matricula;
+import datos.MatriculaComercial;
+import datos.MatriculaComercialPK;
+import datos.MatriculaFactura;
+import datos.MatriculaFacturaPK;
+import datos.Persona;
+import datos.PersonaTelefono;
+import datos.PersonaTelefonoPK;
+import datos.Proveedor;
+import datos.TelefonoTipo;
+import datos.Tutor;
+import datos.TutoriaHorario;
+import datos.TutoriaHorarioPK;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import util.Fecha;
+import util.Validacion;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import javax.faces.event.ActionEvent;
+import util.VariablesSistema;
+import util.descripcionEventos;
+import vista.SesionActual;
+
+/**
+ *
+ * @author fran
+ */
+public class inicio {
+
+    public static boolean migra = true;
+    static bd_F5 f5 = new bd_F5();
+    static bd grupoiwi = new bd();
+    static bd_proyecto proyecto = new bd_proyecto();
+
+    public static void empresa(
+            ActividadFacade activfacade,
+            EmpresaFacade empFacade,
+            List<CpLocalidad> localidades,
+            TipoViaFacade tvFac,
+            EmpresaEstadoFacade eefac,
+            PersonaFacade persFac,
+            List<CColectivo> ccols,
+            List<EmpresaAgrupacion> agrup) throws ClassNotFoundException, SQLException {
+
+        ResultSet empresas_f5 = f5.consulta("select *,split_part(split_part(split_part(upper(REPLACE(split_part(actividad, ' ', 1),',','')), '-', 1), '/', 1), '@', 1) as activi from f_empresas order by 1 desc");
+        while (empresas_f5.next()) {
+            String doc = (empresas_f5.getString("num_documento") == null ? empresas_f5.getString("num_documento_representante") : empresas_f5.getString("num_documento"));
+            if (doc != null && empFacade.find(doc.toUpperCase()) == null) {
+                doc = doc.toUpperCase();
+                System.out.println("Cliente: [" + empresas_f5.getString("cod_empresa") + "] " + empresas_f5.getString("razon_social"));
+                Empresa emp = new Empresa(doc);
+                emp.setRazonSocial(empresas_f5.getString("razon_social"));
+                ResultSet activ = proyecto.consulta("select * from actividad where nombre in (select coalesce( (select nombre from actividad where actividad.nombre like '%'||substr( '" + Validacion.removeChars(empresas_f5.getString("activi")) + "', 0, 10)||'%'  limit 1), coalesce( (select nombre from actividad where actividad.nombre like '%'||substr( '" + Validacion.removeChars(empresas_f5.getString("activi")) + "', 0, 9)||'%'  limit 1), coalesce( (select nombre from actividad where actividad.nombre like '%'||substr( '" + Validacion.removeChars(empresas_f5.getString("activi")) + "', 0, 8)||'%'  limit 1), coalesce( (select nombre from actividad where actividad.nombre like '%'||substr( '" + Validacion.removeChars(empresas_f5.getString("activi")) + "', 0, 7)||'%'  limit 1), coalesce( (select nombre from actividad where actividad.nombre like '%'||substr( '" + Validacion.removeChars(empresas_f5.getString("activi")) + "', 0, 6)||'%'  limit 1), coalesce( (select nombre from actividad where actividad.nombre like '%'||substr( '" + Validacion.removeChars(empresas_f5.getString("activi")) + "', 0, 5)||'%'  limit 1), coalesce( (select nombre from actividad where actividad.nombre like substr( '" + Validacion.removeChars(empresas_f5.getString("activi")) + "', 0, 4)||'%'  limit 1), coalesce( (select nombre from actividad where actividad.nombre like substr( '" + Validacion.removeChars(empresas_f5.getString("activi")) + "',0, 3)||'%'  limit 1), coalesce( (select nombre from actividad where actividad.nombre like substr( '" + Validacion.removeChars(empresas_f5.getString("activi")) + "', 0, 2)||'%'  limit 1), (select nombre from actividad where actividad.nombre like substr( '" + Validacion.removeChars(empresas_f5.getString("activi")) + "', 0, 1)||'%'  limit 1) ) ) ) ) ) ) ) ) ) as x   from actividad) LIMIT 1");
+                Actividad ac;
+                if (activ.next()) {
+                    ac = activfacade.find(activ.getInt("id"));
+                } else {
+                    ac = activfacade.find(154);
+                }
+                emp.setActividad(ac);
+                if (empresas_f5.getString("cp") != null || empresas_f5.getString("cp_fiscal") != null) {
+                    Direccion d = new Direccion();
+                    String cps, localidads;
+                    d.setTipoVia(tvFac.find(29));
+                    if (empresas_f5.getString("cp_fiscal") == null || empresas_f5.getString("direccion_fiscal") == null) {
+                        d.setVia(empresas_f5.getString("domicilio") == null ? " " : empresas_f5.getString("domicilio"));
+                        d.setNumero(empresas_f5.getString("numero") == null ? " " : empresas_f5.getString("numero"));
+                        cps = empresas_f5.getString("cp");
+                        localidads = empresas_f5.getString("localidad");
+                    } else {
+                        d.setVia(empresas_f5.getString("direccion_fiscal") == null ? " " : empresas_f5.getString("direccion_fiscal"));
+                        d.setNumero(" ");
+                        cps = empresas_f5.getString("cp_fiscal");
+                        localidads = empresas_f5.getString("localidad_fiscal");
+                    }
+                    CpLocalidad cp = null;
+                    cps = cps.trim().replace(" ", "");
+                    try {
+                        for (CpLocalidad cpLocalidad : localidades) {
+                            CpLocalidad cpPrim = null;
+                            if (cpLocalidad.getCpLocalidadPK().getCp() == Integer.parseInt(cps)) {
+                                if (cpPrim == null) {
+                                    cpPrim = cpLocalidad;
+                                }
+                                if (localidads != null && Validacion.removeChars(cpLocalidad.getLocalidad1().getNombre().toUpperCase()).contains(Validacion.removeChars(localidads.toUpperCase()))) {
+                                    cp = cpLocalidad;
+                                }
+                            }
+                            if (cp == null) {
+                                cp = cpPrim;
+                            }
+                        }
+                    } catch (Exception e) {
+                    }
+                    if (cp == null) {
+                        for (CpLocalidad cpLocalidad : localidades) {
+                            if (cpLocalidad.getCpLocalidadPK().getCp() == 0) {
+                                cp = cpLocalidad;
+                                break;
+                            }
+                        }
+                    }
+                    d.setCpLocalidad(cp);
+                    emp.setDireccion(d);
+                }
+                emp.setEmail(empresas_f5.getString("email"));
+                emp.setPagWeb(empresas_f5.getString("web"));
+                emp.setEstado(eefac.find(1));
+                Persona repLeg = null;
+                if (empresas_f5.getString("num_documento_representante") == null) {
+                    repLeg = persFac.find("-100");
+                } else {
+                    repLeg = persFac.find(empresas_f5.getString("num_documento_representante"));
+                    if (repLeg == null) {
+                        repLeg = new Persona(empresas_f5.getString("num_documento_representante"));
+                        String nombre, ape1, ape2;
+                        nombre = (empresas_f5.getString("nombre_representante") == null ? empresas_f5.getString("razon_social") : empresas_f5.getString("nombre_representante"));
+                        String[] n = nombre.split(" ");
+                        if (n.length == 2) {
+                            repLeg.setApellido1(n[n.length - 1]);
+                            nombre = "";
+                            for (int i = 0; i < n.length - 1; i++) {
+                                nombre += " " + n[i];
+                            }
+                            nombre = nombre.trim();
+                        } else if (n.length > 2) {
+                            repLeg.setApellido2(n[n.length - 1]);
+                            repLeg.setApellido1(n[n.length - 2]);
+                            nombre = "";
+                            for (int i = 0; i < n.length - 2; i++) {
+                                nombre += " " + n[i];
+                            }
+                            nombre = nombre.trim();
+                        }
+                        repLeg.setNombre(nombre);
+                    }
+                }
+                List<EmpresaTelefono> tlf = new ArrayList<EmpresaTelefono>();
+                if (empresas_f5.getString("telefono") != null) {
+                    boolean existe = false;
+                    for (EmpresaTelefono empresaTelefono : tlf) {
+                        if (empresaTelefono.getEmpresaTelefonoPK().getNumero().equals(empresas_f5.getString("telefono"))) {
+                            existe = true;
+                            break;
+                        }
+                    }
+                    if (!existe) {
+                        EmpresaTelefono tlfn = new EmpresaTelefono(new EmpresaTelefonoPK(empresas_f5.getString("telefono"), doc));
+                        tlfn.setTipo(new TelefonoTipo(3));
+                        tlf.add(tlfn);
+                    }
+                }
+                if (empresas_f5.getString("movil") != null) {
+                    boolean existe = false;
+                    for (EmpresaTelefono empresaTelefono : tlf) {
+                        if (empresaTelefono.getEmpresaTelefonoPK().getNumero().equals(empresas_f5.getString("telefono"))) {
+                            existe = true;
+                            break;
+                        }
+                    }
+                    if (!existe) {
+                        EmpresaTelefono tlfn = new EmpresaTelefono(new EmpresaTelefonoPK(empresas_f5.getString("movil"), doc));
+                        tlfn.setTipo(new TelefonoTipo(1));
+                        tlf.add(tlfn);
+                    }
+                }
+                if (empresas_f5.getString("fax") != null) {
+                    boolean existe = false;
+                    for (EmpresaTelefono empresaTelefono : tlf) {
+                        if (empresaTelefono.getEmpresaTelefonoPK().getNumero().equals(empresas_f5.getString("telefono"))) {
+                            existe = true;
+                            break;
+                        }
+                    }
+                    if (!existe) {
+                        EmpresaTelefono tlfn = new EmpresaTelefono(new EmpresaTelefonoPK(empresas_f5.getString("fax"), doc));
+                        tlfn.setTipo(new TelefonoTipo(2));
+                        tlf.add(tlfn);
+                    }
+                }
+                emp.setEmpresaTelefonoList(tlf);
+                emp.setRepresLegal(repLeg);
+
+                EmpresaMatricula emat = new EmpresaMatricula(doc, false, empresas_f5.getString("n_ss_empresa") == null ? "0" : empresas_f5.getString("n_ss_empresa"));
+                for (EmpresaAgrupacion ag : agrup) {
+                    if (empresas_f5.getString("expediente") != null && empresas_f5.getString("expediente").equals("1") && ag.getId() == 1) {
+                        emat.setAgrupacion(ag);
+                        break;
+                    }
+                    if ((empresas_f5.getString("expediente") == null || !empresas_f5.getString("expediente").equals("1")) && ag.getId() == 0) {
+                        emat.setAgrupacion(ag);
+                        break;
+                    }
+                }
+                emat.setCColectivo(null);
+                ArrayList<EmpresaMatriculaAnio> ema = new ArrayList<EmpresaMatriculaAnio>();
+                ema.add(new EmpresaMatriculaAnio(new EmpresaMatriculaAnioPK(doc, Fecha.getAnio(new Date())), empresas_f5.getInt("num_trabajadores"), false, false));
+                emat.setEmpresaMatriculaAnioList(ema);
+                ArrayList<EmpresaMatriculaCcc> emc = new ArrayList<EmpresaMatriculaCcc>();
+                emc.add(new EmpresaMatriculaCcc(new EmpresaMatriculaCccPK(doc, "")));
+                ResultSet ccc = f5.consulta("select distinct num_cuenta from f_cuentas_corrientes where num_cuenta is not null and cod_empresa_f = " + empresas_f5.getInt("cod_empresa"));
+                while (ccc.next()) {
+                    emc.add(new EmpresaMatriculaCcc(new EmpresaMatriculaCccPK(doc, ccc.getString("num_cuenta"))));
+                }
+                emat.setEmpresaMatriculaCccList(emc);
+
+                String ccol = empresas_f5.getString("convenio");
+                CColectivo cc = null;
+                if (ccol != null) {
+                    while (cc == null && ccol.length() > 0) {
+                        for (CColectivo convenio : ccols) {
+                            if (Validacion.removeChars(convenio.getNombre().toUpperCase()).contains(Validacion.removeChars(ccol.toUpperCase()))) {
+                                cc = convenio;
+                                break;
+                            }
+                        }
+                        ccol = ccol.substring(0, ccol.length() - 1);
+                    }
+                }
+                if (cc == null) {
+                    for (CColectivo convenio : ccols) {
+                        if (convenio.getId() == 0) {
+                            cc = convenio;
+                            break;
+                        }
+                    }
+                }
+
+                emat.setCColectivo(cc);
+
+                emp.setEmpresaMatricula(emat);
+                empFacade.create(emp);
+            }
+        }
+
+    }
+
+    public static void alumno(
+            PersonaFacade persFacade,
+            List<AlumnoGrupoCotizacion> grupoCot,
+            List<AlumnoAreaFuncional> arFunc,
+            List<AlumnoCategoriaProfesional> catProf,
+            List<AlumnoNivelEstudio> nivEst, EmpresaFacade empFacade) throws ClassNotFoundException, SQLException {
+        /*
+         ResultSet alumnos_f5 = f5.consulta("select *, upper(num_documento) as num_doc from f_alumnos where num_documento is not null and nombre is not null");
+         while (alumnos_f5.next()) {
+         System.out.println("Alumno: [" + alumnos_f5.getString("cod_alumno") + "] " + alumnos_f5.getString("num_doc"));
+         Persona pers = persFacade.find(alumnos_f5.getString("num_doc"));
+         boolean creado = true;
+         if (pers == null) {
+         creado = false;
+         pers = new Persona(alumnos_f5.getString("num_doc"));
+         }
+
+         pers.setNombre(alumnos_f5.getString("nombre"));
+         pers.setApellido1(alumnos_f5.getString("apellido1"));
+         pers.setApellido2(alumnos_f5.getString("apellido2"));
+         pers.setNss(alumnos_f5.getString("num_ss"));
+         pers.setFechaNacimiento(alumnos_f5.getDate("fecha_nacimiento"));
+         if (alumnos_f5.getString("telefono") != null) {
+         ArrayList<PersonaTelefono> persTlf = new ArrayList<PersonaTelefono>();
+         PersonaTelefono tlfn = new PersonaTelefono(new PersonaTelefonoPK(alumnos_f5.getString("telefono"), alumnos_f5.getString("num_doc")));
+         tlfn.setTipo(new TelefonoTipo(3));
+         persTlf.add(tlfn);
+         pers.setPersonaTelefonoList(persTlf);
+         }
+         pers.setMasculino(alumnos_f5.getString("sexo") == null ? false : (alumnos_f5.getString("sexo").equals("M") ? true : false));
+         pers.setEmail(alumnos_f5.getString("email"));
+
+         Alumno al = new Alumno(alumnos_f5.getString("num_doc"));
+         al.setAutonomo(alumnos_f5.getString("autonomo") == null ? false : (alumnos_f5.getString("autonomo").equals("2") ? true : false));
+         al.setDiscapacitado(alumnos_f5.getString("discapacidad") == null ? false : (alumnos_f5.getString("discapacidad").equals("N") ? false : true));
+         al.setVictimaTerrorismo(false);
+         al.setVictimaVG(false);
+
+         boolean afinv = false;
+         boolean cpinv = false;
+         boolean gcinv = false;
+         boolean neinv = false;
+
+         int af = 5, cp = 4, gc = 8, ne = 3;
+
+         switch (alumnos_f5.getInt("cod_area_funcional")) {
+         case 1:
+         af = 2;
+         break;
+         case 2:
+         af = 3;
+         break;
+         case 3:
+         af = 5;
+         break;
+         case 4:
+         af = 4;
+         break;
+         case 5:
+         af = 3;
+         break;
+         case 6:
+         af = 5;
+         afinv = true;
+         break;
+         }
+         switch (alumnos_f5.getInt("cod_categoria")) {
+         case 6:
+         cp = 4;
+         cpinv = true;
+         break;
+         default:
+         cp = alumnos_f5.getInt("cod_categoria");
+         break;
+         }
+         switch (alumnos_f5.getInt("cod_grupo_ss")) {
+         case 12:
+         gc = 8;
+         gcinv = true;
+         break;
+         default:
+         gc = alumnos_f5.getInt("cod_grupo_ss");
+         break;
+         }
+         switch (alumnos_f5.getInt("cod_nivel_estudios")) {
+         case 1:
+         ne = 1;
+         break;
+         case 2:
+         ne = 2;
+         break;
+         case 3:
+         ne = 3;
+         break;
+         case 4:
+         ne = 3;
+         break;
+         case 5:
+         ne = 4;
+         break;
+         case 6:
+         ne = 5;
+         break;
+         case 7:
+         ne = 3;
+         neinv = true;
+         break;
+         case 8:
+         ne = 3;
+         neinv = true;
+         break;
+         }
+         for (AlumnoNivelEstudio alumnoNivelEstudio : nivEst) {
+         if (alumnoNivelEstudio.getId() == ne) {
+         al.setNivelEstudios(alumnoNivelEstudio);
+         }
+         }
+         for (AlumnoCategoriaProfesional cpro : catProf) {
+         if (cpro.getId() == cp) {
+         al.setCategoriaProfesional(cpro);
+         }
+         }
+         for (AlumnoGrupoCotizacion gruc : grupoCot) {
+         if (gruc.getId() == gc) {
+         al.setGrupoCotizacion(gruc);
+         }
+         }
+         for (AlumnoAreaFuncional afu : arFunc) {
+         if (afu.getId() == af) {
+         al.setAreaFuncional(afu);
+         }
+         }
+
+         pers.setAlumno(al);
+         if (!creado) {
+         pers = persFacade.create(pers);
+         } else {
+         List<PersonaTelefono> pt = pers.getPersonaTelefonoList();
+         pers.setPersonaTelefonoList(null);
+         pers = persFacade.edit(pers);
+         pers.setPersonaTelefonoList(pt);
+         pers = persFacade.edit(pers);
+         }
+
+         if (afinv) {
+         pers.getAlumno().setArea_funcional_inventada(afinv);
+         }
+         if (cpinv) {
+         pers.getAlumno().setCategoria_profesional_inventada(cpinv);
+         }
+         if (gcinv) {
+         pers.getAlumno().setGrupo_cotizacion_inventado(gcinv);
+         }
+         if (neinv) {
+         pers.getAlumno().setNivel_estidios_inventado(neinv);
+         }
+
+
+         persFacade.edit(pers);
+         }
+         */
+        ResultSet alumnos_empresas_f5 = f5.consulta("select upper(f_empresas.num_documento) as a1, upper(f_alumnos.num_documento) as a2 from f_alumnos join f_empresas_alumnos on(f_alumnos.cod_alumno = f_empresas_alumnos.cod_alumno_f) join f_empresas on (f_empresas_alumnos.cod_empresa_f = f_empresas.cod_empresa) ");
+        while (alumnos_empresas_f5.next()) {
+            try {
+                proyecto.insertar("insert into empresa_persona values('" + alumnos_empresas_f5.getString("a1") + "','" + alumnos_empresas_f5.getString("a2") + "')", "mig");
+            } catch (Exception e) {
+            }
+        }
+    }
+
+    public static void tutores(ProveedorFacade provFac, EmpresaFacade empFac, PersonaFacade persFac) throws ClassNotFoundException, SQLException {
+        ResultSet rs = f5.consulta("select case when f_tutores.num_documento is null then cod_tutor::varchar else upper(f_tutores.num_documento) end as num_documento, coalesce(nombre, '-') as nombre, apellido1, apellido2, upper(f_empresas.num_documento) as proveedor from f_tutores join f_empresas on (f_tutores.cod_empresa = f_empresas.cod_empresa)");
+        while (rs.next()) {
+            System.out.println("Tutor: " + rs.getString("num_documento"));
+            Proveedor pr = provFac.find(rs.getString("proveedor"));
+            while (pr == null) {
+                Empresa emp = empFac.find(rs.getString("proveedor"));
+                if (emp == null) {
+                    emp = new Empresa(rs.getString("proveedor"));
+                }
+                emp.setProveedor(new Proveedor(rs.getString("proveedor")));
+                empFac.edit(emp);
+                pr = provFac.find(rs.getString("proveedor"));
+            }
+            Persona tut = persFac.find(rs.getString("num_documento"));
+            boolean create = false;
+            if (tut == null) {
+                tut = new Persona(rs.getString("num_documento"));
+                create = true;
+            }
+            tut.setNombre(rs.getString("nombre"));
+            tut.setApellido1(rs.getString("apellido1"));
+            tut.setApellido2(rs.getString("apellido2"));
+            tut.setTutor(new Tutor(rs.getString("num_documento")));
+            if (tut.getEmpresaList() == null) {
+                tut.setEmpresaList(new ArrayList<Empresa>());
+            }
+            tut.getEmpresaList().add(pr.getEmpresa());
+            tut.getTutor().setEmpresa(pr.getEmpresa());
+            if (create) {
+                tut = persFac.create(tut);
+            } else {
+                tut = persFac.edit(tut);
+            }
+            if (pr.getEmpresa().getPersonaList() == null) {
+                pr.getEmpresa().setPersonaList(new ArrayList<Persona>());
+            }
+            pr.getEmpresa().getPersonaList().add(tut);
+            empFac.edit(pr.getEmpresa());
+        }
+    }
+
+    public static void af(AccionFormativaFacade affacade, AccionFormativaGrupoFacade afgf, AccionFormativaModalidadFacade afmfac, PersonaFacade persFac) {
+        try {
+            Class.forName("com.mysql.jdbc.Driver");
+            Connection conexion = DriverManager.getConnection("jdbc:mysql://62.81.159.208/f5consulto_web?useUnicode=yes&characterEncoding=UTF-8", "f5consulto_read", "Read?f5consul");
+            Statement st = conexion.createStatement();
+            ResultSet rs = st.executeQuery("SELECT * FROM accionesformativas");
+            while (rs.next()) {
+                System.out.println("AF: " + rs.getInt("id"));
+                if (affacade.find(rs.getInt("id")) == null) {
+                    AccionFormativa af = new AccionFormativa(rs.getInt("id"));
+                    af.setNombre(rs.getString("nombre"));
+                    af.setHoras(rs.getShort("horas"));
+                    af.setTipoAccionEspecifica(false);
+                    af.setNivelFormacionSuperior(false);
+                    af.setObjetivos(rs.getString("objetivos").equals("") ? "-" : rs.getString("objetivos"));
+                    af.setContenidos(rs.getString("contenidos").equals("") ? "-" : rs.getString("contenidos"));
+
+                    String afx = "";
+                    ResultSet cod_af = f5.consulta("select cod_accion_formativa from f_acciones_formativas where referencia =  '" + rs.getString("referencia") + "' or referencia = '" + rs.getString("id") + "' ");
+
+                    while (cod_af.next()) {
+                        try {
+                            afx += "//" + cod_af.getString("cod_accion_formativa");
+                        } catch (Exception e) {
+                        }
+                    }
+
+                    af.setObservaciones(afx + "//" + rs.getString("referencia") + "//" + rs.getString("observaciones"));
+                    af.setAccionFormativaGrupo(afgf.find(rs.getString("accion_formativa_grupo")));
+                    af.setModalidad(afmfac.find(rs.getShort("modalidad")));
+                    af.setPrecio(rs.getDouble("precio"));
+                    List<Proveedor> prov = new ArrayList<Proveedor>();
+                    prov.add(VariablesSistema.proveedor_principal);
+                    af.setProveedor(prov);
+                    af = affacade.create(af);
+
+                    //Generamos el grupo "Pendiente de Gestionar"
+                    Grupo grupoPendienteGes = new Grupo(new GrupoPK(af.getId(), 0));
+                    grupoPendienteGes.setFInicio(Fecha.getFechaStringDiaMesAnio("1/1/1900"));
+                    grupoPendienteGes.setFFin(Fecha.getFechaStringDiaMesAnio("1/1/1900"));
+                    grupoPendienteGes.setNombre("Pendiente de Gestionar");
+                    grupoPendienteGes.setObservaciones("Grupo generado para agrupar matrículas Pendientes de Gestionar.");
+                    grupoPendienteGes.setProveedor1(af.getProveedorList().get(0));
+                    PersonaTelefono pt = null;
+                    for (Tutor t : VariablesSistema.proveedor_principal.getEmpresa().getTutorList()) {
+                        if (t.getPersona().getPersonaTelefonoList() != null && !t.getPersona().getPersonaTelefonoList().isEmpty()) {
+                            pt = t.getPersona().getPersonaTelefonoList().get(0);
+                            break;
+                        }
+                    }
+                    grupoPendienteGes.setPersonaTelefono(pt);
+                    if (grupoPendienteGes.getPersonaTelefono() != null) {
+                        if (af.getGrupoList() == null) {
+                            af.setGrupoList(new ArrayList<Grupo>());
+                        }
+
+
+                        //Añadimos los tutores asociados a la AF al grupo:
+                        ResultSet tutores = f5.consulta("select DISTINCT referencia,  upper(case when f_tutores.num_documento is null then cod_tutor::varchar else upper(f_tutores.num_documento) end) as num_documento  from f_grupos_tutores join f_tutores using (cod_tutor) join f_acciones_formativas using(cod_accion_formativa) where referencia = '" + rs.getString("referencia") + "'");
+                        if (!tutores.next()) {
+                            tutores = f5.consulta("select DISTINCT referencia,  upper(case when f_tutores.num_documento is null then cod_tutor::varchar else upper(f_tutores.num_documento) end) as num_documento  from f_grupos_tutores join f_tutores using (cod_tutor) join f_acciones_formativas using(cod_accion_formativa) where referencia = '" + rs.getString("id") + "'");
+                        } else {
+                            tutores.beforeFirst();
+                        }
+                        while (tutores.next()) {
+                            Persona p = persFac.find(tutores.getString("num_documento"));
+                            if (p != null) {
+                                if (grupoPendienteGes.getTutorList() == null) {
+                                    grupoPendienteGes.setTutorList(new ArrayList<Tutor>());
+                                }
+                                grupoPendienteGes.getTutorList().add(p.getTutor());
+                                if (af.getProveedorList() == null) {
+                                    af.setProveedorList(new ArrayList<Proveedor>());
+                                }
+                                boolean aniade = true;
+                                for (Proveedor proveedor : af.getProveedorList()) {
+                                    if (proveedor.getNif().equals(p.getTutor().getEmpresa().getProveedor().getNif())) {
+                                        aniade = false;
+                                        break;
+                                    }
+                                }
+                                if (aniade) {
+                                    af.getProveedorList().add(p.getTutor().getEmpresa().getProveedor());
+                                }
+                            }
+                        }
+
+                        af.getGrupoList().add(grupoPendienteGes);
+                    }
+
+
+                    affacade.edit(af);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void grupos(GrupoFacade gFac, AccionFormativaFacade affac, PersonaFacade persFac, DiaSemanaFacade dias, List<Horario> horas) throws ClassNotFoundException, SQLException {
+        ResultSet grupos = f5.consulta("select * from f_grupos join f_acciones_formativas using(cod_accion_formativa)"
+                + ""
+                + " where f_grupos.cod_accion_formativa in (12355,12365,12356,12354,12360,12358,12371,12367,12352,12361,12364,12362,12348,12366,12370,12369,12359) "
+                + "");
+        while (grupos.next()) {
+            if (grupos.getDate("fecha_inicio") != null) {
+                Short grupo = new Short("-99" + "" + ((grupos.getShort("cod_grupo") > 9) ? grupos.getShort("cod_grupo") : ("0" + grupos.getShort("cod_grupo"))));
+
+                System.out.println("grupo " + grupos.getString("cod_accion_formativa") + "-" + grupo);
+
+                int codaf = 0;
+
+                switch (Integer.parseInt(grupos.getString("cod_accion_formativa"))) {
+                    case 12355:
+                        codaf = 12;
+                        break;
+                    case 12365:
+                        codaf = 13;
+                        break;
+                    case 12356:
+                        codaf = 336;
+                        break;
+                    case 12354:
+                        codaf = 103;
+                        break;
+                    case 12360:
+                        codaf = 360;
+                        break;
+                    case 12358:
+                        codaf = 378;
+                        break;
+                    case 12371:
+                        codaf = 503;
+                        break;
+                    case 12367:
+                        codaf = 499;
+                        break;
+                    case 12352:
+                        codaf = 370;
+                        break;
+                    case 12361:
+                        codaf = 500;
+                        break;
+                    case 12364:
+                        codaf = 501;
+                        break;
+                    case 12362:
+                        codaf = 121;
+                        break;
+                    case 12348:
+                        codaf = 152;
+                        break;
+                    case 12366:
+                        codaf = 151;
+                        break;
+                    case 12370:
+                        codaf = 148;
+                        break;
+                    case 12369:
+                        codaf = 147;
+                        break;
+                    case 12359:
+                        codaf = 466;
+                        break;
+                }
+
+                AccionFormativa af = affac.find(codaf);
+                
+                if (af != null) {
+                    System.out.println("af: " + af.getId());
+                    if (gFac.find(new GrupoPK(af.getId(), grupo)) == null) {
+                        Grupo g = new Grupo(new GrupoPK(af.getId(), grupo));
+                        g.setNombre(af.getId() + "-" + grupo);
+
+                        g.setAccionFormativa1(af);
+
+                        ResultSet tutores = f5.consulta("select DISTINCT upper(case when f_tutores.num_documento is null then cod_tutor::varchar else upper(f_tutores.num_documento) end) as num_documento  from f_grupos_tutores join f_tutores using (cod_tutor) join f_acciones_formativas using(cod_accion_formativa) where f_grupos_tutores.cod_accion_formativa = '" + grupos.getString("cod_accion_formativa") + "' and cod_grupo = '" + grupos.getShort("cod_grupo") + "'");
+                        while (tutores.next()) {
+                            Persona p = persFac.find(tutores.getString("num_documento"));
+                            if (p != null && af.getProveedorList().contains(p.getTutor().getEmpresa().getProveedor())) {
+                                System.out.println("METE TUTOR: " + p.getNif());
+                                if (g.getTutorList() == null) {
+                                    g.setTutorList(new ArrayList<Tutor>());
+                                }
+                                g.getTutorList().add(p.getTutor());
+                            }
+                        }
+                        g.setProveedor1((g.getTutorList() == null || g.getTutorList().isEmpty()) ? VariablesSistema.proveedor_principal : g.getTutorList().get(0).getEmpresa().getProveedor());
+
+                        g.setFInicio(grupos.getDate("fecha_inicio"));
+                        if (grupos.getDate("fecha_fin") == null) {
+                            g.setFFin(grupos.getDate("fecha_inicio"));
+                        } else {
+                            g.setFFin(grupos.getDate("fecha_fin"));
+                        }
+                        g.setObservaciones("ANDROID//" + grupos.getString("cod_accion_formativa") + "-" + grupos.getShort("cod_grupo") + "//" + ((grupos.getString("observaciones") == null || grupos.getString("observaciones").equals("null")) ? "" : grupos.getString("observaciones")) + "\n - Horario: " + grupos.getString("horario") + ".");
+                        PersonaTelefono pt = null;
+                        for (Tutor t : VariablesSistema.proveedor_principal.getEmpresa().getTutorList()) {
+                            if (t.getPersona().getPersonaTelefonoList() != null && !t.getPersona().getPersonaTelefonoList().isEmpty()) {
+                                pt = t.getPersona().getPersonaTelefonoList().get(0);
+                                break;
+                            }
+                        }
+                        g.setPersonaTelefono(pt);
+
+                        g.setMediosP(true);
+                        g.setMediosEO(true);
+                        if (g.getProveedor1().getNif().equals(VariablesSistema.NIF_empresa_principal)) {
+                            g.setMediosC(false);
+                        } else {
+                            g.setMediosC(true);
+                        }/*
+                        if (g.getTutorList() != null) {
+                            for (Tutor t : g.getTutorList()) {
+                                ResultSet rs_tutoria = grupoiwi.consulta("select DISTINCT f5consultoria.franja_horaria.* from f5consultoria.curso_tutoria join f5consultoria.tutoria using(cod_tutoria) join f5consultoria.tutor using(cod_tutor) join f5consultoria.tutoria_franja_horaria on(f5consultoria.tutoria.cod_tutoria = f5consultoria.tutoria_franja_horaria.cod_tutoria) join f5consultoria.franja_horaria using (cod_franja_horaria) "
+                                        + "where (cod_accion_formativa = '" + grupos.getString("cod_accion_formativa") + "' or cod_accion_formativa = '" + af.getId() + "') and cod_grupo = '" + grupos.getShort("cod_grupo") + "' and dni = '" + t.getNif() + "'");
+                                while (rs_tutoria.next()) {
+                                    for (Horario h : horas) {
+                                        if (rs_tutoria.getString("descripcion_franja_horaria").startsWith(Fecha.getFechaHoraMinuto(h.getHoraInicio()))) {
+                                            if (g.getTutoriaHorarioList() == null) {
+                                                g.setTutoriaHorarioList(new ArrayList<TutoriaHorario>());
+                                            }
+                                            g.getTutoriaHorarioList().add(new TutoriaHorario(new TutoriaHorarioPK(af.getId(), grupo, t.getNif(), h.getId())));
+                                        }
+                                    }
+                                }
+                            }
+                        }*/
+
+                        gFac.create(g);/*
+                        ArrayList<DiaSemana> di = new ArrayList<DiaSemana>();
+                        for (DiaSemana d : dias.findAll()) {
+                            if (!d.getId().equals("S") && !d.getId().equals("D")) {
+                                di.add(d);
+                                d.getGrupoList().add(g);
+                                dias.edit(d);
+                            }
+                        }*/
+                    }
+
+                }
+            }
+        }
+    }
+
+    public static void matriculas_facturas_eventos(MatriculaFacade mFacade,
+            PersonaFacade pFacade, EmpresaFacade eFacade,
+            AccionFormativaFacade affacade,
+            GrupoFacade gFacade, List<FormaPago> formasPgago, SesionActual ses,
+            ComercialFacade comFac, ComercialTipoFacade comTFac, FacturaFacade facFacade, FacturaEstadoFacade feFacade) throws ClassNotFoundException, SQLException {
+        ResultSet ventas = f5.consulta("select * from (select *,  (select f_bonificaciones.importe_bonificable from f_bonificaciones where f_bonificaciones.cod_empresa = f_ventas.cod_empresa and f_bonificaciones.cod_accion_formativa = f_ventas.cod_accion_formativa and f_bonificaciones.cod_grupo = id_grupo  order by anio desc limit 1) as importe_bonificar from(\n"
+                + "select *,\n"
+                + "(select upper(num_documento) from f_alumnos where cod_alumno = f_ventas.cod_alumno) as num_doc_alumno, \n"
+                + "(select upper(case when num_documento is null then num_documento_representante else num_documento end) from f_empresas where cod_empresa = f_ventas.cod_empresa) as num_doc_empresa,\n"
+                + "(select upper(case when num_documento is null then num_documento_representante else num_documento end) from f_empresas where cod_empresa = f_ventas.cod_asesoria) as num_doc_asesoria,\n"
+                + "(select cod_grupo from f_alumnos_grupos where cod_alumno = f_ventas.cod_alumno and cod_accion_formativa = f_ventas.cod_accion_formativa order by cod_grupo desc limit 1) as id_grupo,\n"
+                + "(select num_cuenta from f_cuentas_corrientes where f_cuentas_corrientes.cod_cuenta = f_ventas.cod_numero_cuenta and f_ventas.cod_empresa = f_cuentas_corrientes.cod_empresa_f) as ccc\n"
+                + "\n"
+                + " from f_ventas left join (select telefono as nif_comercial, nombre as nombre_comercial, apellido1 as ap1_comercial, apellido2 as ap2_comercial, cod_comercial from f_comerciales) as comerciales on (comerciales.cod_comercial = f_ventas.cod_comercial) ) f_ventas) f_ventas join f_alumnos_grupos on (f_ventas.id_grupo = f_alumnos_grupos.cod_grupo and f_alumnos_grupos.cod_alumno = f_ventas.cod_alumno and f_alumnos_grupos.cod_accion_formativa = f_ventas.cod_accion_formativa)"
+                + ""
+                + " where f_ventas.cod_accion_formativa in (12355,12365,12356,12354,12360,12358,12371,12367,12352,12361,12364,12362,12348,12366,12370,12369,12359) "
+                + ""
+                + " order by fecha_entrega desc");
+
+        while (ventas.next()) {
+
+            if (mFacade.findMatriculaObserv(ventas.getString("cod_venta")) == null) {
+                System.out.println("Venta: " + ventas.getString("cod_venta"));
+                Matricula mat = new Matricula();
+                mat.setObservaciones("//" + ventas.getString("cod_venta") + "//" + (ventas.getString("observaciones") == null ? "" : ventas.getString("observaciones")));
+                if (ventas.getString("num_doc_alumno") == null || ventas.getString("num_doc_empresa") == null) {
+                    continue;
+                }
+                Persona al = pFacade.find(ventas.getString("num_doc_alumno"));
+                if (al == null) {
+                    continue;
+                }
+                mat.setAlumno(al.getAlumno());
+                Empresa emp = eFacade.find(ventas.getString("num_doc_empresa"));
+                if (emp == null || emp.getEmpresaMatricula() == null) {
+                    continue;
+                }
+                EmpresaMatriculaCcc emc = null;
+                for (EmpresaMatriculaCcc e : emp.getEmpresaMatricula().getEmpresaMatriculaCccList()) {
+                    if (e.getEmpresaMatriculaCccPK().getCcc().equals(ventas.getString("ccc"))) {
+                        emc = e;
+                        break;
+                    }
+                    if (emc == null && e.getEmpresaMatriculaCccPK().getCcc().equals("")) {
+                        emc = e;
+                    }
+                }
+                mat.setEmpresaMatriculaCcc(emc);
+                mat.setFechaCreacion(ventas.getDate("fecha_entrega"));
+                mat.setFechaEntrega(ventas.getDate("fecha_entrega"));
+                mat.setFechaFirma(ventas.getDate("fecha_entrega"));
+
+                mat.setPrecio(ventas.getDouble("precio"));
+
+                Grupo g = gFacade.findCodGrupoObserv(ventas.getString("cod_accion_formativa") + "-" + ventas.getString("cod_grupo"));
+                /*if (g == null) {
+                 AccionFormativa af = affacade.findCodAFObserv(ventas.getString("cod_accion_formativa"));
+                 if(af == null) { continue; }
+                 for (Grupo gr : af.getGrupoList()) {
+                 if (gr.getGrupoPK().getId() == 0) {
+                 g = gr;
+                 }
+                 }
+                 }
+                 if (g == null) {
+                 continue;
+                 }*/
+                mat.setGrupo(g);
+                if (ventas.getDouble("importe_bonificar") > 0) {
+                    mat.setImporteBonificar(ventas.getDouble("importe_bonificar"));
+                }
+
+                boolean pago_posterior = false, gestion_moroso = false, evalua_gestion_moroso = true;
+                Date fecha_gestion_moroso = null;
+                Factura fac_gest_moroso = null;
+                Date real_pp = null;
+                int formaPago = 1;
+                switch (ventas.getInt("modo_pago")) {
+                    case 1:
+                        formaPago = 2;
+                        break;
+                    case 2:
+                        formaPago = 1;
+                        break;
+                    case 3:
+                        formaPago = 4;
+                        break;
+                    case 4:
+                        formaPago = 3;
+                        break;
+                    case 5:
+                        formaPago = 3;
+                        pago_posterior = true;
+                        break;
+                    case 6:
+                        formaPago = 1;
+                        pago_posterior = true;
+                        break;
+                    case 7:
+                        formaPago = 2;
+                        pago_posterior = true;
+                        break;
+                }
+
+                for (FormaPago fpago : formasPgago) {
+                    if (fpago.getId() == formaPago) {
+                        mat.setFormaPago(fpago);
+                        break;
+                    }
+                }
+                if (mat.getEventoList() == null) {
+                    mat.setEventoList(new ArrayList<Evento>());
+                }
+
+                if (mat.getGrupo() == null) {
+                }
+
+                mat = mFacade.create(mat);
+
+                //Crear EC
+                String comercial = ventas.getString("nif_comercial") == null ? "COM" + ventas.getString("cod_comercial") : ventas.getString("nif_comercial");
+                Persona comerc = pFacade.find(comercial);
+                if (comercial != null && ventas.getString("nombre_comercial") != null) {
+                    if (comerc == null) {
+                        comerc = new Persona(comercial);
+                        comerc.setNombre(ventas.getString("nombre_comercial"));
+                        comerc.setApellido1(ventas.getString("ap1_comercial"));
+                        comerc.setApellido2(ventas.getString("ap2_comercial"));
+                        ArrayList<Empresa> elist = new ArrayList<Empresa>();
+                        elist.add(VariablesSistema.proveedor_principal.getEmpresa());
+                        comerc.setEmpresaList(elist);
+                        Comercial com = new Comercial();
+                        com.setComercialSuperior(comFac.find(1));
+                        com.setComercialTipo(comTFac.find(8));
+                        comerc.setComercial(com);
+                        comerc = pFacade.create(comerc);
+                    } else {
+                        if (comerc.getComercial() == null) {
+                            Comercial com = new Comercial();
+                            com.setComercialSuperior(comFac.find(1));
+                            com.setComercialTipo(comTFac.find(8));
+                            comerc.setComercial(com);
+                            comerc = pFacade.edit(comerc);
+                        }
+                    }
+                }
+
+                String asesoria = ventas.getString("num_doc_asesoria");
+                Empresa ase = null;
+                if (asesoria != null) {
+                    ase = eFacade.find(asesoria);
+                    if (ase != null) {
+                        if (ase.getComercial() == null) {
+                            Comercial com = new Comercial();
+                            if (comerc != null) {
+                                com.setComercialSuperior(comerc.getComercial());
+                            } else {
+                                com.setComercialSuperior(comFac.find(1));
+                            }
+                            com.setComercialTipo(comTFac.find(7));
+                            ase.setComercial(com);
+                            ase = eFacade.edit(ase);
+                        }
+                    }
+                }
+
+                ArrayList<MatriculaComercial> ec = new ArrayList<MatriculaComercial>();
+
+                MatriculaComercial mcp = new MatriculaComercial(new MatriculaComercialPK(1, mat.getId()));
+                mcp.setPorcentaje(0.0);
+                ec.add(mcp);
+                if (comerc != null) {
+                    MatriculaComercial mc = new MatriculaComercial(new MatriculaComercialPK(comerc.getComercial().getId(), mat.getId()));
+                    mc.setPorcentaje(0.0);
+                    ec.add(mc);
+                }
+                if (ase != null) {
+                    MatriculaComercial mc = new MatriculaComercial(new MatriculaComercialPK(ase.getComercial().getId(), mat.getId()));
+                    mc.setPorcentaje(0.0);
+                    ec.add(mc);
+                }
+                mat.setMatriculaComercialList(ec);
+                mat = mFacade.edit(mat);
+                //Fin EC
+
+                //Facturas
+                ResultSet facturas = f5.consulta("select *, f_facturas.fecha as fac_fecha, f_facturas.observaciones as fac_obs from f_albaranes join (select cod_albaran, min(cod_factura) as cod_factura  from f_albaranes_facturas group by 1) f_albaranes_facturas using(cod_albaran) join f_facturas using(cod_factura) where cod_venta = " + ventas.getString("cod_venta"));
+                while (facturas.next()) {
+                    Date fecha_cobro_venta = (facturas.getDate("fecha_cobro") == null ? ventas.getDate("fecha_cobro_venta") : facturas.getDate("fecha_cobro"));
+                    Date fecha_factura = facturas.getDate("fac_fecha");
+                    Date fecha_devolucion = facturas.getDate("fecha_dev");
+
+                    if (fecha_factura != null && fecha_cobro_venta != null && (fecha_factura.equals(fecha_cobro_venta) || fecha_factura.after(fecha_cobro_venta))) {
+                        fecha_cobro_venta = Fecha.getFechaSetMinutos(fecha_factura, 1);
+                    }
+
+                    if (fecha_factura != null && fecha_devolucion != null && (fecha_factura.equals(fecha_devolucion) || fecha_factura.after(fecha_devolucion))) {
+                        fecha_devolucion = Fecha.getFechaSetMinutos(fecha_factura, 1);
+                    }
+
+                    if (fecha_cobro_venta != null && fecha_devolucion != null && (fecha_cobro_venta.equals(fecha_devolucion))) {
+                        fecha_devolucion = Fecha.getFechaSetMinutos(fecha_cobro_venta, 1);
+                    }
+
+                    Factura fac = facFacade.find(facturas.getString("cod_factura"));
+                    if (fac == null) {
+                        fac = new Factura(facturas.getString("cod_factura"));
+                        fac.setProveedor(VariablesSistema.proveedor_principal);
+                        fac.setFecha(fecha_factura);
+                        fac.setFormaPago(mat.getFormaPago());
+                        fac.setObservaciones(facturas.getString("fac_obs"));
+
+                        ArrayList<FacturaHistoricoEstado> fhel = new ArrayList<FacturaHistoricoEstado>();
+
+                        FacturaHistoricoEstado factura_pendiente, factura_cobrada, factura_devuelta;
+                        factura_pendiente = new FacturaHistoricoEstado(new FacturaHistoricoEstadoPK(facturas.getString("cod_factura"), fecha_factura));
+                        factura_pendiente.setEstado(feFacade.find(1));
+                        fhel.add(factura_pendiente);
+
+
+                        if (fecha_cobro_venta != null) {
+                            factura_cobrada = new FacturaHistoricoEstado(new FacturaHistoricoEstadoPK(facturas.getString("cod_factura"), fecha_cobro_venta));
+                            factura_cobrada.setEstado(feFacade.find(3));
+                            fhel.add(factura_cobrada);
+                        }
+                        if (fecha_devolucion != null) {
+                            factura_devuelta = new FacturaHistoricoEstado(new FacturaHistoricoEstadoPK(facturas.getString("cod_factura"), fecha_devolucion));
+                            factura_devuelta.setEstado(feFacade.find(2));
+                            fhel.add(factura_devuelta);
+                        }
+
+                        fac.setFacturaHistoricoEstadoList(fhel);
+
+                        facFacade.create(fac);
+                    }
+
+                    List<MatriculaFactura> mfList = fac.getMatriculaFacturaList();
+                    if (mfList == null) {
+                        mfList = new ArrayList<MatriculaFactura>();
+                    }
+
+                    if (real_pp == null && (facturas.getDouble("coste_imparticion") < 0.0 || (fecha_cobro_venta != null
+                            && (fecha_factura == null || fecha_cobro_venta.after(fecha_factura))
+                            && (fecha_devolucion == null || fecha_cobro_venta.after(fecha_devolucion))))) {
+                        if (fecha_cobro_venta != null) {
+                            real_pp = fecha_cobro_venta;
+                        } else {
+                            real_pp = fecha_factura;
+                        }
+                    }
+
+                    if (evalua_gestion_moroso && (facturas.getDouble("coste_imparticion") < 0.0 || Fecha.getAnio(mat.getFechaCreacion()) < 2013)) {
+                        gestion_moroso = false;
+                        evalua_gestion_moroso = false;
+                    }
+
+                    if (evalua_gestion_moroso && (fecha_devolucion != null
+                            && (fecha_factura == null || fecha_devolucion.after(fecha_factura))
+                            && (fecha_cobro_venta == null || fecha_devolucion.after(fecha_cobro_venta)))) {
+                        gestion_moroso = true;
+                        fecha_gestion_moroso = fecha_devolucion;
+                        fac_gest_moroso = fac;
+                    }
+
+                    MatriculaFactura m1 = new MatriculaFactura(new MatriculaFacturaPK(mat.getId(), fac.getId()), util.Validacion.Redondear(facturas.getDouble("coste_imparticion")));
+                    MatriculaFactura m2 = new MatriculaFactura(new MatriculaFacturaPK(mat.getId(), fac.getId()), util.Validacion.Redondear(facturas.getDouble("coste_organizacion")));
+                    m1.setObservaciones("COSTE DE IMPARTICIÓN DEL CURSO");
+                    m2.setObservaciones("COSTE DE ORGANIZACIÓN DEL CURSO");
+                    m1.setIva(new Iva(2));
+                    m2.setIva(new Iva(2));
+                    mfList.add(m1);
+                    mfList.add(m2);
+
+                    fac.setMatriculaFacturaList(mfList);
+                    facFacade.edit(fac);
+                }
+                //Fin Facturas
+
+                //Eventos
+                //Evento Pago posterior
+                if (pago_posterior) {
+                    Evento pagoPosterior = new Evento();
+                    pagoPosterior.setCreador(pFacade.find("23800645S"));
+                    pagoPosterior.setMatricula(mat);
+                    descripcionEventos.configurarEvento(pagoPosterior, descripcionEventos.PAGO_POSTERIOR_TRASBON);
+                    pagoPosterior.setFechaCreacion(mat.getFechaCreacion());
+                    if (real_pp != null) {
+                        pagoPosterior.setFechaRealizacion(real_pp);
+                    }
+                    mat.getEventoList().add(pagoPosterior);
+                }
+
+                Map<Date, String> fechas_envios_documentacion = new HashMap<Date, String>();
+
+                //	-EVENTO ENVIO FIN CURSO: fecha_envio_costes (realizado)
+                fechas_envios_documentacion = aniadeDoc(ventas.getDate("fecha_envio_costes"), "<br/>-Se le envía la información de FIN DE CURSO<br/>", fechas_envios_documentacion);
+
+                //	-EVENTO ENVIO DOC (FACTURA): fecha_envio_factura (realizado)
+                fechas_envios_documentacion = aniadeDoc(ventas.getDate("fecha_envio_factura"), "<br/>-Se le envía la FACTURA<br/>", fechas_envios_documentacion);
+                //	-EVENTO ENVIO DOC (DIPLOMA): fecha_envio_diploma (realizado)
+                fechas_envios_documentacion = aniadeDoc(ventas.getDate("fecha_envio_diploma"), "<br/>-Se le envía el DIPLOMA<br/>", fechas_envios_documentacion);
+                //	-EVENTO ENVIO DOC (CARTA RL, F CURSO, F ALUMNO, FACTURA): fecha_envio_material (realizado)
+                fechas_envios_documentacion = aniadeDoc(ventas.getDate("fecha_envio_material"), "<br/>-Se le envía el MATERIAL DEL CURSO<br/>", fechas_envios_documentacion);
+                //	-EVENTO DIPLOMA ADICIONAL: f_diplomas_adicionales (realizado)
+                ResultSet dip_ad = f5.consulta("select f_alumnos.num_documento, coalesce(f_alumnos.nombre,' ')||' '||coalesce(f_alumnos.apellido1,' ')||' '||coalesce(f_alumnos.apellido2,' '),f_diplomas_adicionales.fecha_entrega from f_diplomas_adicionales join f_alumnos using (cod_alumno) where cod_venta =" + ventas.getString("cod_venta"));
+                while (dip_ad.next()) {
+                    mat = nuevoEvento(pFacade.find("23800645S"), mat, new Date(), descripcionEventos.DIPLOMA_ADICCIONAL, mFacade, dip_ad.getString(2), dip_ad.getString(1), "", new Date());
+                    fechas_envios_documentacion = aniadeDoc(dip_ad.getDate("fecha_entrega"), "<br/>-Se le envía el DIPLOMA ADICIONAL (" + dip_ad.getString(2) + ")<br/>", fechas_envios_documentacion);
+                }
+                //SE GENERAN LOS EVENTOS DE ENVÍO DE DOCUMENTACIÓN
+                for (Map.Entry<Date, String> eventos : fechas_envios_documentacion.entrySet()) {
+                    mat = nuevoEvento(pFacade.find("23800645S"), mat, eventos.getKey(), descripcionEventos.ENVIO_DOCUMENTACION, mFacade, eventos.getValue(), "", "", eventos.getKey());
+                }
+
+                //	-EVENTO GESTION MOROSO - SE GENERA ESTE EVENTO CUANDO: LA FACTURA ESTÁ EN ESTADO DEVUELTA, ES DE 2013, NO EXISTE FACTURA DE ABONO.
+                //		ESTADO: PENDIENTE
+                if (gestion_moroso) {
+                    mat = nuevoEvento(pFacade.find("23800645S"), mat, fecha_gestion_moroso, descripcionEventos.GESTION_MOROSO, mFacade, "", "", descripcionEventos.getTextoDescripcionContiene(descripcionEventos.GESTION_MOROSO) + " " + fac_gest_moroso.getId() + " (" + fac_gest_moroso.getImporte() + " €)", null);
+
+                }
+
+
+                //	-EVENTO SEGUIMIENTO TUTORIAL : SI PROVEEDOR F5 - GENERA EVENTO DIA INICIO CURSO (realizado)
+                if (mat.getGrupo().getProveedor1().getNif().equals(VariablesSistema.NIF_empresa_principal)) {
+                    mat = nuevoEvento(pFacade.find("23800645S"), mat, mat.getGrupo().getFInicio(), descripcionEventos.SEGUIMIENTO_TUTORIAL, mFacade, "", "", "", mat.getGrupo().getFInicio());
+                }
+                //	-EVENTO CONFIRMACIÓN MATRÍCULA: GENERAR COMO ALTA DE MATRICULA - PENDIENTE SI GRUPO PENDIENTE DE GESTIONAR (SINO/REALIZADO)
+                mat = nuevoEvento(pFacade.find("23800645S"), mat, mat.getFechaCreacion(), descripcionEventos.CONFIRMACION_MATRICULA, mFacade, "", "", "", (mat.getGrupo().getGrupoPK().getId() == 0 ? null : mat.getFechaCreacion()));
+                //	-EVENTO Recepción de Ficha de Registro -f_alumnos_grupos.fich_registro (realizado)
+                if (ventas.getDate("fich_registro") != null) {
+                    mat = nuevoEvento(pFacade.find("23800645S"), mat, ventas.getDate("fich_registro"), descripcionEventos.RECEPCION_FICHA_REGISTRO, mFacade, "", "", "", ventas.getDate("fich_registro"));
+                }
+                //	-EVENTO Recepción de Evaluación - f_alumnos_grupos.evaluacion (realizado)
+                if (ventas.getDate("evaluacion") != null) {
+                    mat = nuevoEvento(pFacade.find("23800645S"), mat, ventas.getDate("evaluacion"), descripcionEventos.RECEPCION_EVALUACION, mFacade, "", "", "", ventas.getDate("evaluacion"));
+                }
+                //	-EVENTO Recepción de Cuestionario de Calidad - f_alumnos_grupos.cuestionario (realizado)
+                if (ventas.getDate("cuestionario") != null) {
+                    mat = nuevoEvento(pFacade.find("23800645S"), mat, ventas.getDate("cuestionario"), descripcionEventos.RECEPCION_CUESTIONARIO_CALIDAD, mFacade, "", "", "", ventas.getDate("cuestionario"));
+                }
+                //	-EVENTO Recepción de Recibí Diploma - f_alumnos_grupos.recibi_diploma (realizado),,
+                if (ventas.getDate("recibi_diploma") != null) {
+                    mat = nuevoEvento(pFacade.find("23800645S"), mat, ventas.getDate("recibi_diploma"), descripcionEventos.RECEPCION_DIPLOMA, mFacade, "", "", "", ventas.getDate("recibi_diploma"));
+                }
+
+                if (ventas.getString("cod_estado_venta").equals("3") || ventas.getString("cod_estado_venta").equals("2") || ventas.getString("cod_estado_venta").equals("5")) {
+                    Date fecha_baja = mat.getFechaCreacion();
+                    for (Evento e : mat.getEventoList()) {
+                        if (e.getFechaCreacion().after(fecha_baja)) {
+                            fecha_baja = e.getFechaCreacion();
+                        }
+                    }
+
+                    fecha_baja = Fecha.getFechaSetDias(fecha_baja, 1);
+                    ResultSet ebaja = f5.consulta("select des_estado from f_estados where cod_estado = " + ventas.getString("cod_estado_venta"));
+                    ebaja.next();
+                    mat = nuevoEvento(pFacade.find("23800645S"), mat, fecha_baja, descripcionEventos.MATRICULA_BAJA, mFacade, "Matrícula exportada en estado: " + ebaja.getString(1), "", "Por cliente", fecha_baja);
+
+                }
+
+                mat = mFacade.edit(mat);
+                //Fin eventos
+
+
+            }
+        }
+    }
+
+    public static Matricula nuevoEvento(Persona cread, Matricula matriculaSeleccionada, Date fcreacion,
+            int evento_a_agenerar, MatriculaFacade matriculaFacade, String alumnoALUMNOA, String alumnoDNIA, String motivoBaja, Date fecha_realiz) {
+        try {
+
+            Evento evnto = new Evento();
+            evnto.setCreador(cread);
+            evnto.setMatricula(matriculaSeleccionada);
+            evnto.setFechaCreacion(fcreacion);
+            descripcionEventos.configurarEvento(evnto, evento_a_agenerar);
+            if (evento_a_agenerar == descripcionEventos.DIPLOMA_ADICCIONAL) {
+                evnto.setDescripcion("DIPOMA_ADICIONAL<>" + alumnoALUMNOA + "<>" + alumnoDNIA);
+            }
+            if (evento_a_agenerar == descripcionEventos.GESTION_MOROSO) {
+                evnto.setDescripcion(motivoBaja);
+            }
+            if (evento_a_agenerar == descripcionEventos.MATRICULA_BAJA) {
+                evnto.setDescripcion(descripcionEventos.getTextoDescripcionContiene(descripcionEventos.MATRICULA_BAJA) + " - " + motivoBaja);
+                evnto.setObservaciones(alumnoALUMNOA);
+            }
+            if (fecha_realiz != null) {
+                evnto.setFechaRealizacion(fecha_realiz);
+            }
+            if (evento_a_agenerar == descripcionEventos.ENVIO_DOCUMENTACION) {
+                evnto.setObservaciones(alumnoALUMNOA);
+            }
+            matriculaSeleccionada.getEventoList().add(evnto);
+            Collections.sort(matriculaSeleccionada.getEventoList());
+            return matriculaFacade.edit(matriculaSeleccionada);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return matriculaSeleccionada;
+        }
+    }
+
+    public static Map<Date, String> aniadeDoc(Date f, String d, Map<Date, String> fechas_envios_documentacion) {
+        if (f != null) {
+            String doc = "";
+            if (fechas_envios_documentacion.containsKey(f)) {
+                doc = fechas_envios_documentacion.get(f);
+            }
+            doc += d;
+            fechas_envios_documentacion.put(f, doc);
+        }
+        return fechas_envios_documentacion;
+    }
+}

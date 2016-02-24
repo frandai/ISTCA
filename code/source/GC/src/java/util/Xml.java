@@ -1,0 +1,529 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package util;
+
+import datos.AccionFormativa;
+import datos.DiaSemana;
+import datos.Direccion;
+import datos.Empresa;
+import datos.EmpresaAgrupacion;
+import datos.EmpresaMatriculaAnio;
+import datos.Grupo;
+import datos.Matricula;
+import datos.Tutor;
+import datos.TutoriaHorario;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Random;
+import org.jdom.Document;
+import org.jdom.Element;
+import org.jdom.Namespace;
+import org.jdom.output.Format;
+import org.jdom.output.XMLOutputter;
+import static util.Validacion.NIF_NIE;
+
+/**
+ *
+ *
+ */
+public class Xml {
+
+    public static Namespace TRIPARTITA_NAMESPACE = Namespace.getNamespace("", "http://www.fundaciontripartita.es/schemas");
+
+    public static String limpiarTextoXML(String texto) {
+        StringBuilder out = new StringBuilder();
+        int codePoint;
+        int i = 0;
+        while (i < texto.length()) {
+            codePoint = texto.codePointAt(i);
+            if ((codePoint != 0x1)) {
+                out.append(Character.toChars(codePoint));
+            }
+            i += Character.charCount(codePoint);
+        }
+        return out.toString();
+    }
+
+    public static String generarXMLAccionesFormativas(List<AccionFormativa> afs, EmpresaAgrupacion agr) throws FileNotFoundException, IOException {
+        String temp = "/docs/temp/";
+        Random r = new Random();
+        String numr = "" + r.nextInt();
+        String agrupacion = agr.getNombre().replace("ó", "o") + "_" + numr + ".xml";
+        String nombre_archivo = "ACCIONES_FORMATIVAS" + "_" + agrupacion;
+        Format format = Format.getPrettyFormat();
+        XMLOutputter xmloutputter = new XMLOutputter(format);
+        Document ag = new Document();
+        Element accionesFormativas = new Element("AccionesFormativas", TRIPARTITA_NAMESPACE);
+        for (AccionFormativa af : afs) {
+            Element accionF = new Element("AccionFormativa", TRIPARTITA_NAMESPACE);
+            accionF.addContent(getElemento("codAccion", "" + af.getId()));
+            accionF.addContent(getElemento("nombreAccion", "" + af.getNombre()));
+            accionF.addContent(getElemento("codGrupoAccion", "" + af.getAccionFormativaGrupoFundacion().getId()));
+            Element modalidadSimple = new Element("modalidadSimple", TRIPARTITA_NAMESPACE);
+            modalidadSimple.addContent(getElemento("horas", "" + af.getHoras()));
+            modalidadSimple.addContent(getElemento("modalidad", "" + af.getModalidad().getId()));
+            accionF.addContent(modalidadSimple);
+            if (af.getAccionFormativaExtra() != null) {
+                Element modalidadMixta = new Element("modalidadMixta", TRIPARTITA_NAMESPACE);
+                modalidadMixta.addContent(getElemento("horasPr", "" + (af.getAccionFormativaExtra().getMixtaHpr() == null ? 0 : af.getAccionFormativaExtra().getMixtaHpr())));
+                if (af.getAccionFormativaExtra().getMixtaHdi() != null) {
+                    modalidadMixta.addContent(getElemento("horasDi", "" + af.getAccionFormativaExtra().getMixtaHdi()));
+                }
+                if (af.getAccionFormativaExtra().getMixtaHte() != null) {
+                    modalidadMixta.addContent(getElemento("horasTe", "" + af.getAccionFormativaExtra().getMixtaHte()));
+                }
+                if (af.getModalidad().getId().equals(new Short("9"))) {
+                    accionF.addContent(modalidadMixta);
+                }
+                if (af.getAccionFormativaExtra().getUri() != null) {
+                    accionF.addContent(getElemento("uri", "" + af.getAccionFormativaExtra().getUri()));
+                }
+                if (af.getAccionFormativaExtra().getUsuario() != null) {
+                    accionF.addContent(getElemento("usuario", "" + af.getAccionFormativaExtra().getUsuario()));
+                }
+                if (af.getAccionFormativaExtra().getPassword() != null) {
+                    accionF.addContent(getElemento("password", "" + af.getAccionFormativaExtra().getPassword()));
+                }
+            }
+            accionF.addContent(getElemento("observaciones", "-" /*+ af.getObservaciones()  - */, false));
+            accionF.addContent(getElemento("tipoAccion", "" + (af.getTipoAccionEspecifica() ? 1 : 0)));
+            accionF.addContent(getElemento("nivelFormacion", "" + (af.getNivelFormacionSuperior() ? 1 : 0)));
+            if (af.getAccionFormativaExtra() != null) {
+                if (af.getAccionFormativaExtra().getModTecnologia() != null) {
+                    accionF.addContent(getElemento("modTecnologia", "" + af.getAccionFormativaExtra().getModTecnologia()));
+                }
+                if (af.getAccionFormativaExtra().getModPrevRiesgos() != null) {
+                    accionF.addContent(getElemento("modPrevRiesgos", "" + af.getAccionFormativaExtra().getModPrevRiesgos()));
+                }
+                if (af.getAccionFormativaExtra().getModSensMedAmb() != null) {
+                    accionF.addContent(getElemento("modSensiMedAmb", "" + af.getAccionFormativaExtra().getModSensMedAmb()));
+                }
+                if (af.getAccionFormativaExtra().getModPromocion() != null) {
+                    accionF.addContent(getElemento("modPromocion", "" + af.getAccionFormativaExtra().getModPromocion()));
+                }
+            }
+            accionF.addContent(getElemento("objetivos", "" + af.getObjetivos()));
+            accionF.addContent(getElemento("contenidos", "" + af.getContenidos()));
+            ArrayList<String> nifRLT = new ArrayList<String>();
+            for (Grupo g : af.getGrupoList()) {
+                for (Matricula m : g.getMatriculaList()) {
+                    if (m.getEmpresaMatriculaCcc().getEmpresaMatricula().getRepresentacionLegal()
+                            && m.getEmpresaMatriculaCcc().getEmpresaMatricula().getAgrupacion().getId().equals(agr.getId())) {
+                        if (!nifRLT.contains(m.getEmpresaMatriculaCcc().getEmpresaMatricula().getNif())) {
+                            nifRLT.add(m.getEmpresaMatriculaCcc().getEmpresaMatricula().getNif());
+                        }
+                    }
+                }
+            }
+            for (String nif : nifRLT) {
+                Element empParticipante = new Element("empParticipantes", TRIPARTITA_NAMESPACE);
+                empParticipante.addContent(getElemento("cif", nif));
+                Element infRLT = new Element("infRLT", TRIPARTITA_NAMESPACE);
+                infRLT.addContent(getElemento("informaRLT", "S"));
+                Element informe = new Element("informe", TRIPARTITA_NAMESPACE);
+                informe.addContent(getElemento("valorinf", "f"));
+                infRLT.addContent(informe);
+                empParticipante.addContent(infRLT);
+                accionF.addContent(empParticipante);
+            }
+            accionesFormativas.addContent(accionF);
+        }
+        ag.addContent(accionesFormativas);
+        FileOutputStream file_os = new FileOutputStream(VariablesSistema.ruta_absoluta_proyecto + temp + nombre_archivo);
+        xmloutputter.output(ag, file_os);
+        file_os.close();
+        return temp + nombre_archivo;
+    }
+
+    public static String generarXMLInicioGrupo(List<Grupo> g) throws FileNotFoundException, IOException {
+        return generarXMLFinalizacionInicioGrupo(g, false);
+    }
+
+    public static String generarXMLFinalizacionGrupo(List<Grupo> g) throws FileNotFoundException, IOException {
+        return generarXMLFinalizacionInicioGrupo(g, true);
+    }
+
+    public static String generarXMLFinalizacionInicioGrupo(List<Grupo> g, boolean finalizacion_inicio) throws FileNotFoundException, IOException {
+        String temp = "/docs/temp/";
+        Random r = new Random();
+        String numr = "" + r.nextInt();
+        Format format = Format.getPrettyFormat();
+        XMLOutputter xmloutputter = new XMLOutputter(format);
+
+
+        DecimalFormatSymbols simbolos = new DecimalFormatSymbols();
+        simbolos.setDecimalSeparator('.');
+        DecimalFormat df = new DecimalFormat("#.##", simbolos);
+        HashMap<String, List<Element>> grupos_agrupacion = new HashMap<String, List<Element>>();
+
+        for (Grupo grupo : g) {
+            String agrupacion = grupo.getMatriculaList().get(0).getEmpresaMatriculaCcc().getEmpresaMatricula().getAgrupacion().getNombre().replace("ó", "o") + ".xml";
+            if (!grupos_agrupacion.containsKey(agrupacion)) {
+                grupos_agrupacion.put(agrupacion, new ArrayList<Element>());
+            }
+            grupos_agrupacion.get(agrupacion).add(finalizacion_inicio ? getElementoGrupoFin(grupo, df) : getElementoGrupoInicio(grupo));
+        }
+
+        for (String agrupacion : grupos_agrupacion.keySet()) {
+            Document ag = new Document();
+            Element grupos = new Element("grupos", TRIPARTITA_NAMESPACE);
+            for (Element grupo : grupos_agrupacion.get(agrupacion)) {
+                grupos.addContent(grupo);
+            }
+            ag.addContent(grupos);
+            FileOutputStream file_os = new FileOutputStream(VariablesSistema.ruta_absoluta_proyecto + temp + "_" + numr + "_" + agrupacion);
+            xmloutputter.output(ag, file_os);
+            file_os.close();
+        }
+        if (finalizacion_inicio) {
+            generaExcelImpBonif(VariablesSistema.ruta_absoluta_proyecto + temp + "_" + numr + "_" + "imp_bonif.xls", g);
+            grupos_agrupacion.put("imp_bonif.xls", null);
+        }
+        if (grupos_agrupacion.keySet().size() != 1) {
+            String zip = temp + "xml_" + (finalizacion_inicio ? "FINALIZACION" : "INICIO") + "_" + numr + ".zip";
+            util.Zip.comprimir(VariablesSistema.ruta_absoluta_proyecto + temp + "_" + numr + "_", grupos_agrupacion.keySet(), VariablesSistema.ruta_absoluta_proyecto + zip);
+
+            return zip;
+        } else {
+            return temp + "_" + numr + "_" + grupos_agrupacion.keySet().iterator().next();
+        }
+    }
+
+    private static Element getElementoGrupoFin(Grupo g, DecimalFormat df) {
+        Element grupo = new Element("grupo", TRIPARTITA_NAMESPACE);
+
+        grupo.addContent(getElemento("idAccion", "" + g.getGrupoPK().getAccionFormativa()));
+        grupo.addContent(getElemento("idGrupo", "" + g.getGrupoPK().getId()));
+
+        Element participantes = new Element("participantes", TRIPARTITA_NAMESPACE);
+
+        for (Matricula m : g.getMatriculaList()) {
+            Element participante = new Element("participante", TRIPARTITA_NAMESPACE);
+
+            participante.addContent(getElemento("nif", m.getAlumno().getNif()));
+            participante.addContent(getElemento("N_TIPO_DOCUMENTO", "" + (Validacion.getTipoNif(m.getAlumno().getNif()) == NIF_NIE ? 60 : 10)));
+            participante.addContent(getElemento("nombre", m.getAlumno().getPersona().getNombre()));
+            participante.addContent(getElemento("primerApellido", m.getAlumno().getPersona().getApellido1()));
+            participante.addContent(getElemento("segundoApellido", m.getAlumno().getPersona().getApellido2()));
+            participante.addContent(getElemento("niss", m.getAlumno().getPersona().getNss()));
+            participante.addContent(getElemento("cifEmpresa", m.getEmpresaMatriculaCcc().getEmpresaMatricula().getNif()));
+            participante.addContent(getElemento("ctaCotizacion",
+                    m.getEmpresaMatriculaCcc().getEmpresaMatricula().getCotSs().length() > 9
+                    ? m.getEmpresaMatriculaCcc().getEmpresaMatricula().getCotSs().substring(0, 9)
+                    : m.getEmpresaMatriculaCcc().getEmpresaMatricula().getCotSs()));
+            participante.addContent(getElemento("fechaNacimiento", Fecha.getFechaDiaMesAnio(m.getAlumno().getPersona().getFechaNacimiento())));
+            participante.addContent(getElemento("sexo", m.getAlumno().getPersona().getMasculino() ? "M" : "F"));
+            participante.addContent(getElemento("discapacidad", m.getAlumno().getDiscapacitado() ? "true" : "false"));
+            participante.addContent(getElemento("afectadosTerrorismo", m.getAlumno().getVictimaTerrorismo() ? "true" : "false"));
+            participante.addContent(getElemento("afectadosViolenciaGenero", m.getAlumno().getVictimaVG() ? "true" : "false"));
+            participante.addContent(getElemento("categoriaprofesional", "" + m.getAlumno().getCategoriaProfesional().getId()));
+            participante.addContent(getElemento("grupocotizacion", "" + m.getAlumno().getGrupoCotizacion().getId()));
+            participante.addContent(getElemento("nivelestudios", "" + m.getAlumno().getNivelEstudios().getId()));
+            if (g.getAccionFormativa1().getModalidad().getId().equals(new Short("10"))) {
+                participante.addContent(getElemento("fechaInicioTeleformacion", Fecha.getFechaDiaMesAnio(g.getFInicio())));
+                participante.addContent(getElemento("fechaFinTeleformacion", Fecha.getFechaDiaMesAnio(g.getFFin())));
+            }
+
+
+            participantes.addContent(participante);
+        }
+
+        grupo.addContent(participantes);
+
+
+        HashMap<String, costeFinalizacionGrupo> costes_grupo = new HashMap<String, costeFinalizacionGrupo>();
+
+        for (Matricula m : g.getMatriculaList()) {
+            String nif = m.getEmpresaMatriculaCcc().getEmpresaMatricula().getNif();
+            if (!costes_grupo.containsKey(nif)) {
+                costeFinalizacionGrupo cfg = new costeFinalizacionGrupo();
+                cfg.setMes(Fecha.getMes(g.getFFin()));
+                costes_grupo.put(nif, cfg);
+            }
+            costes_grupo.get(nif).setAsociados(costes_grupo.get(nif).getAsociados() + m.getC_organizacion());
+            costes_grupo.get(nif).setDirectos(costes_grupo.get(nif).getDirectos() + m.getC_imparticion());
+            costes_grupo.get(nif).setSalariales(costes_grupo.get(nif).getSalariales() + m.getC_salariales());
+            costes_grupo.get(nif).setImporte_mes(costes_grupo.get(nif).getImporte_mes() + m.getPrecio());
+        }
+
+
+        Element costes = new Element("costes", TRIPARTITA_NAMESPACE);
+
+        for (String cifag : costes_grupo.keySet()) {
+            Element coste = new Element("coste", TRIPARTITA_NAMESPACE);
+
+            coste.addContent(getElemento("cifagrupada", cifag));
+            coste.addContent(getElemento("directos", df.format(costes_grupo.get(cifag).getDirectos())));
+            coste.addContent(getElemento("asociados", df.format(costes_grupo.get(cifag).getAsociados())));
+            coste.addContent(getElemento("salariales", df.format(costes_grupo.get(cifag).getSalariales())));
+
+            Element periodos = new Element("periodos", TRIPARTITA_NAMESPACE);
+            Element periodo = new Element("periodo", TRIPARTITA_NAMESPACE);
+
+            periodo.addContent(getElemento("mes", "" + costes_grupo.get(cifag).getMes()));
+            periodo.addContent(getElemento("importe", df.format(costes_grupo.get(cifag).getImporte_mes())));
+
+            periodos.addContent(periodo);
+
+            coste.addContent(periodos);
+
+            costes.addContent(coste);
+        }
+
+        grupo.addContent(costes);
+
+        return grupo;
+    }
+
+    private static Element getElementoGrupoInicio(Grupo g) {
+        Element grupo = new Element("grupo", TRIPARTITA_NAMESPACE);
+
+        grupo.addContent(getElemento("idAccion", "" + g.getGrupoPK().getAccionFormativa()));
+        grupo.addContent(getElemento("idGrupo", "" + g.getGrupoPK().getId()));
+        grupo.addContent(getElemento("descripcion", "" + g.getNombre()));
+        grupo.addContent(getElemento("cumAportPrivada", g.getAportPrivada() ? "true" : "false"));
+        Element tipoFormacion = new Element("tipoFormacion", TRIPARTITA_NAMESPACE);
+        tipoFormacion.addContent(getElemento("mediosPropios", g.getMediosP() ? "true" : "false"));
+        tipoFormacion.addContent(getElemento("mediosEntidadOrganizadora", g.getMediosEO() ? "true" : "false"));
+        tipoFormacion.addContent(getElemento("mediosCentro", g.getMediosC() ? "true" : "false"));
+        grupo.addContent(tipoFormacion);
+        grupo.addContent(getElemento("NumeroParticipante", "" + g.getMatriculaList().size()));
+        grupo.addContent(getElemento("fechaInicio", Fecha.getFechaDiaMesAnio(g.getFInicio())));
+        grupo.addContent(getElemento("fechaFin", Fecha.getFechaDiaMesAnio(g.getFFin())));
+        grupo.addContent(getElemento("responsable", ((g.getPersonaTelefono().getPersona1().getNombre() == null ? "" : g.getPersonaTelefono().getPersona1().getNombre() + " ")
+                + (g.getPersonaTelefono().getPersona1().getApellido1() == null ? "" : g.getPersonaTelefono().getPersona1().getApellido1() + " ")
+                + (g.getPersonaTelefono().getPersona1().getApellido2() == null ? "" : g.getPersonaTelefono().getPersona1().getApellido2() + " "))));
+        grupo.addContent(getElemento("telefonoContacto", g.getPersonaTelefono().getPersonaTelefonoPK().getNumero()));
+
+        if (g.getAccionFormativa1().getModalidad().getId().equals(new Short("7")) || g.getAccionFormativa1().getModalidad().getId().equals(new Short("9"))) {
+            rellenaPresencial(grupo, g);
+        }
+        if (g.getAccionFormativa1().getModalidad().getId().equals(new Short("8"))
+                || g.getAccionFormativa1().getModalidad().getId().equals(new Short("9"))
+                || g.getAccionFormativa1().getModalidad().getId().equals(new Short("10"))) {
+            rellenaTeleformacion(grupo, g);
+        }
+        rellenaEmpresasParticipantes(grupo, g);
+
+        grupo.addContent(getElemento("observaciones", g.getObservaciones().length() > 4000 ? g.getObservaciones().substring(0, 4000) : g.getObservaciones()));
+
+        return grupo;
+    }
+
+    private static void generaExcelImpBonif(String archivo, List<Grupo> g) throws FileNotFoundException, IOException {
+        ArrayList<String> grupo_empresa = new ArrayList<String>();
+        for (Grupo grupo : g) {
+            for (Matricula m : grupo.getMatriculaList()) {
+                if (!grupo_empresa.contains(grupo.getNombre() + "//--//" + m.getEmpresaMatriculaCcc().getEmpresaMatriculaCccPK().getNif())) {
+                    grupo_empresa.add(grupo.getNombre() + "//--//" + m.getEmpresaMatriculaCcc().getEmpresaMatriculaCccPK().getNif());
+                }
+            }
+        }
+        String[][] datos = new String[grupo_empresa.size() + 1][3];
+        datos[0][0] = "Grupo";
+        datos[0][1] = "Empresa";
+        datos[0][2] = "Imp. Bonif.";
+        for (int i = 1; i < datos.length; i++) {
+            datos[i][0] = grupo_empresa.get(i - 1).split("//--//")[0];
+            datos[i][1] = grupo_empresa.get(i - 1).split("//--//")[1];
+            datos[i][2] = "";
+        }
+        Excel.exportarExcelEstandar(datos, archivo);
+    }
+
+    public static Element getElemento(String nombre, String contenido) {
+        return getElemento(nombre, contenido, true);
+    }
+
+    public static Element getElemento(String nombre, String contenido, boolean limpiar) {
+        Element elemento = new Element(nombre, TRIPARTITA_NAMESPACE);
+        elemento.setText(limpiar ? limpiarTextoXML(contenido) : contenido);
+        return elemento;
+    }
+
+    private static void rellenaTeleformacion(Element grupo, Grupo g) {
+        Element distanciaTeleformacion = new Element("distanciaTeleformacion", TRIPARTITA_NAMESPACE);
+        Element asistencia;
+        if (g.getAccionFormativa1().getModalidad().getId().equals(new Short("8"))) { //DISTANCIA
+            asistencia = new Element("asistenciaDistancia", TRIPARTITA_NAMESPACE);
+        } else { //MIXTA / TELEFORMACION
+            asistencia = new Element("asistenciaTeleformacion", TRIPARTITA_NAMESPACE);
+        }
+        Element centro = new Element("centro", TRIPARTITA_NAMESPACE);
+
+        rellenaCentro(centro, g.getProveedor1().getEmpresa());
+
+        asistencia.addContent(centro);
+        asistencia.addContent(getElemento("telefono", g.getProveedor1().getEmpresa().getEmpresaTelefonoList().get(0).getEmpresaTelefonoPK().getNumero()));
+        distanciaTeleformacion.addContent(asistencia);
+
+        rellenaHorario(distanciaTeleformacion, g, true);
+        rellenaTutores(distanciaTeleformacion, g);
+
+        grupo.addContent(distanciaTeleformacion);
+    }
+
+    private static void rellenaPresencial(Element grupo, Grupo g) {
+        Element jornadaPresencial = new Element("jornadaPresencial", TRIPARTITA_NAMESPACE);
+        Element tutoriaPresencial = new Element("tutoriaPresencial", TRIPARTITA_NAMESPACE);
+        Element centro = new Element("centro", TRIPARTITA_NAMESPACE);
+        centro.addContent(getElemento("cif", g.getProveedor1().getNif()));
+        centro.addContent(getElemento("nombreCentro", g.getProveedor1().getEmpresa().getRazonSocial()));
+        jornadaPresencial.addContent(centro);
+        tutoriaPresencial.addContent(centro);
+        Element lugarImparticion = new Element("lugarImparticion", TRIPARTITA_NAMESPACE);
+        rellenaCentro(lugarImparticion, g.getProveedor1().getEmpresa(), g.getDireccionList().get(0));
+        jornadaPresencial.addContent(lugarImparticion);
+        tutoriaPresencial.addContent(lugarImparticion);
+        Element horario = new Element("horario", TRIPARTITA_NAMESPACE);
+        rellenaHorario(horario, g, false);
+        jornadaPresencial.addContent(horario);
+        tutoriaPresencial.addContent(horario);
+        rellenaTutores(tutoriaPresencial, g);
+
+
+        grupo.addContent(jornadaPresencial);
+        grupo.addContent(tutoriaPresencial);
+    }
+
+    private static void rellenaEmpresasParticipantes(Element grupo, Grupo g) {
+        Element EmpresasParticipantes = new Element("EmpresasParticipantes", TRIPARTITA_NAMESPACE);
+        HashMap<String, Boolean> empresas = new HashMap<String, Boolean>();
+        for (Matricula m : g.getMatriculaList()) {
+            if (!empresas.containsKey(m.getEmpresaMatriculaCcc().getEmpresaMatriculaCccPK().getNif())) {
+                boolean jornadalaboral = false;
+                for (EmpresaMatriculaAnio ema : m.getEmpresaMatriculaCcc().getEmpresaMatricula().getEmpresaMatriculaAnioList()) {
+                    if (ema.getEmpresaMatriculaAnioPK().getAnio() == Fecha.getAnio(new Date()) && ema.getPlantilla() >= 10) {
+                        jornadalaboral = true;
+                    }
+                }
+                empresas.put(m.getEmpresaMatriculaCcc().getEmpresaMatriculaCccPK().getNif(),
+                        jornadalaboral);
+            }
+        }
+
+        for (Entry<String, Boolean> emp : empresas.entrySet()) {
+            Element empresa = new Element("empresa", TRIPARTITA_NAMESPACE);
+            empresa.addContent(getElemento("cifEmpresaParticipante", emp.getKey()));
+            empresa.addContent(getElemento("jornadaLaboral", emp.getValue() ? "true" : "false"));
+            EmpresasParticipantes.addContent(empresa);
+        }
+
+        grupo.addContent(EmpresasParticipantes);
+    }
+
+    private static void rellenaCentro(Element centro, Empresa empresa) {
+        rellenaCentro(centro, empresa, null);
+    }
+
+    private static void rellenaCentro(Element centro, Empresa empresa, Direccion direccionG) {
+        centro.addContent(getElemento("cif", empresa.getNif()));
+        centro.addContent(getElemento("nombreCentro", empresa.getRazonSocial()));
+        Direccion d;
+        if (direccionG != null) {
+            d = direccionG;
+        } else {
+            d = empresa.getDireccion();
+        }
+        centro.addContent(getElemento("direccionDetallada", d.getdireccionString()));
+        centro.addContent(getElemento("codPostal", ExportarRemesa.completarCon("" + d.getCpLocalidad().getCpLocalidadPK().getCp(), 5, '0', true)));
+        centro.addContent(getElemento("localidad", d.getCpLocalidad().getLocalidad1().getNombre()));
+
+    }
+
+    private static void rellenaHorario(Element elemento, Grupo g, boolean horasTutorias) {
+        Element horario = new Element("horario", TRIPARTITA_NAMESPACE);
+        horario.addContent(getElemento("horaTotales", "" + g.getAccionFormativa1().getHoras()));
+        if (horasTutorias) {
+            TutoriaHorario thI = null;
+            TutoriaHorario thF = null;
+            for (TutoriaHorario t : g.getTutoriaHorarioList()) {
+                if (t.getHorario1().getId() > 0) {
+                    if (thI == null || thI.getHorario1().getId() > t.getHorario1().getId()) {
+                        thI = t;
+                    }
+                    if (thF == null || thF.getHorario1().getId() < t.getHorario1().getId()) {
+                        thF = t;
+                    }
+                }
+            }
+            if (thI != null && thF != null) {
+                if (esMas15(thI)) {
+                    horario.addContent(getElemento("horaInicioTarde", thI.getHorario1().getHorarioInicioString()));
+                    horario.addContent(getElemento("horaFinTarde", thF.getHorario1().getHorarioFinString()));
+                } else {
+                    horario.addContent(getElemento("horaInicioMañana", thI.getHorario1().getHorarioInicioString()));
+                    if (esMas15(thF)) {
+                        horario.addContent(getElemento("horaFinMañana", "15:00"));
+                        horario.addContent(getElemento("horaInicioTarde", "15:01"));
+                        horario.addContent(getElemento("horaFinTarde", thF.getHorario1().getHorarioFinString()));
+                    } else {
+                        horario.addContent(getElemento("horaFinMañana", thF.getHorario1().getHorarioFinString()));
+                    }
+                }
+            }
+        } else {
+            if (g.getHoraIM() != null) {
+                horario.addContent(getElemento("horaInicioMañana", Fecha.getFechaHoraMinuto(g.getHoraIM())));
+                horario.addContent(getElemento("horaFinMañana", Fecha.getFechaHoraMinuto(g.getHoraFM())));
+            }
+            if (g.getHoraIT() != null) {
+                horario.addContent(getElemento("horaInicioTarde", Fecha.getFechaHoraMinuto(g.getHoraIT())));
+                horario.addContent(getElemento("horaFinTarde", Fecha.getFechaHoraMinuto(g.getHoraFT())));
+            }
+        }
+
+        horario.addContent(getElemento("dias", getStingDias(g)));
+        elemento.addContent(horario);
+    }
+
+    private static void rellenaTutores(Element elemento, Grupo g) {
+        for (Tutor t : g.getTutorList()) {
+            Element tutor = new Element("Tutor", TRIPARTITA_NAMESPACE);
+
+            tutor.addContent(getElemento("numeroHoras", getNumeroHoras(t, g)));
+            tutor.addContent(getElemento("nif", t.getNif()));
+            tutor.addContent(getElemento("nombre", t.getPersona().getNombre()));
+            tutor.addContent(getElemento("apellido1", t.getPersona().getApellido1()));
+            tutor.addContent(getElemento("apellido2", t.getPersona().getApellido2()));
+
+            elemento.addContent(tutor);
+        }
+    }
+
+    private static String getStingDias(Grupo g) {
+        List<DiaSemana> ds = g.getDiaSemanaList();
+        Collections.sort(ds);
+        String d = "";
+        for (DiaSemana di : ds) {
+            d += di.getId();
+        }
+        return d;
+    }
+
+    private static boolean esMas15(TutoriaHorario thI) {
+        return Integer.parseInt(thI.getHorario1().getHorarioInicioString().split(":")[0]) >= 15;
+    }
+
+    private static String getNumeroHoras(Tutor tut, Grupo g) {
+        for (TutoriaHorario th : tut.getTutoriaHorarioList()) {
+            if (th.getHorario1().getId() == -1
+                    && th.getGrupo1().getGrupoPK().getId() == g.getGrupoPK().getId()
+                    && th.getGrupo1().getGrupoPK().getAccionFormativa() == g.getGrupoPK().getAccionFormativa()) {
+                return "" + th.getHoras();
+            }
+        }
+        return "" + ((int) (g.getAccionFormativa1().getHoras() / g.getTutorList().size()));
+    }
+}

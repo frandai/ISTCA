@@ -1,0 +1,210 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package datos;
+
+import java.io.Serializable;
+import java.util.List;
+import javax.persistence.Basic;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinColumns;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
+
+/**
+ *
+ * @author sergio
+ */
+@Entity
+@Table( schema = "public")
+@XmlRootElement
+@NamedQueries({
+    @NamedQuery(name = "Direccion.findAll", query = "SELECT d FROM Direccion d"),
+    @NamedQuery(name = "Direccion.findById", query = "SELECT d FROM Direccion d WHERE d.id = :id"),
+    @NamedQuery(name = "Direccion.findByVia", query = "SELECT d FROM Direccion d WHERE d.via = :via"),
+    @NamedQuery(name = "Direccion.findByNumero", query = "SELECT d FROM Direccion d WHERE d.numero = :numero"),
+    @NamedQuery(name = "Direccion.findByExtra", query = "SELECT d FROM Direccion d WHERE d.extra = :extra")})
+public class Direccion implements Serializable {
+    private static final long serialVersionUID = 1L;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Basic(optional = false)
+    @Column(nullable = false)
+    private Integer id;
+    @Basic(optional = false)
+    @NotNull
+    @Size(min = 1, max = 2147483647)
+    @Column(nullable = false, length = 2147483647)
+    private String via;
+    @Basic(optional = false)
+    @NotNull
+    @Size(min = 1, max = 2147483647)
+    @Column(nullable = false, length = 2147483647)
+    private String numero;
+    @Size(max = 2147483647)
+    @Column(length = 2147483647)
+    private String extra;
+    @JoinTable(name = "GRUPO_DIRECCION", joinColumns = {
+        @JoinColumn(name = "DIRECCION", referencedColumnName = "ID", nullable = false)}, inverseJoinColumns = {
+        @JoinColumn(name = "ACCION_FORMATIVA", referencedColumnName = "ACCION_FORMATIVA", nullable = false),
+        @JoinColumn(name = "GRUPO", referencedColumnName = "ID", nullable = false)})
+    @ManyToMany
+    private List<Grupo> grupoList;
+    @OneToMany(mappedBy = "direccion")
+    private List<Persona> personaList;
+    @OneToMany(mappedBy = "direccionEnvio")
+    private List<Matricula> matriculaList;
+    @OneToMany(mappedBy = "direccion")
+    private List<Empresa> empresaList;
+    @JoinColumn(name = "TIPO_VIA", referencedColumnName = "ID", nullable = false)
+    @ManyToOne(optional = false)
+    private TipoVia tipoVia;
+    @JoinColumns({
+        @JoinColumn(name = "CP", referencedColumnName = "CP", nullable = false),
+        @JoinColumn(name = "LOCALIDAD", referencedColumnName = "LOCALIDAD", nullable = false)})
+    @ManyToOne(optional = false)
+    private CpLocalidad cpLocalidad;
+
+    public Direccion() {
+    }
+
+    public Direccion(Integer id) {
+        this.id = id;
+    }
+
+    public Direccion(Integer id, String via, String numero) {
+        this.id = id;
+        this.via = via;
+        this.numero = numero;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getVia() {
+        return via;
+    }
+
+    public void setVia(String via) {
+        this.via = via;
+    }
+
+    public String getNumero() {
+        return numero;
+    }
+
+    public void setNumero(String numero) {
+        this.numero = numero;
+    }
+
+    public String getExtra() {
+        return extra;
+    }
+
+    public void setExtra(String extra) {
+        this.extra = extra;
+    }
+
+    @XmlTransient
+    public List<Grupo> getGrupoList() {
+        return grupoList;
+    }
+
+    public void setGrupoList(List<Grupo> grupoList) {
+        this.grupoList = grupoList;
+    }
+
+    @XmlTransient
+    public List<Persona> getPersonaList() {
+        return personaList;
+    }
+
+    public void setPersonaList(List<Persona> personaList) {
+        this.personaList = personaList;
+    }
+
+    @XmlTransient
+    public List<Matricula> getMatriculaList() {
+        return matriculaList;
+    }
+
+    public void setMatriculaList(List<Matricula> matriculaList) {
+        this.matriculaList = matriculaList;
+    }
+
+    @XmlTransient
+    public List<Empresa> getEmpresaList() {
+        return empresaList;
+    }
+
+    public void setEmpresaList(List<Empresa> empresaList) {
+        this.empresaList = empresaList;
+    }
+
+    public TipoVia getTipoVia() {
+        return tipoVia;
+    }
+
+    public void setTipoVia(TipoVia tipoVia) {
+        this.tipoVia = tipoVia;
+    }
+
+    public CpLocalidad getCpLocalidad() {
+        return cpLocalidad;
+    }
+
+    public void setCpLocalidad(CpLocalidad cpLocalidad) {
+        this.cpLocalidad = cpLocalidad;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (id != null ? id.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (!(object instanceof Direccion)) {
+            return false;
+        }
+        Direccion other = (Direccion) object;
+        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "datos.Direccion[ id=" + id + " ]";
+    }
+
+    public String getdireccionString() {
+        return getTipoVia().getAbreviatura()+" "+getVia()+", nº "+getNumero()+" "+getExtra();
+    }
+    
+}

@@ -1,0 +1,192 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package datos;
+
+import java.io.Serializable;
+
+import java.util.Date;
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinColumns;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+import javax.xml.bind.annotation.XmlRootElement;
+
+/**
+ *
+ * @author sergio
+ */
+@Entity
+@Table(name = "PEDIDO_LINEA",  schema = "public")
+@XmlRootElement
+@NamedQueries({
+    @NamedQuery(name = "PedidoLinea.findAll", query = "SELECT p FROM PedidoLinea p"),
+    @NamedQuery(name = "PedidoLinea.findByPedido", query = "SELECT p FROM PedidoLinea p WHERE p.pedidoLineaPK.pedido = :pedido"),
+    @NamedQuery(name = "PedidoLinea.findById", query = "SELECT p FROM PedidoLinea p WHERE p.pedidoLineaPK.id = :id"),
+    @NamedQuery(name = "PedidoLinea.findByConcepto", query = "SELECT p FROM PedidoLinea p WHERE p.concepto = :concepto"),
+    @NamedQuery(name = "PedidoLinea.findByPvp", query = "SELECT p FROM PedidoLinea p WHERE p.pvp = :pvp"),
+    @NamedQuery(name = "PedidoLinea.findByDescuento", query = "SELECT p FROM PedidoLinea p WHERE p.descuento = :descuento"),
+    @NamedQuery(name = "PedidoLinea.findByFechaEnvio", query = "SELECT p FROM PedidoLinea p WHERE p.fechaEnvio = :fechaEnvio"),
+    @NamedQuery(name = "PedidoLinea.findByEmpresaSumi", query = "SELECT p FROM PedidoLinea p WHERE p.pedidoLineaPK.empresaSumi = :empresaSumi")})
+public class PedidoLinea implements Serializable {
+    private static final long serialVersionUID = 1L;
+    @EmbeddedId
+    protected PedidoLineaPK pedidoLineaPK;
+    @Basic(optional = false)
+    @NotNull
+    @Size(min = 1, max = 2147483647)
+    @Column(nullable = false, length = 2147483647)
+    private String concepto;
+    @Basic(optional = false)
+    @NotNull
+    @Column(nullable = false)
+    private Double pvp;
+    @Basic(optional = false)
+    @NotNull
+    @Column(nullable = false)
+    private Double descuento;
+    @Column(name = "FECHA_ENVIO")
+    @Temporal(TemporalType.DATE)
+    private Date fechaEnvio;
+    @JoinColumn(name = "TIPO", referencedColumnName = "ID", nullable = false)
+    @ManyToOne(optional = false)
+    private PedidoLineaTipo tipo;
+    @JoinColumns({
+        @JoinColumn(name = "PEDIDO", referencedColumnName = "ID", nullable = false, insertable = false, updatable = false),
+        @JoinColumn(name = "EMPRESA_SUMI", referencedColumnName = "EMPRESA_SUMI", nullable = false, insertable = false, updatable = false)})
+    @ManyToOne(optional = false)
+    private Pedido pedido1;
+    @JoinColumn(name = "MATRICULA", referencedColumnName = "ID")
+    @ManyToOne
+    private Matricula matricula;
+    @JoinColumn(name = "IVA", referencedColumnName = "ID", nullable = false)
+    @ManyToOne(optional = false)
+    private Iva iva;
+
+    public PedidoLinea() {
+    }
+
+    public PedidoLinea(PedidoLineaPK pedidoLineaPK) {
+        this.pedidoLineaPK = pedidoLineaPK;
+    }
+
+    public PedidoLinea(PedidoLineaPK pedidoLineaPK, String concepto, Double pvp, Double descuento) {
+        this.pedidoLineaPK = pedidoLineaPK;
+        this.concepto = concepto;
+        this.pvp = pvp;
+        this.descuento = descuento;
+    }
+
+    public PedidoLinea(String pedido, int id, String empresaSumi) {
+        this.pedidoLineaPK = new PedidoLineaPK(pedido, id, empresaSumi);
+    }
+
+    public PedidoLineaPK getPedidoLineaPK() {
+        return pedidoLineaPK;
+    }
+
+    public void setPedidoLineaPK(PedidoLineaPK pedidoLineaPK) {
+        this.pedidoLineaPK = pedidoLineaPK;
+    }
+
+    public String getConcepto() {
+        return concepto;
+    }
+
+    public void setConcepto(String concepto) {
+        this.concepto = concepto;
+    }
+
+    public Double getPvp() {
+        return pvp;
+    }
+
+    public void setPvp(Double pvp) {
+        this.pvp = pvp;
+    }
+
+    public Double getDescuento() {
+        return descuento;
+    }
+
+    public void setDescuento(Double descuento) {
+        this.descuento = descuento;
+    }
+
+    public Date getFechaEnvio() {
+        return fechaEnvio;
+    }
+
+    public void setFechaEnvio(Date fechaEnvio) {
+        this.fechaEnvio = fechaEnvio;
+    }
+
+    public PedidoLineaTipo getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(PedidoLineaTipo tipo) {
+        this.tipo = tipo;
+    }
+
+    public Pedido getPedido1() {
+        return pedido1;
+    }
+
+    public void setPedido1(Pedido pedido1) {
+        this.pedido1 = pedido1;
+    }
+
+    public Matricula getMatricula() {
+        return matricula;
+    }
+
+    public void setMatricula(Matricula matricula) {
+        this.matricula = matricula;
+    }
+
+    public Iva getIva() {
+        return iva;
+    }
+
+    public void setIva(Iva iva) {
+        this.iva = iva;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (pedidoLineaPK != null ? pedidoLineaPK.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (!(object instanceof PedidoLinea)) {
+            return false;
+        }
+        PedidoLinea other = (PedidoLinea) object;
+        if ((this.pedidoLineaPK == null && other.pedidoLineaPK != null) || (this.pedidoLineaPK != null && !this.pedidoLineaPK.equals(other.pedidoLineaPK))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "datos.PedidoLinea[ pedidoLineaPK=" + pedidoLineaPK + " ]";
+    }
+    
+}

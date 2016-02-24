@@ -1,0 +1,30 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package bean;
+
+import datos.LiquidacionPerfil;
+import javax.ejb.Stateless;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
+/**
+ *
+ * @author sergio
+ */
+@Stateless
+public class LiquidacionPerfilFacade extends AbstractFacade<LiquidacionPerfil> {
+    @PersistenceContext(unitName = "GC_DAIPU")
+    private EntityManager em;
+
+    @Override
+    protected EntityManager getEntityManager() {
+        return em;
+    }
+
+    public LiquidacionPerfilFacade() {
+        super(LiquidacionPerfil.class);
+    }
+    
+}

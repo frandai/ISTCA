@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:c="http://java.sun.com/jsp/jstl/core">
+
+    <ui:composition template="/template.xhtml">
+        <ui:define name="title">
+            <h:outputText value="Personas"></h:outputText>
+        </ui:define>
+        <ui:define name="body">
+            <p:button value="Nueva Persona" href="/faces/JSF/vista/persona/persona.xhtml" styleClass="separador" rendered="#{sesionActual.tienePermiso(4)}"/>
+            <h:panelGrid columns="2" style="float: right;">  
+                <p:panel id="generar_excel">  
+                    <h:commandLink
+                        onclick="#{matriculaVista.todasLasPaginas?'validaTodasPag(); if(!lanzaProc){return false;};':''}"
+                        >  
+                        <p:graphicImage value="/img/excel.png" style="height: 30px;"  />  
+                        <p:dataExporter type="xls" target="dataTable" fileName="personas" pageOnly="#{not matriculaVista.todasLasPaginas}" postProcessor="#{utilidadesVista.postProcessXLS}" />  
+                    </h:commandLink>  
+                    <p:contextMenu for="generar_excel" >  
+                        <p:menuitem actionListener="#{matriculaVista.cambiaValorPag}" value="#{matriculaVista.todasLasPaginas?'Generar Excel para esta página':'Generar Excel para todas las páginas'}" update="@this generar_excel" process="@this" />
+                    </p:contextMenu>
+                    <p:tooltip for="generar_excel" value="#{matriculaVista.todasLasPaginas?'Generar Excel para todas las páginas':'Generar Excel para esta página'}" />
+
+                </p:panel>
+            </h:panelGrid> 
+            <p:fieldset legend="Columnas a Mostrar" collapsed="true" toggleable="true"  styleClass="separador">  
+                <span><h:outputText value="NIF " />  
+                    <p:selectBooleanCheckbox value="#{personaVista.muestraNIF}"/> </span>                
+                <span><h:outputText value="Nombre " />
+                    <p:selectBooleanCheckbox value="#{personaVista.muestraNombre}"  />  </span>   
+                <span> <h:outputText value="Empresa " />  
+                    <p:selectBooleanCheckbox value="#{personaVista.muestraEmpresa}"/> </span>
+                <span> <h:outputText value="Teléfonos" />             
+                    <p:selectBooleanCheckbox value="#{personaVista.muestraTelefono}"/> </span>
+                <span> <h:outputText value="Provincia" />             
+                    <p:selectBooleanCheckbox value="#{personaVista.muestraProvincia}"/> </span>
+                <span> <h:outputText value="Localidad" />             
+                    <p:selectBooleanCheckbox value="#{personaVista.muestraLocalidad}"/> </span>
+                <span><h:outputText value="Tipo " />
+                    <p:selectBooleanCheckbox value="#{personaVista.muestraTipo}"  />  </span>                
+                <span> <h:outputText value="Nivel Estudios " />  
+                    <p:selectBooleanCheckbox value="#{personaVista.muestraNivelEsudios}"/> </span>
+                <span> <h:outputText value="Grupo Cotizacion " />  
+                    <p:selectBooleanCheckbox value="#{personaVista.muestraGrupoCotizacion}"/> </span>
+                <span> <h:outputText value="Area Funcional " />  
+                    <p:selectBooleanCheckbox value="#{personaVista.muestraAreaFuncional}"/> </span>
+                <span> <h:outputText value="Categoría Profesional " />  
+                    <p:selectBooleanCheckbox value="#{personaVista.muestraCatProf}"/> </span>
+                <span><h:outputText value="E.C. Superior " />
+                    <p:selectBooleanCheckbox value="#{personaVista.muestraECSuperior}"  />  </span> 
+                <span><h:outputText value="Nivel E.C. " />
+                    <p:selectBooleanCheckbox value="#{personaVista.muestraNivelEC}"  />  </span> 
+                    <span><h:outputText value="NSS " />
+                        <p:selectBooleanCheckbox value="#{personaVista.muestraNSS}"  />  </span> 
+
+
+
+                <p:commandButton value="Aplicar" update="dataTable" styleClass="botonAplicar"/>
+            </p:fieldset>
+            <p:dataTable  filterEvent="change" id="dataTable" var="persona" value="#{personaVista.personas}" widgetVar="personaTable" lazy="true"
+                          filteredValue="#{personaVista.personasFiltradas}"
+                          emptyMessage="No se encuentran personas" styleClass="separador"
+                          paginator="true" rows="5"   
+                          paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {NextPageLink} {RowsPerPageDropdown}"  
+                          currentPageReportTemplate="Página {currentPage}" 
+                          rowsPerPageTemplate="5,10,15,25,50,100"
+                          filterMap="#{personaVista.filterMap}"
+                          >  
+                <p:column style="width: 30px; text-align: center;" exportable="false" >  
+                    <f:facet name="header">
+                        <p:commandButton type="button" icon="ui-icon-print" title="Invertir selección de matrículas para generar documentación en PDF."
+                                         onclick="$('.boton_imprimir_mat').click();
+                                                 $('.boton_imprimir_mat').focus();
+                                                 $('.boton_imprimir_mat').blur();" id="boton_impr"
+                                         />
+                        <p:contextMenu for="boton_impr" >  
+                            <p:menuitem actionListener="#{personaVista.seleccionaTodosRegistros}" onclick="
+                                                 if (!confirm('Atención: este proceso puede tardar unos minutos. Se limitará el número de valores seleccionados a 10000. ¿Seguro que desea lanzar el proceso? (Si lo lanza, por favor sea paciente).')) {
+                                                     return false;
+                                                 }
+                                        " value="Seleccionar Personas de todas las páginas" update="imprimir_mat :formulario_principal:growl :formulario_principal:messages :formulario_principal:dataTable" process="@this"/>
+                        </p:contextMenu>
+                    </f:facet>
+                    <p:selectBooleanButton value="#{persona.persona.seleccionarPDF}" onchange="$('.bt_imp_#{persona.nif}').click();" id="imprimir_mat" styleClass="boton_imprimir_mat" onLabel="" offLabel="" onIcon="ui-icon-print" offIcon="ui-icon-print" style="width: 30px; height: 30px;float: left;" >
+
+                    </p:selectBooleanButton>
+
+
+
+                    <p:commandButton ajax="true" styleClass="bt_imp_#{persona.nif}" style="display: none;">
+                        <f:setPropertyActionListener target="#{personaVista.empPDF}" value="#{persona.persona}"/>
+                    </p:commandButton>
+                </p:column>
+
+                <p:column filterBy="#{persona.nif}" sortBy="#{persona.nif}" exportable="false"
+                          headerText="NIF"  
+                          filterMatchMode="contains" rendered="#{personaVista.muestraNIF}">  
+                    <a href="../persona/persona.xhtml?persona=#{persona.nif}" target="_blank">#{persona.nif}</a>
+                </p:column>
+                 <p:column exportable="#{personaVista.muestraNIF}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="NIF" />  
+                    </f:facet>  
+                    <h:outputText value="#{persona.nif}" />  
+                </p:column>
+                <p:column filterBy="#{persona.nombre}" sortBy="#{persona.nombre}" exportable="false"
+                          headerText="Nombre"  
+                          filterMatchMode="contains" rendered="#{personaVista.muestraNombre}">  
+                    <a href="../persona/persona.xhtml?persona=#{persona.nif}" target="_blank">#{persona.nombre}</a> 
+                </p:column>
+                <p:column exportable="#{personaVista.muestraNombre}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Nombre" />  
+                    </f:facet>  
+                    <h:outputText value="#{persona.nombre}" />  
+                </p:column>
+                <p:column filterBy="#{persona.empresas}" sortBy="#{persona.empresas}"
+                          headerText="Empresa"  exportable="false"
+                          filterMatchMode="contains" rendered="#{personaVista.muestraEmpresa}">  
+                    <p:dataList rendered="#{persona.nif ne '-100'}" var="empr" value="#{persona.persona.empresaList}" styleClass="listaTabla sinBorde">
+                        <a href="../empresa/empresa.xhtml?empresa=#{empr.nif}" target="_blank">#{empr.razonSocial} ( #{empr.nif} )</a>
+                    </p:dataList>
+                    <p:dataList rendered="#{persona.nif ne '-100'}" var="empr" value="#{persona.persona.empresaList1}" styleClass="listaTabla sinBorde">
+                        <a href="../empresa/empresa.xhtml?empresa=#{empr.nif}" target="_blank">#{empr.razonSocial} ( #{empr.nif} )</a>
+                    </p:dataList>
+                </p:column>
+                <p:column exportable="#{personaVista.muestraEmpresa}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Empresa" />  
+                    </f:facet>  
+                    <h:outputText value="#{persona.empresas}" />  
+                </p:column>
+                <p:column filterBy="#{persona.telefono}" sortBy="#{persona.telefono}"
+                          headerText="Telefono"  exportable="false"
+                          filterMatchMode="contains" rendered="#{personaVista.muestraTelefono}">  
+                    <p:dataList var="tel" value="#{persona.persona.personaTelefonoList}" styleClass="listaTabla sinBorde">
+                        #{tel.personaTelefonoPK.numero} (#{tel.tipo.nombre})
+                    </p:dataList>
+                </p:column>
+                <p:column exportable="#{personaVista.muestraTelefono}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Telefono" />  
+                    </f:facet>  
+                    <h:outputText value="#{persona.telefono}" />  
+                </p:column>
+                <p:column filterBy="#{persona.provinciaNombre}" sortBy="#{persona.provinciaNombre}"
+                          filterMatchMode="contains" rendered="#{personaVista.muestraProvincia}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Provincia" />  
+                    </f:facet>  
+                    <h:outputText value="#{persona.provinciaNombre}"/>
+                </p:column>
+                <p:column filterBy="#{persona.localidadNombre}" sortBy="#{persona.localidadNombre}"
+                          headerText="Localidad"  
+                          filterMatchMode="contains" rendered="#{personaVista.muestraLocalidad}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Localidad" />  
+                    </f:facet>  
+                    <h:outputText value="#{persona.localidadNombre}"/>
+                </p:column>
+                <p:column  filterBy="#{persona.tipo}"    
+                           sortBy="#{persona.tipo}"
+                           rendered="#{personaVista.muestraTipo}"
+                           filterOptions="#{desplegableVista.tipoPersonaOptions}"  
+                           filterMatchMode="exact">  
+                    <f:facet name="header">  
+                        <h:outputText value="Tipo" />  
+                    </f:facet>  
+                    <h:outputText value="#{persona.tipo}"/>
+                </p:column> 
+                <p:column filterBy="#{persona.nivelEstudio}" sortBy="#{persona.nivelEstudio}" 
+                          filterMatchMode="contains" rendered="#{personaVista.muestraNivelEsudios}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Nivel de Estudios" />  
+                    </f:facet>  
+                    <h:outputText value="#{persona.nivelEstudio}"/>
+                </p:column> 
+                <p:column filterBy="#{persona.grupoCotizacion}" sortBy="#{persona.grupoCotizacion}"
+                          
+                          filterMatchMode="contains" rendered="#{personaVista.muestraGrupoCotizacion}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Grupo Cotización" />  
+                    </f:facet>  
+                    <h:outputText value="#{persona.grupoCotizacion}" />  
+                </p:column> 
+                <p:column filterBy="#{persona.areaFuncional}" sortBy="#{persona.areaFuncional}"
+                           
+                          filterMatchMode="contains" rendered="#{personaVista.muestraAreaFuncional}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Area Funcional" />  
+                    </f:facet>  
+                    <h:outputText value="#{persona.areaFuncional}" />  
+                </p:column> 
+                <p:column filterBy="#{persona.categoriaProfesional}" sortBy="#{persona.categoriaProfesional}"
+                           
+                          filterMatchMode="contains" rendered="#{personaVista.muestraCatProf}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Categoría Profesional" />  
+                    </f:facet>  
+                    <h:outputText value="#{persona.categoriaProfesional}" />  
+                </p:column> 
+                <p:column filterBy="#{persona.ecSuperior}" sortBy="#{persona.ecSuperior}"
+                          headerText="Estructura Comercial Superior"  exportable="false"
+                          filterMatchMode="contains" rendered="#{personaVista.muestraECSuperior}">  
+                    <p:dataList var="com" value="#{persona.persona.comercialSuperiorList}" styleClass="listaTabla sinBorde">
+                        #{com.nombre} (#{com.comercialTipo.nombre})
+                    </p:dataList>
+                </p:column>
+                 <p:column exportable="#{personaVista.muestraECSuperior}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Estructura Comercial Superior" />  
+                    </f:facet>  
+                    <h:outputText value="#{persona.ecSuperior}" />  
+                </p:column>
+                <p:column filterBy="#{persona.nivelEc}" sortBy="#{persona.nivelEc}"
+                            
+                          filterOptions="#{desplegableVista.nivelesECOptions}"  
+                          filterMatchMode="exact" rendered="#{personaVista.muestraNivelEC}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Nivel E.C." />  
+                    </f:facet>  
+                    <h:outputText value="#{persona.nivelEc}"/>
+                </p:column>
+                <p:column filterBy="#{persona.nss}" sortBy="#{persona.nss}"
+                           
+                          filterMatchMode="contains" rendered="#{personaVista.muestraNSS}">  
+                    <f:facet name="header">  
+                        <h:outputText value="NSS" />  
+                    </f:facet>  
+                    <h:outputText value="#{persona.nss}" />  
+                </p:column> 
+                <p:column style="width:4%" exportable="false">  
+                    <p:button id="selectButton" title="Ver" icon="ui-icon-search" href="persona.xhtml?persona=#{persona.nif}"/>  
+                </p:column>
+            </p:dataTable>  
+
+            <p:panel style=" border: none; margin: auto; text-align: center;" id="botones_des">
+                <p:dialog modal="true" header="Descargar" id="dialog_desc" widgetVar="dialogDesc" visible="#{personaVista.enlaceDescarga ne ''}">
+                    <h:form>
+                        <p:commandButton styleClass="boton_descarga" icon="ui-icon-print" value="Descargar" onclick="dialogDesc.hide();
+                                                 window.open('../../../..#{personaVista.enlaceDescarga}');" style="float:left; width: 150px; margin: 5px;"/>
+                    </h:form>
+                </p:dialog>
+
+                <p:panel header="Documentación" style="display: inline-block; margin: auto;">
+                    <p:commandButton value="Generar Matrícula" actionListener="#{personaVista.generarMatriculas}" onclick="if (!confirm('¿Seguro que desea Generar las Matrículas para las Personas Seleccionadas?')) {
+                                                     return false;
+                                                 }" style="margin: 3px;"
+                                     update=":formulario_principal:messages :formulario_principal:growl :formulario_principal:dataTable :formulario_principal:dialog_desc :dialogo_CCC"
+                                     />
+
+                </p:panel>
+
+            </p:panel>
+
+        </ui:define>
+        <ui:define name="dialogos">
+            <p:dialog modal="true" header="Descargar" id="dialogo_CCC" widgetVar="dialogoCCC" visible="#{not empty personaVista.matriculaCambiar}" closable="true">
+                <h:form>
+                    <p>Las siguientes personas tienen varias empresas y/o varios CCC a elegir. Por favor, elija las empresas y CCC que quiere mostrar en la matrícula:</p>
+                    <p:dataTable value="#{personaVista.matriculaCambiar}" var="matriculacambia" id="tabla_ccc">
+                        <p:column headerText="Alumno">
+                            #{matriculacambia.alumno.persona.nombreApellidos} (#{matriculacambia.alumno.nif})
+                        </p:column>
+                        <p:column headerText="Empresa">
+                            <p:selectOneMenu value="#{matriculacambia.emcc}" >   
+                                <f:selectItems value="#{matriculacambia.alumno.emccc}" var="emccc" itemLabel="#{emccc.empresaMatricula.empresa.razonSocial} - #{emccc.empresaMatriculaCccPK.ccc}" itemValue="#{emccc}"/>  
+                            </p:selectOneMenu>  
+                        </p:column>
+                    </p:dataTable>
+                    <br/>
+                    <p:commandButton value="Generar Matrículas" styleClass="botonAplicar" actionListener="#{personaVista.generarMatriculas}" 
+                                     update=":formulario_principal:messages :formulario_principal:growl :formulario_principal:dataTable :formulario_principal:dialog_desc :dialogo_CCC"
+
+                                     />
+                </h:form>
+            </p:dialog>
+        </ui:define>
+    </ui:composition>
+</html>

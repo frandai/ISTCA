@@ -1,0 +1,859 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:c="http://java.sun.com/jsp/jstl/core">
+
+    <ui:composition template="/template.xhtml">
+        <ui:define name="title">
+            <h:outputText value="Matrículas"></h:outputText>
+        </ui:define>
+        <ui:define name="body">
+            <p:button value="Nueva Matrícula" href="/faces/JSF/vista/matricula/matricula.xhtml" styleClass="separador" rendered="#{sesionActual.tienePermiso(13)}"/>&nbsp;&nbsp;&nbsp;|&nbsp;
+            <p:commandButton type="button" value="Inicio de Grupos" styleClass="separador" onclick="dialogoFIGrupo.show();"/>
+            <p:commandButton type="button" value="Finalización de Grupos" onclick="dialogoFFGrupo.show();"/>
+            <p:commandButton value="Env. de Dip." title="Envío de Diplomas" actionListener="#{matriculaVista.recargarMatriculasModeloEnvioDiplomas}" update=":formulario_principal" oncomplete="filtraEnvioDiplomas();"/>
+            <p:commandButton value="M. a Cobrar" title="Matrículas a Cobrar" actionListener="#{matriculaVista.recargarMatriculasModeloMatriculasACobrar}" update=":formulario_principal" oncomplete="filtraMatriculasACobrar();"/>
+            <p:commandButton value="C. Al." title="Comunicaciones al Alumno" actionListener="#{matriculaVista.recargarMatriculasModeloComunicacionesAlumno}" update=":formulario_principal" oncomplete="filtraFIGrupo();"/>
+            <p:commandButton value="C. P.Ev." title="Comunicaciones de Petición de Evaluación" actionListener="#{matriculaVista.recargarMatriculasModeloComPetEval}" update=":formulario_principal" oncomplete="filtraComEv();"/>
+            &nbsp;&nbsp;&nbsp;|&nbsp;
+            <p:commandButton type="button" value="Importar Imp. Bonif." styleClass="separador" onclick="dialogoImpBonif.show();" rendered="#{sesionActual.tienePermiso(13)}"
+                             title="Importar Importes a Bonificar"
+                             />
+            <h:panelGrid columns="2" style="float: right;">  
+                <p:panel id="generar_excel">  
+                    <h:commandLink
+                        onclick="#{matriculaVista.todasLasPaginas?'validaTodasPag(); if(!lanzaProc){return false;};':''}"
+                        >  
+                        <p:graphicImage value="/img/excel.png" style="height: 30px;"  />  
+                        <p:dataExporter type="xls" target="dataTable" fileName="matrículas" pageOnly="#{not matriculaVista.todasLasPaginas}" postProcessor="#{utilidadesVista.postProcessXLS}" />  
+                    </h:commandLink>  
+                    <p:contextMenu for="generar_excel" >  
+                        <p:menuitem actionListener="#{matriculaVista.cambiaValorPag}" value="#{matriculaVista.todasLasPaginas?'Generar Excel para esta página':'Generar Excel para todas las páginas'}" update="@this generar_excel" process="@this" />
+                    </p:contextMenu>
+                    <p:tooltip for="generar_excel" value="#{matriculaVista.todasLasPaginas?'Generar Excel para todas las páginas':'Generar Excel para esta página'}" />
+
+                </p:panel> 
+            </h:panelGrid> 
+
+            <p:commandButton value="Reiniciar" style="float: right; margin: 10px;" oncomplete="location.href= 'lista.xhtml';" >
+                <f:setPropertyActionListener target="#{matriculaVista.filterMap}" value="#{null}"/>
+            </p:commandButton>
+            <p:commandButton value="Borrar Selección" rendered="#{sesionActual.tienePermiso(13)}" style="float: right; margin: 10px;" actionListener="#{matriculaVista.borraSelec}" update="dataTable" >
+            </p:commandButton>
+            <p:fieldset legend="Columnas a Mostrar" collapsed="true" toggleable="true"  styleClass="separador">  
+                <span><h:outputText value="Número de Fila  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraNumFila}" /> </span>
+                <span><h:outputText value="Empresa  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraEmpresa}" /> </span>
+                <span><h:outputText value="Alumno  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraAlumno}" /> </span>
+                <span><h:outputText value="Grupo  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraGrupo}" /> </span>
+                <span><h:outputText value="Precio  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraPrecio}" /> </span>
+                <span><h:outputText value="Fecha Inicio Grupo  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraFIG}" /> </span>
+                <span><h:outputText value="Fecha Fin Grupo  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraFFG}" /> </span>
+                <span><h:outputText value="Cobro Pendiente  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraCobro_Pendiente}" /> </span>
+                <span><h:outputText value="Matrícula Confirmada  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraConfirmada}" /> </span>
+                <span><h:outputText value="Matrícula A finializar  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraA_finializar}" /> </span>
+                <span><h:outputText value="Matrícula Finalizada  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraFinalizada}" /> </span>
+                <span><h:outputText value="Evaluación Recibida  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraEv_Rec}" /> </span>
+                <span><h:outputText value="Informe de Fin de Curso Enviado  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraIFC_Env}" /> </span>
+                <span><h:outputText value="ID Matrícula  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraID}" /> </span>
+                <span><h:outputText value="Forma de Pago Matrícula  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraFP}" /> </span>
+                <span><h:outputText value="Baja  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraBaja}" /> </span>
+                <span><h:outputText value="Envío Diploma  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraEnv_Dip}" /> </span>
+                <span><h:outputText value="Pago Posterior  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraPago_Pos}" /> </span>
+                <span><h:outputText value="CCC Matrícula  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraCCC}" /> </span>
+                <span><h:outputText value="Facturas  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraFacturas}" /> </span>
+                <span><h:outputText value="Modalidad Acción Fromativa  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraModalidad}" /> </span>
+                <span><h:outputText value="Estructura Comercial  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraEC}" /> </span>
+                <span><h:outputText value="Proveedor  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraProveedor}" /> </span>
+                <span><h:outputText value="E-Mail  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraEmail}" /> </span>
+                <span><h:outputText value="Pago Aplazado  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraPagoAplazado}" /> </span>
+                <span><h:outputText value="Creado XML Inicio de Grupos  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraCreadoXMLInicio}" /> </span>
+                <span><h:outputText value="Diplomas Adicionales  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraDiplAdicc}" /> </span>
+                <span><h:outputText value="Fecha Entrega Matrícula  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraFechaMatricula}" /> </span>
+                <span><h:outputText value="Asesoría  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraAesoria}" /> </span>
+                <span><h:outputText value="Observaciones  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraObservaciones}" /> </span>
+                <span><h:outputText value="E-mail Alumno  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraEmailAlumno}" /> </span>
+                <span><h:outputText value="Teléfono Empresa  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraTelefonoEmpresa}" /> </span>
+                <span><h:outputText value="Teléfono Alumno  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraTelefonoAlumno}" /> </span>
+                <span><h:outputText value="Com. Inicio Curso  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraComInicioCurso}" /> </span>
+                <span><h:outputText value="Com. Seguimiento Curso  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraComSegCurso}" /> </span>
+                <span><h:outputText value="Com. Fin Curso  " /> <p:selectBooleanCheckbox value="#{matriculaVista.muestraComFinCurso}" /> </span>
+
+
+
+
+                <p:commandButton value="Aplicar" update="dataTable :formulario_principal" styleClass="botonAplicar"/>
+            </p:fieldset>
+
+            <p:outputLabel style="text-align: center; font-weight: bolder; color: black; background-color: white; display: block; width: 100%;" id="mostrarff" rendered="#{matriculaVista.ffin_desde ne null and not matriculaVista.inicio_fin}" value="Se muestran las matrículas con Fecha de Fin de Grupo desde #{Fecha.getFechaDiaMesAnio(matriculaVista.ffin_desde)} hasta #{Fecha.getFechaDiaMesAnio(matriculaVista.ffin_hasta)}."/>
+            <p:outputLabel style="text-align: center; font-weight: bolder; color: black; background-color: white; display: block; width: 100%;" id="mostrarfi" rendered="#{matriculaVista.ffin_desde ne null and matriculaVista.inicio_fin}" value="Se muestran las matrículas con Fecha de Inicio de Grupo desde #{Fecha.getFechaDiaMesAnio(matriculaVista.ffin_desde)} hasta #{Fecha.getFechaDiaMesAnio(matriculaVista.ffin_hasta)}."/>
+
+
+
+            <script>
+
+                function filtra() {
+                    matriculaTable.filter();
+                }
+
+                $(function() {
+                    $('.seleccionarFechaMatricula').change(function() {
+                        $('.fechaMatricula').val($('.seleccionarFechaMatricula').val());
+                        $('.fechaMatricula').change();
+                    });
+                    $('.recarga').click();
+                    $('.seleccionarFechaMatricula').change();
+                    filtra();
+                });
+
+                function filtraFIGrupo() {
+                    $(".baja").val("No");
+                    filtra();
+                }
+
+                function filtraComEv() {
+                    $(".baja").val("No");
+                    $(".env_rec").val("No");
+                    $(".finalizada").val("Sí");
+                    filtra();
+                }
+
+                function filtraFFGrupo() {
+                    $(".afinalizar").val("Sí");
+                    $(".finalizada").val("No");
+                    //$(".env_rec").val("Sí");
+                    $(".baja").val("No");
+                    filtra();
+                }
+
+                function filtraEnvioDiplomas() {
+                    $(".env_rec").val("Sí");
+                    $(".cob_pend").val("No");
+                    $(".env_dip").val("No");
+                    $(".baja").val("No");
+                    filtra();
+                }
+
+                function filtraMatriculasACobrar() {
+                    $(".cob_pend").val("Sí");
+                    $(".baja").val("No");
+                    $(".pago_pos").val("No");
+                    filtra();
+                }
+
+            </script>
+
+
+
+            <p:dataTable  filterEvent="change" id="dataTable" var="matricula" value="#{matriculaVista.matriculas}" widgetVar="matriculaTable"   
+                          filteredValue="#{matriculaVista.matriculasFiltradas}" rowIndexVar="rowIndex"
+                          lazy="true"
+                          emptyMessage="No se encuentran matriculas" styleClass="separador"
+                          paginator="true" rows="#{matriculaVista.filasSelec}"   
+                          paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"  
+                          currentPageReportTemplate="{totalRecords} Filas (página {currentPage} de {totalPages})"
+                          rowsPerPageTemplate="5,10,15,25,50,100, 300"
+                          filterMap="#{matriculaVista.filterMap}"
+                          >  
+                <p:ajax event="sort" listener="#{matriculaVista.onSort}"/>
+                <f:facet name="footer">
+                    Matrículas Entregadas en: <input type="text" class="
+                                                     ui-inputfield ui-inputtext ui-widget ui-state-default ui-corner-all calendarFilter
+                                                     seleccionarFechaMatricula
+                                                     "
+                                                     value="#{matriculaVista.anioSelect}"
+                                                     />
+                </f:facet>
+
+
+                <p:column exportable="false" rendered="#{matriculaVista.muestraNumFila}">
+                    #{rowIndex+1}
+                </p:column>
+                <p:column style="#{sesionActual.tienePermiso(13)?'width: 120px; text-align: center;':''}" exportable="false">  
+                    <f:facet name="header">
+                        <p:commandButton type="button" icon="ui-icon-print" title="Invertir selección de matrículas para generar documentación en PDF."
+                                         onclick="$('.boton_imprimir_mat').click();
+                    $('.boton_imprimir_mat').focus();
+                    $('.boton_imprimir_mat').blur();" update="generaDoc" id="boton_impr"
+                                         />
+                        <p:contextMenu for="boton_impr" >  
+                            <p:menuitem actionListener="#{matriculaVista.seleccionaTodosRegistros}" onclick="
+                    if (!confirm('Atención: este proceso puede tardar unos minutos. Se limitará el número de valores seleccionados a 10000. ¿Seguro que desea lanzar el proceso? (Si lo lanza, por favor sea paciente).')) {
+                        return false;
+                    }
+                                        " value="Seleccionar Matrículas de todas las páginas" update=":generaDoc imprimir_mat :formulario_principal:growl :formulario_principal:messages :formulario_principal:dataTable" process="@this"/>
+                        </p:contextMenu>
+                        <p:commandButton rendered="#{sesionActual.tienePermiso(13)}" type="button" icon="ui-icon-mail-closed" title="Invertir selección de matrículas para  enviar documentación por e-mail." update="generaDoc"
+                                         onclick="$('.boton_email_mat').click();
+                    $('.boton_email_mat').focus();
+                    $('.boton_email_mat').blur();"
+                                         />
+                        <p:commandButton rendered="#{sesionActual.tienePermiso(13)}" type="button" icon="ui-icon-suitcase" title="Invertir selección de matrículas para  enviar documentación por e-mail a asesoría." update="generaDoc"
+                                         onclick="$('.boton_email_mat_ase').click();
+                    $('.boton_email_mat_ase').focus();
+                    $('.boton_email_mat_ase').blur();"
+                                         />
+                    </f:facet>
+                    <div style="#{sesionActual.tienePermiso(13)?'width:100px;text-align: center;':''}">
+                        <p:selectBooleanButton value="#{matricula.matricula.seleccionarPDF}" onchange="$('.bt_imp_#{matricula.id}').click();" id="imprimir_mat" styleClass="boton_imprimir_mat" onLabel="" offLabel="" onIcon="ui-icon-print" offIcon="ui-icon-print" style="#{sesionActual.tienePermiso(13)?'width: 29%; height: 30px;':'width: 30px; height: 30px;'}" >
+
+                        </p:selectBooleanButton>
+                        <p:selectBooleanButton rendered="#{sesionActual.tienePermiso(13)}" value="#{matricula.matricula.seleccionarEmail}" onchange="$('.bt_pdf_#{matricula.id}').click();" id="email_mat" disabled="#{matricula.matricula.emailEnvio eq ''}" styleClass="boton_email_mat" onLabel="" offLabel="" onIcon="ui-icon-mail-closed" offIcon="ui-icon-mail-closed" style="width: 29%; height: 30px;" >
+
+                        </p:selectBooleanButton>
+                        <p:selectBooleanButton rendered="#{sesionActual.tienePermiso(13)}" value="#{matricula.matricula.seleccionarEmail_ase}" onchange="$('.bt_ase_#{matricula.id}').click();" id="email_mat_ase" disabled="#{matricula.matricula.emailEnvio_ase eq ''}" styleClass="boton_email_mat_ase" onLabel="" offLabel="" onIcon="ui-icon-suitcase" offIcon="ui-icon-suitcase" style="width: 29%; height: 30px;" >
+
+                        </p:selectBooleanButton>
+
+
+
+
+                        <p:commandButton ajax="true" styleClass="bt_imp_#{matricula.id}" style="display: none;">
+                            <f:setPropertyActionListener target="#{matriculaVista.matPDF}" value="#{matricula.matricula}"/>
+                        </p:commandButton>
+                        <p:commandButton ajax="true" rendered="#{sesionActual.tienePermiso(13)}" styleClass="bt_pdf_#{matricula.id}" style="display: none;">
+                            <f:setPropertyActionListener target="#{matriculaVista.matEmail}" value="#{matricula.matricula}"/>
+                        </p:commandButton>
+                        <p:commandButton ajax="true" rendered="#{sesionActual.tienePermiso(13)}" styleClass="bt_ase_#{matricula.id}" style="display: none;">
+                            <f:setPropertyActionListener target="#{matriculaVista.matEmail_ase}" value="#{matricula.matricula}"/>
+                        </p:commandButton>
+                    </div>
+                    <p:tooltip for="imprimir_mat" value="Seleccionar Matrícula para generar documentación en PDF." />  
+                    <p:tooltip for="email_mat" rendered="#{sesionActual.tienePermiso(13)}" value="Seleccionar Matrícula para enviar documentación por e-mail. (#{matricula.matricula.emailEnvio})" />
+                    <p:tooltip for="email_mat_ase" rendered="#{sesionActual.tienePermiso(13)}" value="Seleccionar Matrícula para enviar documentación por e-mail a asesoría. (#{matricula.matricula.emailEnvio_ase})" />
+                    <p:contextMenu for="email_mat" rendered="#{sesionActual.tienePermiso(13)}" style="width: 270px; text-align: center;" >  
+                        <p:menuitem  value="Cambiar e-mail (#{matricula.matricula.emailEnvio})" icon="ui-icon-pencil" update=":cambia_email :cambia_email:valor_email" oncomplete="dlgEditarEmail.show()">
+                            <f:setPropertyActionListener target="#{matriculaVista.matriculaSeleccionada}" value="#{matricula.matricula}"/>
+                        </p:menuitem> 
+                    </p:contextMenu>
+                </p:column>
+                <p:column style="width:20px" headerText="Eventos" exportable="false">  
+                    <p:rowToggler rendered="#{not empty matricula.matricula.eventoList}" />  
+                </p:column> 
+                <!--muestraEmpresa-->
+                <p:column filterBy="#{matricula.razonSocial}" 
+                          sortBy="#{matricula.razonSocial}" id="razonSocial"
+                          headerText="Empresa"  exportable="false"
+                          filterMatchMode="contains" rendered="#{matriculaVista.muestraEmpresa}"> 
+                    <a href="../empresa/empresa.xhtml?empresa=#{matricula.matricula.empresaMatriculaCcc.empresaMatricula.empresa.nif}" target="_blank"> #{matricula.razonSocial}</a>
+                </p:column>
+                <p:column exportable="#{matriculaVista.muestraEmpresa}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Razón Social Empresa" />  
+                    </f:facet>  
+                    <h:outputText value="#{matricula.matricula.empresaMatriculaCcc.empresaMatricula.empresa.razonSocial}" />  
+                </p:column>
+                <p:column exportable="#{matriculaVista.muestraEmpresa}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="NIF Empresa" />  
+                    </f:facet>  
+                    <h:outputText value="#{matricula.matricula.empresaMatriculaCcc.empresaMatriculaCccPK.nif}" />  
+                </p:column>
+
+                <!--muestraAlumno-->
+                <p:column filterBy="#{matricula.alumno}" 
+                          exportable="false"
+                          headerText="Alumno"  
+                          filterMatchMode="contains" rendered="#{matriculaVista.muestraAlumno}">  
+                    <a href="../persona/persona.xhtml?persona=#{matricula.matricula.alumno.nif}" target="_blank"><h:outputText value="#{matricula.alumno}" /></a> 
+                </p:column>
+
+                <p:column exportable="#{matriculaVista.muestraAlumno}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Nombre Alumno" />  
+                    </f:facet>  
+                    <h:outputText value="#{matricula.matricula.alumno.persona.nombre} #{matricula.matricula.alumno.persona.apellido1} #{matricula.matricula.alumno.persona.apellido2}" />  
+                </p:column>
+                <p:column exportable="#{matriculaVista.muestraAlumno}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="NIF Alumno" />  
+                    </f:facet>  
+                    <h:outputText value="#{matricula.matricula.alumno.nif}" />  
+                </p:column>
+
+                <!--muestraGrupo-->
+                <p:column filterBy="#{matricula.grupo}" 
+                          exportable="false"
+                          headerText="Grupo"  
+                          filterMatchMode="contains" rendered="#{matriculaVista.muestraGrupo}">  
+                    <a href="../grupo/grupo.xhtml?grupo=#{matricula.matricula.grupo.grupoPK.id}&amp;accionformativa=#{matricula.matricula.grupo.accionFormativa1.id}" target="_blank"><h:outputText value="#{matricula.grupo}" /></a> 
+                </p:column>
+
+                <p:column exportable="#{matriculaVista.muestraGrupo}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Grupo" />  
+                    </f:facet>  
+                    <h:outputText value="#{matricula.grupo}" />  
+                </p:column>
+
+                <!--muestraPrecio-->
+                <p:column filterBy="#{matricula.precio}"
+                          filterMatchMode="contains" rendered="#{matriculaVista.muestraPrecio}" exportable="#{matriculaVista.muestraPrecio}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Precio" />  
+                    </f:facet> 
+                    <h:outputText value="#{matricula.precio} €" /> 
+                </p:column>
+                <!--muestraFIG-->
+                <p:column filterStyleClass="calendarFilter" filterBy="#{matricula.fechaInicio}" 
+                          filterMatchMode="contains" rendered="#{matriculaVista.muestraFIG}" exportable="#{matriculaVista.muestraFIG}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Inicio Grupo" />  
+                    </f:facet> 
+                    <h:outputText value="#{Fecha.getPGes(matricula.fechaInicio)}" /> 
+                </p:column>
+
+                <!--muestraFFG-->
+                <p:column filterStyleClass="calendarFilter" filterBy="#{matricula.fechaFin}"  
+                          filterMatchMode="contains" rendered="#{matriculaVista.muestraFFG}" exportable="#{matriculaVista.muestraFFG}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Fin Grupo" />  
+                    </f:facet> 
+                    <h:outputText value="#{Fecha.getPGes(matricula.fechaFin)}" /> 
+                </p:column>
+
+                <!--muestraCobro_Pendiente-->
+                <p:column filterBy="#{matricula.cobroPendiente}"
+                          filterOptions="#{desplegableVista.sinoOptions}"
+                          exportable="#{matriculaVista.muestraCobro_Pendiente}"
+                          filterMatchMode="exact" 
+                          rendered="#{matriculaVista.muestraCobro_Pendiente}"
+                          styleClass="sino_col"
+                          filterStyleClass="cob_pend"
+                          >  
+                    <f:facet name="header">  
+                        <h:outputText value="Cobro Pend." />  
+                    </f:facet> 
+                    <h:outputText value="#{matricula.cobroPendiente}" /> 
+                </p:column>
+
+                <!--muestraConfirmada-->
+                <p:column filterBy="#{matricula.confirmada}"
+                          filterOptions="#{desplegableVista.sinoOptions}"
+                          exportable="#{matriculaVista.muestraConfirmada}"
+                          filterMatchMode="exact" 
+                          rendered="#{matriculaVista.muestraConfirmada}"
+                          styleClass="sino_col"
+                          >  
+                    <f:facet name="header">  
+                        <h:outputText value="Confirmada" />  
+                    </f:facet> 
+                    <h:outputText value="#{matricula.confirmada}" /> 
+                </p:column>
+
+                <!--muestraA_finializar-->
+                <p:column filterBy="#{matricula.a_finalizar}"
+                          filterOptions="#{desplegableVista.sinoOptions}"
+                          exportable="#{matriculaVista.muestraA_finializar}"
+                          filterMatchMode="exact" 
+                          rendered="#{matriculaVista.muestraA_finializar}"
+                          styleClass="sino_col" 
+                          filterStyleClass="afinalizar"
+                          >  
+                    <f:facet name="header">  
+                        <h:outputText value="A Finalizar" />  
+                    </f:facet>
+                    <h:outputText value="#{(matricula.a_finalizar)}" /> 
+                </p:column>
+                <!--muestraFinalizada-->
+                <p:column filterBy="#{matricula.finalizada}"
+                          filterOptions="#{desplegableVista.sinoOptions}"
+                          exportable="#{matriculaVista.muestraFinalizada}"
+                          filterMatchMode="exact" 
+                          rendered="#{matriculaVista.muestraFinalizada}"
+                          styleClass="sino_col" 
+                          filterStyleClass="finalizada"
+                          >  
+                    <f:facet name="header">  
+                        <h:outputText value="Finalizada" />  
+                    </f:facet>
+                    <h:outputText value="#{matricula.finalizada}" /> 
+                </p:column>
+                <!--muestraEv_Rec-->
+                <p:column filterBy="#{matricula.evRecibida}"
+                          filterOptions="#{desplegableVista.sinoOptions}"
+                          exportable="#{matriculaVista.muestraEv_Rec}"
+                          filterMatchMode="exact" 
+                          rendered="#{matriculaVista.muestraEv_Rec}"
+                          styleClass="sino_col" 
+                          filterStyleClass="env_rec"
+                          >  
+                    <f:facet name="header">  
+                        <h:outputText value="Ev. Recibida" />  
+                    </f:facet>
+                    <h:outputText value="#{(matricula.evRecibida)}" /> 
+                </p:column>
+                <!--muestraIFC_Env-->
+                <p:column filterBy="#{matricula.ifcEnviada}"
+                          filterOptions="#{desplegableVista.sinoOptions}"
+                          exportable="#{matriculaVista.muestraIFC_Env}"
+                          filterMatchMode="exact" 
+                          rendered="#{matriculaVista.muestraIFC_Env}"
+                          styleClass="sino_col" 
+                          >  
+                    <f:facet name="header">  
+                        <h:outputText value="I.F.C. Enviado" />  
+                    </f:facet>
+                    <h:outputText value="#{matricula.ifcEnviada}" /> 
+                </p:column>
+                <!--muestraID-->
+                <p:column filterBy="#{matricula.id}" sortBy="#{matricula.id}" id="matriculaID"
+                          headerText="ID"  
+                          filterMatchMode="contains" rendered="#{matriculaVista.muestraID}"
+                          exportable="false"
+                          >  
+                    <a href="../matricula/matricula.xhtml?matricula=#{matricula.id}" target="_blank"><h:outputText value="#{matricula.id}" /></a>
+                </p:column> 
+                <p:column exportable="#{matriculaVista.muestraID}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="ID" />  
+                    </f:facet>  
+                    <h:outputText value="#{matricula.id}" />  
+                </p:column>
+
+                <!--muestraFP-->
+                <p:column filterBy="#{matricula.formaPago}" 
+                          filterMatchMode="contains" rendered="#{matriculaVista.muestraFP}" exportable="#{matriculaVista.muestraFP}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Forma Pago" />  
+                    </f:facet> 
+                    <h:outputText value="#{matricula.formaPago}" /> 
+                </p:column>
+                <!--muestraBaja-->
+                <p:column filterBy="#{matricula.asbaja}"
+                          filterOptions="#{desplegableVista.sinoOptionsDefectoNo}"
+                          exportable="#{matriculaVista.muestraBaja}"
+                          filterMatchMode="exact" 
+                          rendered="#{matriculaVista.muestraBaja}"
+                          styleClass="sino_col" 
+                          filterStyleClass="baja"
+                          >  
+                    <f:facet name="header">  
+                        <h:outputText value="Baja" />  
+                    </f:facet> 
+                    <h:outputText value="#{matricula.asbaja}" /> 
+                </p:column>
+                <!--muestraEnv_Dip-->
+                <p:column filterBy="#{matricula.diplomaEnviado}"
+                          filterOptions="#{desplegableVista.sinoOptions}"
+                          exportable="#{matriculaVista.muestraEnv_Dip}"
+                          filterMatchMode="exact" 
+                          rendered="#{matriculaVista.muestraEnv_Dip}"
+                          styleClass="sino_col" 
+                          filterStyleClass="env_dip"
+                          >  
+                    <f:facet name="header">  
+                        <h:outputText value="Dipl. Enviado" />  
+                    </f:facet>
+                    <h:outputText value="#{(matricula.diplomaEnviado)}" /> 
+                </p:column>
+                <!--muestraPago_Pos-->
+                <p:column filterBy="#{matricula.pagoPosterior}"
+                          filterOptions="#{desplegableVista.sinoOptions}"
+                          exportable="#{matriculaVista.muestraPago_Pos}"
+                          filterMatchMode="exact" style="width: 10px;"
+                          rendered="#{matriculaVista.muestraPago_Pos}"
+                          styleClass="sino_col" 
+                          filterStyleClass="pago_pos"
+                          >  
+                    <f:facet name="header">  
+                        <h:outputText value="Pago Post." />  
+                    </f:facet>
+                    <h:outputText value="#{matricula.pagoPosterior}" /> 
+                </p:column>
+                <!--muestraCCC-->
+                <p:column filterBy="#{matricula.ccc}" 
+                          exportable="#{matriculaVista.muestraCCC}"
+                          filterMatchMode="contains" rendered="#{matriculaVista.muestraCCC}">  
+                    <f:facet name="header">  
+                        <h:outputText value="CCC Matrícula" />  
+                    </f:facet>
+                    <h:outputText value="#{matricula.ccc}" /> 
+                </p:column>
+                <!--muestraFacturas-->
+                <p:column filterBy="#{matricula.factura}" exportable="false" headerText="Facturas"
+                          filterMatchMode="contains" rendered="#{matriculaVista.muestraFacturas}">  
+                    <p:dataList var="fac" value="#{matricula.matricula.facturaList}" styleClass="listaTabla">
+                        #{fac.id} (#{((fac.importe lt 0.0)? 'Abono' :  fac.ultimoEstado.estado.nombre)})
+
+                    </p:dataList>
+                </p:column>
+                <p:column exportable="#{matriculaVista.muestraFacturas}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Facturas" />  
+                    </f:facet>  
+                    <h:outputText value="#{matricula.matricula.facturasString}" />  
+                </p:column>
+                <!--muestraModalidad-->
+                <p:column filterBy="#{matricula.modalidad}"
+                          exportable="#{matriculaVista.muestraModalidad}"
+                          filterOptions="#{desplegableVista.modalidadOptions}"
+                          filterMatchMode="exact" rendered="#{matriculaVista.muestraModalidad}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Modalidad" />  
+                    </f:facet>
+                    <h:outputText value="#{matricula.modalidad}" /> 
+                </p:column>
+                <!--muestraEC-->
+                <p:column filterBy="#{matricula.comercial}" exportable="false"
+                          headerText="Estructura Comercial"  
+                          filterMatchMode="contains" rendered="#{matriculaVista.muestraEC}">  
+                    <p:dataList var="com" value="#{matricula.matricula.matriculaComercialList}" styleClass="listaTabla">
+                        #{com.comercial1.nombre} (#{com.comercial1.comercialTipo.nombre})
+                    </p:dataList>
+                </p:column>
+                <p:column exportable="#{matriculaVista.muestraEC}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Estructura Comercial" />  
+                    </f:facet>  
+                    <h:outputText value="#{matricula.comercial}" />  
+                </p:column>
+                <p:column filterBy="#{matricula.proveedor}"
+                          exportable="#{matriculaVista.muestraProveedor}"
+                          rendered="#{matriculaVista.muestraProveedor}"
+                          filterMatchMode="contains" > 
+                    <f:facet name="header">  
+                        <h:outputText value="Proveedor" />  
+                    </f:facet>
+                    <h:outputText value="#{matricula.proveedor}"/>
+                </p:column>
+                <p:column filterBy="#{matricula.email}"
+                          exportable="#{matriculaVista.muestraEmail}"
+                          rendered="#{matriculaVista.muestraEmail}"
+                          filterMatchMode="contains" >  
+                    <f:facet name="header">  
+                        <h:outputText value="E-Mail" />  
+                    </f:facet>
+                    <h:outputText value="#{matricula.email}"/>
+                </p:column>
+                <!--muestraPago_aplazado-->
+                <p:column filterBy="#{matricula.pagoAplazado}"
+                          exportable="#{matriculaVista.muestraPagoAplazado}"  filterOptions="#{desplegableVista.sinoOptions}"
+
+                          filterMatchMode="exact" style="width: 10px;"
+                          rendered="#{matriculaVista.muestraPagoAplazado}"
+                          styleClass="sino_col" 
+                          filterStyleClass="pago_pos"
+                          >  
+                    <f:facet name="header"> 
+                        <h:outputText value="Pago Aplaz" />  
+                    </f:facet>
+                    <h:outputText value="#{matricula.pagoAplazado}" /> 
+                </p:column>
+                <p:column filterBy="#{matricula.creadoXmlInicio}"
+                          exportable="#{matriculaVista.muestraCreadoXMLInicio}"  filterOptions="#{desplegableVista.sinoOptions}"
+
+                          filterMatchMode="exact" style="width: 10px;"
+                          rendered="#{matriculaVista.muestraCreadoXMLInicio}"
+                          styleClass="sino_col" 
+                          filterStyleClass="pago_pos"
+                          >  
+                    <f:facet name="header"> 
+                        <h:outputText value="Cr. XML Ini." title="Creado XML de Inicio de Grupos" />  
+                    </f:facet>
+                    <h:outputText value="#{matricula.creadoXmlInicio}" /> 
+                </p:column>
+
+                <!--muestraDipAdic-->
+                <p:column filterBy="#{matricula.diplomasAdicc}" exportable="false" headerText="Diplomas Adicionales"
+                          filterMatchMode="contains" rendered="#{matriculaVista.muestraDiplAdicc}">  
+                    <p:dataList var="dipAd" value="#{matricula.diplomasAdicc.split('/')}" styleClass="listaTabla" rendered="#{matricula.diplomasAdicc ne ''}">
+                        #{dipAd}
+                    </p:dataList>
+                </p:column>
+                <p:column exportable="#{matriculaVista.muestraDiplAdicc}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Diplomas Adicionales" />  
+                    </f:facet>  
+                    <h:outputText value="#{matricula.diplomasAdicc}" />  
+                </p:column>
+
+
+                <p:column filterBy="#{matricula.asesoria}" 
+                          exportable="#{matriculaVista.muestraAesoria}"
+                          filterMatchMode="contains" rendered="#{matriculaVista.muestraAesoria}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Asesoría" />  
+                    </f:facet>
+                    <h:outputText value="#{matricula.asesoria}" /> 
+                </p:column>
+
+
+                <p:column filterBy="#{matricula.observaciones}" exportable="false" headerText="Observaciones"
+                          filterMatchMode="contains" rendered="#{matriculaVista.muestraObservaciones}">  
+                    <h:outputText value="#{matricula.observaciones.length() gt 10? matricula.observaciones.substring(0,10) : matricula.observaciones}#{matricula.observaciones.length() gt 10?'[...]':''}" title="#{matricula.observaciones}" style="cursor: pointer;" />  
+                </p:column>
+                <p:column exportable="#{matriculaVista.muestraObservaciones}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Observaciones" />  
+                    </f:facet>  
+                    <h:outputText value="#{matricula.observaciones}" />  
+                </p:column>
+
+                <!--muestraFEM-->
+                <p:column filterStyleClass="calendarFilter fechaMatricula" filterBy="#{matricula.fechaMatricula}" 
+                          filterMatchMode="contains" rendered="true" exportable="#{matriculaVista.muestraFechaMatricula}"
+                          styleClass="#{matriculaVista.muestraFechaMatricula?'':'noMostrar'}"
+                          >  
+                    <f:facet name="header">  
+                        <h:outputText value="Entrega Matrícula" />  
+                    </f:facet> 
+                    <h:outputText value="#{Fecha.getPGes(matricula.fechaMatricula)}" /> 
+                </p:column>
+
+                <p:column filterBy="#{matricula.comInicioCursio}"
+                          exportable="#{matriculaVista.muestraComInicioCurso}"
+                          filterOptions="#{desplegableVista.estadoEventoComOptions}"
+                          filterMatchMode="exact" rendered="#{matriculaVista.muestraComInicioCurso}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Com. Inicio Curso" title="Comunicación de Inicio de Curso" />  
+                    </f:facet>
+                    <h:outputText value="#{matricula.comInicioCursio}" /> 
+                </p:column>
+                <p:column filterBy="#{matricula.comSegCurso}"
+                          exportable="#{matriculaVista.muestraComSegCurso}"
+                          filterOptions="#{desplegableVista.estadoEventoComOptions}"
+                          filterMatchMode="exact" rendered="#{matriculaVista.muestraComSegCurso}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Com. Seg. Curso" title="Comunicación de Seguimiento de Curso" />  
+                    </f:facet>
+                    <h:outputText value="#{matricula.comSegCurso}" /> 
+                </p:column>
+                <p:column filterBy="#{matricula.comFinCurso}"
+                          exportable="#{matriculaVista.muestraComFinCurso}"
+                          filterOptions="#{desplegableVista.estadoEventoComOptions}"
+                          filterMatchMode="exact" rendered="#{matriculaVista.muestraComFinCurso}">  
+                    <f:facet name="header">  
+                        <h:outputText value="Com. Fin Curso" title="Comunicación de Fin de Curso" />  
+                    </f:facet>
+                    <h:outputText value="#{matricula.comFinCurso}" /> 
+                </p:column>
+
+                <p:column filterBy="#{matricula.emailAlumno}" 
+                          filterMatchMode="contains" rendered="#{matriculaVista.muestraEmailAlumno}" exportable="#{matriculaVista.muestraEmailAlumno}">  
+                    <f:facet name="header">  
+                        <h:outputText value="E-mail Alumno" />  
+                    </f:facet> 
+                    <h:outputText value="#{matricula.emailAlumno}" /> 
+                </p:column>
+
+                <p:column filterBy="#{matricula.telefonoAlumno}" exportable="false" headerText="Tlf. Alumno"
+                          filterMatchMode="contains" rendered="#{matriculaVista.muestraTelefonoAlumno}">  
+                    <p:dataList var="tlfAl" value="#{matricula.telefonoAlumno.split(',')}" styleClass="listaTabla" rendered="#{matricula.telefonoAlumno ne ''}">
+                        #{tlfAl}
+                    </p:dataList>
+                </p:column>
+                <p:column exportable="#{matriculaVista.muestraTelefonoAlumno}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Tlf. Alumno" />  
+                    </f:facet>  
+                    <h:outputText value="#{matricula.telefonoAlumno}" />  
+                </p:column>
+                <p:column filterBy="#{matricula.telefonoEmpresa}" exportable="false" headerText="Tlf. Empresa"
+                          filterMatchMode="contains" rendered="#{matriculaVista.muestraTelefonoEmpresa}">  
+                    <p:dataList var="tlfEmp" value="#{matricula.telefonoEmpresa.split(',')}" styleClass="listaTabla" rendered="#{matricula.telefonoEmpresa ne ''}">
+                        #{tlfEmp}
+                    </p:dataList>
+                </p:column>
+                <p:column exportable="#{matriculaVista.muestraTelefonoEmpresa}" styleClass="noMostrar"> 
+                    <f:facet name="header">  
+                        <h:outputText value="Tlf. Empresa" />  
+                    </f:facet>  
+                    <h:outputText value="#{matricula.telefonoEmpresa}" />  
+                </p:column>
+
+
+                <p:column style="width:4%" exportable="false">  
+                    <p:button id="selectButton" title="Ver" icon="ui-icon-search" href="matricula.xhtml?matricula=#{matricula.id}" />   
+                </p:column>
+                <p:rowExpansion>
+                    <p:dataTable  filterEvent="change" value="#{matricula.matricula.eventoList}" var="evento"
+                                  sortBy="#{evento.fechaCreacion}" sortOrder="descending" id="fechaCreacion"
+                                  emptyMessage="No existen eventos asociados a la matrícula"
+                                  style="margin-bottom: 30px; margin-left: 30px; margin-top: 0px; float: right;"
+                                  >
+                        <p:column headerText="Descripción">
+                            <p:outputLabel value="#{evento.descripcion}"/>
+                            <p:outputLabel value="#{evento.documentacionEvento}"/>
+                        </p:column>
+                        <p:column headerText="Estado">
+                            <p:outputLabel value="#{evento.estadoLargo}"/>
+                        </p:column>
+                        <p:column headerText="Fecha de Creación">
+                            <p:outputLabel value="#{Fecha.getFechaDiaMesAnio(evento.fechaCreacion)}"/>
+                        </p:column>
+                        <p:column headerText="Fecha de Realización">
+                            <p:outputLabel value="#{Fecha.getFechaDiaMesAnio(evento.fechaRealizacion)}"/>
+                        </p:column>
+                        <p:column headerText="Fecha de Vencimiento">
+                            <p:outputLabel value="#{Fecha.getFechaDiaMesAnio(evento.fechaVencimiento)}"/>
+                        </p:column>
+                        <p:column style="width:4%">  
+                            <p:commandButton id="selectButtonVer" process="@this" update=":detalles_de_evento" title="Ver" icon="ui-icon-search" oncomplete="dlgDetalleEvento.show();"  styleClass="#{(evento.observaciones eq null or evento.observaciones eq '') ? '' : 'greenyellow'}" >
+                                <f:setPropertyActionListener target="#{controlCalendario.eventId}" value="#{evento.id}"/>
+                            </p:commandButton>   
+                        </p:column>
+                    </p:dataTable>
+
+                </p:rowExpansion>
+            </p:dataTable>  
+            <p:panel style=" border: none; margin: auto;" id="botones_des">
+
+                <div style="float: right;">
+                    <p:commandButton value="Generar Excel Mensajería" rendered="#{sesionActual.tienePermiso(13)}" actionListener="#{matriculaVista.generarDocumentacionExcelMensajeria}" update=":formulario_principal:messages :formulario_principal:growl :formulario_principal :formulario_principal:boton_descarga :dialog_desc :formulario_principal:botones_des" style="float:left; width: 150px; margin: 5px;" icon="ui-icon-calculator"/>
+                    <br/>
+                    <p:commandButton value="Generar Documentación" onclick="dlgGeneraDoc.show();" style="float:left; width: 150px; margin: 5px;"/>
+                    <br/>
+                    <p:commandButton id="boton_descarga" styleClass="boton_descarga" icon="ui-icon-print" value="Descargar" rendered="#{matriculaVista.enlaceDescarga ne ''}" onclick="window.open('../../../../#{matriculaVista.enlaceDescarga}');" style="float:left; width: 150px; margin: 5px; display: none;"/>
+
+                </div>
+                <div style="#{sesionActual.tienePermiso(13)?'':'text-align: center;'}">
+                    <p:panel header="Documentación Inicio Curso" style="display: inline-block; margin: 5px;" rendered="#{sesionActual.tienePermiso(13)}">
+                        <p:selectBooleanButton value="#{matriculaVista.gen.generar_carta_rep_legal}" onLabel="Carta Rep. Legal" offLabel="Carta Rep. Legal" style="margin: 3px;"/>
+                        <p:selectBooleanButton value="#{matriculaVista.gen.generar_datos_curso_alumno}" onLabel="Ficha Curso" offLabel="Ficha Curso" style="margin: 3px;"/>
+                        <p:selectBooleanButton value="#{matriculaVista.gen.generar_ficha_registro_alumno}" styleClass="ficha_alumno1" onLabel="Ficha Alumno" id="fa1" offLabel="Ficha Alumno" style="margin: 3px;" onchange="$('.ficha_alumno2').click();" >
+                        </p:selectBooleanButton>
+                        <p:selectBooleanButton value="#{matriculaVista.gen.generar_factura}" onLabel="Factura" offLabel="Factura" style="margin: 3px;"/>
+                        <p:selectBooleanButton value="#{matriculaVista.gen.generar_recibi_material}" onLabel="Recibí Material" offLabel="Recibí Material" style="margin: 3px;"/>
+                        <p:selectBooleanButton value="#{matriculaVista.gen.generar_autorizacion}" onLabel="Autor." offLabel="Autor." style="margin: 3px;" title="Autorización curso no relacionado con actividad" />
+                        <p:selectBooleanButton value="#{matriculaVista.gen.generar_acreditacion}" onLabel="Acred." title="Acreditación Jornada Laboral" offLabel="Acred." style="margin: 3px;"/>
+                    </p:panel>
+                    <p:panel header="Documentación Fin Curso" style="display: inline-block; margin: 5px;" rendered="#{sesionActual.tienePermiso(13)}">
+                        <p:selectBooleanButton value="#{matriculaVista.gen.generar_informe_fin_curso}" onLabel="Informe Fin Curso" offLabel="Informe Fin Curso" style="margin: 3px;"/>
+                        <p:selectBooleanButton value="#{matriculaVista.gen.generar_diploma}" onLabel="Diploma" offLabel="Diploma" style="margin: 3px;"/>
+                        <p:selectBooleanButton value="#{matriculaVista.gen.generar_recibi_diploma}" onLabel="Recibí Diploma" offLabel="Recibí Diploma" style="margin: 3px;"/>
+                    </p:panel>
+                    <br/>
+                    <p:panel header="Documentación Presencial" style="display: inline-block; margin: 5px;" rendered="#{sesionActual.tienePermiso(13)}">
+                        <p:selectBooleanButton value="#{matriculaVista.gen.generar_control_asistencia}" onLabel="Control de asistencia" offLabel="Control de asistencia" style="margin: 3px;"/>
+                        <p:selectBooleanButton value="#{matriculaVista.gen.generar_cartel_FEFE}" onLabel="Cartel FEFE" offLabel="Cartel FEFE" style="margin: 3px;"/>
+                        <p:selectBooleanButton id="fa2" value="#{matriculaVista.gen.generar_ficha_registro_alumno}" onLabel="Ficha Alumno" offLabel="Ficha Alumno" style="margin: 3px;" styleClass="ficha_alumno2" >
+                            <p:ajax event="change" process="@this" oncomplete="$('.botonUpdate').click();"/>
+                        </p:selectBooleanButton>
+                    </p:panel>
+                    <p:panel header="Acciones Facturas" style="display: inline-block; margin: 5px;" rendered="#{sesionActual.tienePermiso(13)}">
+                        <p:commandButton value="Generar Factura" actionListener="#{matriculaVista.generarFacturas}" onclick="if (!confirm('¿Seguro que desea Generar las Facturas para las Matrícluas Seleccionadas?')) {
+                        return false;
+                    }" style="margin: 3px;"
+                                         update=":formulario_principal:messages :formulario_principal:growl"
+                                         />
+
+                    </p:panel>
+                    <p:panel header="Documentación Matrícula" style="display: inline-block; margin: 5px; text-align: center;">
+                        <p:selectOneButton value="#{matriculaVista.gen.generar_matricula}">
+                            <f:selectItem itemLabel="&nbsp;" itemValue="0" />
+                            <f:selectItem itemLabel="Mat. Completa" itemValue="1" />  
+                            <f:selectItem itemLabel="Mat. - Alumno y Empresa" itemValue="2" />  
+                            <f:selectItem itemLabel="Mat. - Empresa" itemValue="3" />
+                        </p:selectOneButton>
+                    </p:panel>
+                    <p:panel header="Acciones XML" style="display: inline-block; margin: 5px;" rendered="#{(matriculaVista.muestraCreadoXMLInicio or matriculaVista.muestraA_finializar) and sesionActual.tienePermiso(13)}">
+                        <p:commandButton value="XML Acciones Formativas" onclick="if (!confirm('¿Seguro que desea generar el XML de las Acciones Formativas de las matrículas seleccionadas?')) {
+                        return false;
+                    }"  actionListener="#{matriculaVista.generarXMLAccionesFormativas}" update=":formulario_principal:messages :formulario_principal:growl :formulario_principal :formulario_principal:boton_descarga :dialog_desc :formulario_principal:botones_des" style="margin: 3px;" />
+                        <p:commandButton value="XML Inicio Grupo" rendered="#{matriculaVista.muestraCreadoXMLInicio}" onclick="if (!confirm('¿Seguro que desea generar el XML de Inicio de Grupo de las matrículas seleccionadas?')) {
+                        return false;
+                    }"  actionListener="#{matriculaVista.generarXMLInicioGrupo}" update=":formulario_principal:messages :formulario_principal:growl :formulario_principal :formulario_principal:boton_descarga :dialog_desc :formulario_principal:botones_des" style="margin: 3px;" />
+                        <p:commandButton value="XML Fin Grupo"  rendered="#{matriculaVista.muestraA_finializar}" onclick="if (!confirm('¿Seguro que desea generar el XML de Fin de Grupo de las matrículas seleccionadas?')) {
+                        return false;
+                    }" actionListener="#{matriculaVista.generarXMLFinGrupo}" update=":formulario_principal:messages :formulario_principal:growl :formulario_principal :formulario_principal:boton_descarga :dialog_desc :formulario_principal:botones_des" style="margin: 3px;" />
+                    </p:panel>
+                    <p:panel header="Comunicaciones Alumno" style="display: inline-block; margin: 5px; text-align: center;" rendered="#{matriculaVista.muestraComInicioCurso or matriculaVista.muestraEmail}">
+                        <p:commandButton rendered="#{matriculaVista.muestraComInicioCurso}" value="Com. Inicio Curso" onclick="if (!confirm('¿Seguro que desea enviar el E-mail de Comunicación de Inicio de Curso de las matrículas seleccionadas?')) {
+                        return false;
+                    }" actionListener="#{matriculaVista.enviarEmailComunicacion(1)}" update=":formulario_principal:messages :formulario_principal:growl :formulario_principal :formulario_principal:boton_descarga :dialog_desc :formulario_principal:botones_des" style="margin: 3px;" />
+                        <p:commandButton rendered="#{matriculaVista.muestraComInicioCurso}" value="Com. Seg. Curso" onclick="if (!confirm('¿Seguro que desea enviar el E-mail de Comunicación de Seguimiento de Curso de las matrículas seleccionadas?')) {
+                        return false;
+                    }" actionListener="#{matriculaVista.enviarEmailComunicacion(2)}" update=":formulario_principal:messages :formulario_principal:growl :formulario_principal :formulario_principal:boton_descarga :dialog_desc :formulario_principal:botones_des" style="margin: 3px;" />
+                        <p:commandButton rendered="#{matriculaVista.muestraComInicioCurso}" value="Com. Fin Curso" onclick="if (!confirm('¿Seguro que desea enviar el E-mail de Comunicación de Fin de Curso de las matrículas seleccionadas?')) {
+                        return false;
+                    }" actionListener="#{matriculaVista.enviarEmailComunicacion(3)}" update=":formulario_principal:messages :formulario_principal:growl :formulario_principal :formulario_principal:boton_descarga :dialog_desc :formulario_principal:botones_des" style="margin: 3px;" />
+                        <p:commandButton rendered="#{matriculaVista.muestraEmail}" value="Com. Petición Evaluación" onclick="if (!confirm('¿Seguro que desea enviar el E-mail de Comunicación de Petición de Evaluación de las matrículas seleccionadas?')) {
+                        return false;
+                    }" actionListener="#{matriculaVista.enviarEmailComunicacion(4)}" update=":formulario_principal:messages :formulario_principal:growl :formulario_principal :formulario_principal:boton_descarga :dialog_desc :formulario_principal:botones_des" style="margin: 3px;" />
+                    </p:panel>
+                    <p:commandButton update="fa2 fa1" styleClass="botonUpdate" value="" style="display: none;"/>
+                </div>
+            </p:panel>
+        </ui:define>
+        <ui:define name="dialogos">
+
+            <p:dialog widgetVar="dialogoMasFactura" header="Seleccionar Facturas de Matrículas">
+                <h:form id="dialogo_Mas_Factura">
+                    <p>Seleccione las Facturas que desea generar de las Matrículas con más de una Factura:</p>
+                    <p:dataTable value="#{matriculaVista.matFactura}" var="matriculaFact">
+                        <p:column headerText="ID Matrícula">#{matriculaFact.id}</p:column>
+                        <p:column headerText="Empresa">#{matriculaFact.empresaMatriculaCcc.empresaMatricula.empresa.razonSocial} (#{matriculaFact.empresaMatriculaCcc.empresaMatriculaCccPK.nif})</p:column>
+                        <p:column headerText="Facturas">
+                            <p:dataList var="facEmp" value="#{matriculaFact.facturaList}" styleClass="listaTabla">
+                                #{facEmp.id} [#{facEmp.importe} €] (#{((facEmp.importe lt 0.0)? 'Abono' :  facEmp.ultimoEstado.estado.nombre)})
+                                <p:selectBooleanCheckbox value="#{facEmp.seleccionado}" id="fac_selecc">
+                                    <f:ajax render="fac_selecc"/>
+                                </p:selectBooleanCheckbox>
+                            </p:dataList>
+                        </p:column>
+                    </p:dataTable>
+                    <p:commandButton styleClass="botonAplicar" value="Generar Documentación" 
+                                     actionListener="#{matriculaVista.generarDocumentacionFac}" update=":formulario_principal:messages :formulario_principal:growl :formulario_principal :formulario_principal:boton_descarga :dialog_desc :formulario_principal:botones_des :formulario_principal:dataTable"/>  
+
+                </h:form>
+            </p:dialog>
+            <p:dialog widgetVar="dialogoFIGrupo" header="Elegir rango de inicio de Grupos">
+                <h:form id="busca_finicio">
+                    <p>Desde: <p:calendar required="true" value="#{matriculaVista.ffin_desde}" lang="es" label="F. Fin - Desde" navigator="true"  showOn="button" styleClass="valor" /> - Hasta: <p:calendar value="#{matriculaVista.ffin_hasta}" required="true"  lang="es" label="F. Fin - Hasta" navigator="true"  showOn="button" styleClass="valor" /></p>
+                    <p:commandButton styleClass="botonAplicar" onclick="dialogoFIGrupo.hide();" value="Filtrar" actionListener="#{matriculaVista.recargarMatriculasModeloInicioGrupos}" update=":formulario_principal:dataTable :formulario_principal:growl :formulario_principal:messages :formulario_principal" oncomplete="filtraFIGrupo();"/>   
+                </h:form>
+            </p:dialog>
+            <p:dialog widgetVar="dialogoFFGrupo" header="Elegir rango de finalización de Grupos">
+                <h:form id="busca_ffin">
+                    <p>Desde: <p:calendar required="true" value="#{matriculaVista.ffin_desde}" lang="es" label="F. Fin - Desde" navigator="true"  showOn="button" styleClass="valor" /> - Hasta: <p:calendar value="#{matriculaVista.ffin_hasta}" required="true"  lang="es" label="F. Fin - Hasta" navigator="true"  showOn="button" styleClass="valor" /></p>
+                    <p:commandButton styleClass="botonAplicar" onclick="dialogoFFGrupo.hide();" value="Filtrar" actionListener="#{matriculaVista.recargarMatriculasModeloFinGrupos}" update=":formulario_principal:dataTable :formulario_principal:growl :formulario_principal:messages :formulario_principal" oncomplete="filtraFFGrupo();"/>   
+                </h:form>
+            </p:dialog>
+            <p:confirmDialog id="generaDoc" widgetVar="dlgGeneraDoc" message="¿Seguro que desea generar la documentación de las matrículas seleccionadas?"  
+                             header="Generar Documentación" severity="alert">  
+                <h:form id="genera_Doc">
+                    <p:commandButton styleClass="botonAplicar" value="Sí"  oncomplete="dlgGeneraDoc.hide();"  
+                                     actionListener="#{matriculaVista.generarDocumentacion}" update=":formulario_principal:messages :formulario_principal:growl :formulario_principal :formulario_principal:boton_descarga :dialog_desc :formulario_principal:botones_des :formulario_principal:dataTable :dialogo_Mas_Factura"/>  
+                    <p:commandButton styleClass="botonAplicar" value="No" onclick="dlgGeneraDoc.hide()" type="button" />   
+                </h:form>
+            </p:confirmDialog> 
+
+            <p:dialog id="editarEmail" widgetVar="dlgEditarEmail"  
+                      header="Editar e-mail" width="400">  
+                <h:form id="cambia_email" style="text-align: center;">
+                    <p:commandButton onsuccess="dlgEditarEmail.hide();" update="valor_email :formulario_principal:growl :formulario_principal:messages :formulario_principal:dataTable" style="margin:5px;" rendered="#{matriculaVista.matriculaSeleccionada.empresaMatriculaCcc.empresaMatricula.empresa.email ne ''}"  value="#{matriculaVista.matriculaSeleccionada.empresaMatriculaCcc.empresaMatricula.empresa.email} (Empresa Matriculada)">
+                        <f:setPropertyActionListener target="#{matriculaVista.matriculaSeleccionada.emailEnvio}" value="#{matriculaVista.matriculaSeleccionada.empresaMatriculaCcc.empresaMatricula.empresa.email}"/>
+                    </p:commandButton>
+                    <p:commandButton onsuccess="dlgEditarEmail.hide();" update="valor_email :formulario_principal:growl :formulario_principal:messages :formulario_principal:dataTable" style="margin:5px;" rendered="#{matriculaVista.matriculaSeleccionada.alumno.persona.email ne ''}" value="#{matriculaVista.matriculaSeleccionada.alumno.persona.email} (Alumno Matriculado)">
+                        <f:setPropertyActionListener target="#{matriculaVista.matriculaSeleccionada.emailEnvio}" value="#{matriculaVista.matriculaSeleccionada.alumno.persona.email}"/>
+                    </p:commandButton>
+                    <p:inputText style="width:90%;text-align: center;margin:5px;" label="e-mail" value="#{matriculaVista.matriculaSeleccionada.emailEnvio}" validator="#{validarVista.validaEmail}" required="true" id="valor_email">
+                        <f:ajax event="change" render="valor_email :formulario_principal:growl :formulario_principal:messages :formulario_principal:dataTable"/>
+                    </p:inputText>
+                    <p style="text-align: center;"><p:commandButton value="Guardar" update="cambia_email :formulario_principal:dataTable" onclick="dlgEditarEmail.hide();" >
+                            
+                        </p:commandButton></p>
+                </h:form>
+            </p:dialog>
+
+            <p:dialog modal="true" header="Descargar" id="dialog_desc" widgetVar="dialogDesc" visible="#{matriculaVista.enlaceDescarga ne '' and matriculaVista.muestraDesc}">
+                <h:form>
+                    <p style="text-align: center; cursor: pointer;padding: 5px; margin: 1px"><a href="../../../..#{matriculaVista.enlaceDescarga}" target="_blank"><p:commandButton type="button" value="Descargar"/></a></p>
+                </h:form>
+            </p:dialog>
+            <p:dialog modal="true" header="Subir Excel Importe Bonificar" id="dialog_ImpBonif" widgetVar="dialogoImpBonif">
+                <h:form enctype="multipart/form-data">
+                    <p:fileUpload value="#{matriculaVista.excelImpBonif}" mode="simple"/>  
+
+                    <p:commandButton value="Subir Archivo" ajax="false"  
+                                     actionListener="#{matriculaVista.subirExcelImpBonif}" />  
+                </h:form>
+            </p:dialog>
+
+        </ui:define>
+    </ui:composition>
+</html>

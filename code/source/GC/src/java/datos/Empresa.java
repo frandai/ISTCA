@@ -1,0 +1,337 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package datos;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import javax.persistence.Basic;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.persistence.CascadeType;
+import javax.persistence.Transient;
+import javax.xml.bind.annotation.XmlTransient;
+import util.Validacion;
+
+/**
+ *
+ *
+ */
+@Entity
+@Table(schema = "public")
+@XmlRootElement
+@NamedQueries({
+    @NamedQuery(name = "Empresa.findAll", query = "SELECT e FROM Empresa e"),
+    @NamedQuery(name = "Empresa.findByNif", query = "SELECT e FROM Empresa e WHERE e.nif = :nif"),
+    @NamedQuery(name = "Empresa.findByRazonSocial", query = "SELECT e FROM Empresa e WHERE e.razonSocial = :razonSocial"),
+    @NamedQuery(name = "Empresa.findByEmail", query = "SELECT e FROM Empresa e WHERE e.email = :email"),
+    @NamedQuery(name = "Empresa.findByPagWeb", query = "SELECT e FROM Empresa e WHERE e.pagWeb = :pagWeb")})
+public class Empresa implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+    @Id
+    @Basic(optional = false)
+    @NotNull
+    @Size(min = 0, max = 2147483647)
+    @Column(nullable = false, length = 2147483647)
+    private String nif;
+    @Basic(optional = false)
+    @NotNull
+    @Size(min = 1, max = 2147483647)
+    @Column(name = "RAZON_SOCIAL", nullable = false, length = 2147483647)
+    private String razonSocial;
+    // @Pattern(regexp="[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?", message="Invalid email")//if the field contains email address consider using this annotation to enforce field validation
+    @Size(max = 2147483647)
+    @Column(length = 2147483647)
+    private String email;
+    @Size(max = 2147483647)
+    @Column(name = "PAG_WEB", length = 2147483647)
+    private String pagWeb;
+    @JoinTable(name = "EMPRESA_PERSONA", joinColumns = {
+        @JoinColumn(name = "EMPRESA", referencedColumnName = "NIF", nullable = false)}, inverseJoinColumns = {
+        @JoinColumn(name = "PERSONA", referencedColumnName = "NIF", nullable = false)})
+    @ManyToMany
+    private List<Persona> personaList;
+    @JoinColumn(name = "REPRES_LEGAL", referencedColumnName = "NIF", nullable = false)
+    @ManyToOne(optional = false)
+    private Persona represLegal;
+    @JoinColumn(name = "ESTADO", referencedColumnName = "ID", nullable = false)
+    @ManyToOne(optional = false)
+    private EmpresaEstado estado;
+    @JoinColumn(name = "DIRECCION", referencedColumnName = "ID", nullable = true)
+    @ManyToOne(optional = true, cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.REMOVE})
+    private Direccion direccion;
+    @JoinColumn(name = "COMERCIAL", referencedColumnName = "ID")
+    @ManyToOne(cascade = CascadeType.ALL)
+    private Comercial comercial;
+    @JoinColumn(name = "ACTIVIDAD", referencedColumnName = "ID", nullable = false)
+    @ManyToOne(optional = false)
+    private Actividad actividad;
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "empresa")
+    private Proveedor proveedor;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "empresa")
+    private List<Tutor> tutorList;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "empresa1")
+    private List<EmpresaTelefono> empresaTelefonoList;
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "empresa")
+    private EmpresaMatricula empresaMatricula;
+    @Transient //Valor que convierte la Estructura Comercial de la Empresa en una cadena de caracteres,
+    //Para mostrársela al usuario.
+    private String ecString;
+    @Transient //Valor que muestra la EC superior de la Empresa
+    private List<Comercial> comercialSuperiorList;
+    @OneToMany(mappedBy = "empresa")
+    private List<Evento> eventoList;
+    @Transient //Parámetro booleano para identifivar si se ha seleccionado ésta Empresa
+    //Para gestionarla en una función de impresión
+    private boolean seleccionarPDF;
+
+    public boolean isSeleccionarPDF() {
+        return seleccionarPDF;
+    }
+
+    public void setSeleccionarPDF(boolean seleccionarPDF) {
+        this.seleccionarPDF = seleccionarPDF;
+    }
+
+    public List<Evento> getEventoList() {
+        return eventoList;
+    }
+
+    public void setEventoList(List<Evento> eventoList) {
+        this.eventoList = eventoList;
+    }
+
+    public String getEcString() {
+        if (ecString == null) {
+            ecString = "";
+            for (Comercial c : getComercialSuperiorList()) {
+                ecString += "[ " + c.getNombre() + " (" + c.getComercialTipo().getNombre() + ") ]";
+            }
+        }
+        return ecString;
+    }
+
+    public void setEcString(String ecString) {
+        this.ecString = ecString;
+    }
+
+    public List<Comercial> getComercialSuperiorList() {
+        if (comercialSuperiorList == null) {
+            comercialSuperiorList = new ArrayList<Comercial>();
+            try {
+                Comercial c = comercial.getComercialSuperior();
+                while (c != null) {
+                    comercialSuperiorList.add(c);
+                    c = c.getComercialSuperior();
+                }
+            } catch (NullPointerException e) {
+            }
+        }
+        return comercialSuperiorList;
+    }
+
+    public void setComercialSuperiorList(List<Comercial> comercialSuperiorList) {
+        this.comercialSuperiorList = comercialSuperiorList;
+    }
+
+    public Empresa() {
+    }
+
+    public Empresa(String nif) {
+        this.nif = nif;
+    }
+
+    public Empresa(String nif, String razonSocial) {
+        this.nif = nif;
+        this.razonSocial = razonSocial;
+    }
+
+    public String getNif() {
+        return nif;
+    }
+
+    public void setNif(String nif) {
+        this.nif = nif.toUpperCase();
+    }
+
+    public String getRazonSocial() {
+        return razonSocial;
+    }
+
+    public void setRazonSocial(String razonSocial) {
+        this.razonSocial = razonSocial;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPagWeb() {
+        return pagWeb;
+    }
+
+    public void setPagWeb(String pagWeb) {
+        this.pagWeb = pagWeb;
+    }
+
+    @XmlTransient
+    public List<Persona> getPersonaList() {
+        return personaList;
+    }
+
+    public void setPersonaList(List<Persona> personaList) {
+        this.personaList = personaList;
+    }
+
+    public Persona getRepresLegal() {
+        return represLegal;
+    }
+
+    public void setRepresLegal(Persona represLegal) {
+        this.represLegal = represLegal;
+    }
+
+    public EmpresaEstado getEstado() {
+        return estado;
+    }
+
+    public void setEstado(EmpresaEstado estado) {
+        this.estado = estado;
+    }
+
+    public Direccion getDireccion() {
+        return direccion;
+    }
+
+    public void setDireccion(Direccion direccion) {
+        this.direccion = direccion;
+    }
+
+    public Comercial getComercial() {
+        return comercial;
+    }
+
+    public void setComercial(Comercial comercial) {
+        this.comercial = comercial;
+    }
+
+    public Actividad getActividad() {
+        return actividad;
+    }
+
+    public void setActividad(Actividad actividad) {
+        this.actividad = actividad;
+    }
+
+    public Proveedor getProveedor() {
+        return proveedor;
+    }
+
+    public void setProveedor(Proveedor proveedor) {
+        this.proveedor = proveedor;
+    }
+
+    @XmlTransient
+    public List<Tutor> getTutorList() {
+        return tutorList;
+    }
+
+    public void setTutorList(List<Tutor> tutorList) {
+        this.tutorList = tutorList;
+    }
+
+    @XmlTransient
+    public List<EmpresaTelefono> getEmpresaTelefonoList() {
+        return empresaTelefonoList;
+    }
+
+    public void setEmpresaTelefonoList(List<EmpresaTelefono> empresaTelefonoList) {
+        this.empresaTelefonoList = empresaTelefonoList;
+    }
+
+    public EmpresaMatricula getEmpresaMatricula() {
+        return empresaMatricula;
+    }
+
+    public void setEmpresaMatricula(EmpresaMatricula empresaMatricula) {
+        this.empresaMatricula = empresaMatricula;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (nif != null ? nif.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (!(object instanceof Empresa)) {
+            return false;
+        }
+        Empresa other = (Empresa) object;
+        if ((this.nif == null && other.nif != null) || (this.nif != null && !this.nif.equals(other.nif))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "datos.Empresa[ nif=" + nif + " ]";
+    }
+
+    public String getTelefonos() {
+        String telefonos = "";
+        for (EmpresaTelefono t : empresaTelefonoList) {
+            telefonos += t.getEmpresaTelefonoPK().getNumero() + " ";
+        }
+        return telefonos;
+    }
+
+    public String getTipo() {
+        return this.empresaMatricula != null && this.proveedor != null ? "Mat.+Prov."
+                : (this.empresaMatricula != null ? "Matricular" : (this.proveedor != null) ? "Proveedor" : "Cliente Potencial");
+    }
+
+    public String getTipoNif() {
+        try {
+            switch (Validacion.getTipoNif(nif)) {
+                case Validacion.NIF_CIF:
+                    return "CIF";
+                case Validacion.NIF_DNI:
+                    return "DNI";
+                case Validacion.NIF_OTRO:
+                    return "NIF";
+                case Validacion.NIF_NIE:
+                    return "NIE";
+                default:
+                    return "-";
+            }
+        } catch (Exception e) {
+            return "-";
+        }
+    }
+}
