@@ -4,6 +4,6 @@ Effective technologies and methodologies have helped with the analysis, developm
 
 The system make easier the communication between actors (tutors, students, businesses receiving training, financial institutions), with special attention tothe Fundación Tripartita de Formación en el Empleo (Spanish public entity) which is responsible for validating and finance training courses for businesses which need to train their employees.
 
-Feel free to ask in: frandai [at] correo.ugr.es.
+Feel free to ask at: frandai [at] correo.ugr.es.
 
 This project is part of the capstone Project of Francisco Serrano Carmona, student of the Degree in Computer Engineering of Universidad de Granada (UGR) (2014).
